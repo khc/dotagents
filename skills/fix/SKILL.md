@@ -24,6 +24,10 @@ If the requested fix is trivial (e.g. small bug, typo, single-line change):
 - Do not re-review the whole target or expand into unrelated cleanup.
 - Accept explicit finding IDs or references when provided and limit fixes strictly to them.
 
+If the user runs `/fix` immediately after a review and does not specify finding IDs:
+- treat it as "fix all findings from the latest review"
+- do not ask for clarification
+
 ## Workflow
 
 If a scoped context is not active:
@@ -59,13 +63,15 @@ If an issue is encountered that is not part of the provided review:
 
 ## Execution Rules
 
-- Do not re-analyze architecture unless required for the fix.
-- Do not search for additional issues unless the user asks.
-- Do not refactor beyond what the fix requires.
-- Do not rename, move, or reorganize code unless necessary for correctness.
-- Do not re-run review or re-evaluate severity of findings.
-- Keep edits local and reversible.
-- Optimize for low LOC and clarity.
+- Do not ask for clarification if the intent can be reasonably inferred from the latest review or command
+- Do not pause or ask questions once execution has started unless blocked
+- Do not re-analyze architecture unless required for the fix
+- Do not search for additional issues unless the user asks
+- Do not refactor beyond what the fix requires
+- Do not rename, move, or reorganize code unless necessary for correctness
+- Do not re-run review or re-evaluate severity of findings
+- Keep edits local and reversible
+- Optimize for low LOC and clarity
 
 ## Required Output Before Coding
 
@@ -87,6 +93,7 @@ Do not include broad analysis.
 ## Code Output Rules
 
 After the plan (or immediately for Fast Path):
+
 - return only code or diff/patch
 - no chain-of-thought
 - no long explanations
@@ -103,6 +110,7 @@ After the plan (or immediately for Fast Path):
 ## Failure Mode
 
 If a requested fix cannot be done safely within current scope:
+
 - state the blocker in 1–2 sentences
 - name the exact extra file or dependency context required
 - stop there

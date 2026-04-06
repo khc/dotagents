@@ -5,7 +5,7 @@ description: Use when the user explicitly asks to add a new feature or a substan
 
 # Feature
 
-Deliver features in a controlled, minimal, and modular way. Do not jump to implementation before planning is complete.
+Deliver features in a controlled, minimal, and modular way.
 
 ## Workflow
 
@@ -45,16 +45,19 @@ Treat the choice as non-trivial if any of the following are true:
 - the current implementation would require noticeable bespoke logic
 - adding a library could materially reduce LOC or risk
 
-If the best path is obvious and already supported by the standard library or existing project utilities, proceed without `$research`, but state that decision briefly in the plan.
+If the best path is obvious and already supported by the standard library or existing project utilities:
+- proceed without `$research`
+- state that decision briefly in the plan
 
 ## Planning Phase (MANDATORY)
 
-Return a short plan BEFORE coding:
+Return a short plan BEFORE coding.
 
 Do NOT write code in this phase.
 
 After completing the plan:
-- transition to Implementation Phase
+- transition immediately to Implementation Phase
+- do not wait for confirmation
 
 ### Scope
 - What will be built (1–3 bullets)
@@ -70,11 +73,9 @@ After completing the plan:
 - Option B (optional)
 - Final choice + why
 
-Do NOT write code in this phase.
-
 ## Implementation Phase
 
-Proceed to implementation immediately after the plan unless the user explicitly requested planning only.
+Proceed immediately after the plan unless the user explicitly requested planning only.
 
 Do not repeat the plan.
 
@@ -83,6 +84,14 @@ Do not repeat the plan.
 - No overengineering
 - Keep functions small and explicit
 - Side effects at boundaries
+
+## Execution Rules
+
+- Do not ask for confirmation
+- Do not pause after planning
+- Do not restate the plan
+- Do not reread unchanged files unless necessary
+- Do not explore outside the scoped context
 
 ## Code Output Rules
 

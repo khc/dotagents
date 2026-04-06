@@ -6,6 +6,14 @@
 - Do not proceed without confirmed scope
 - Follow the active skill strictly; do not mix behaviors
 
+## Execution Discipline
+
+- Do not explain internal reasoning
+- Do not ask for confirmation when the next action is obvious from the active skill
+- Do not reread unchanged files unless a write failed or new context is required
+- Do not verify trivial edits with extra reads unless the user asked for validation
+- Prefer direct execution over discussion when scope is already confirmed
+
 ## Coding Principles
 
 - Prefer simple solutions (KISS)
