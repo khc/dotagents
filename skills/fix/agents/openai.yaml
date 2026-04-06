@@ -1,0 +1,12 @@
+interface:
+  display_name: "Fix"
+  short_description: "Implement scoped fixes from review findings"
+  default_prompt: "Use $fix to implement specific review findings by following the review as the source of truth, applying minimal safe changes only, and avoiding re-analysis or scope expansion."
+
+policy:
+  allow_implicit_invocation: false
+  priority: high
+
+enforcement:
+  required_input:
+    - review

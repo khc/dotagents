@@ -1,0 +1,13 @@
+interface:
+  display_name: "Plan"
+  short_description: "Choose the minimal skill workflow for a task"
+  default_prompt: "Use $plan to choose the smallest effective workflow for a scoped task by selecting the right skill sequence and next step without doing implementation."
+
+policy:
+  allow_implicit_invocation: true
+  priority: high
+
+constraints:
+  - "Do not implement code"
+  - "Do not perform review, fix, or feature work during planning"
+  - "Recommend the minimal workflow only"

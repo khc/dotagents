@@ -1,0 +1,8 @@
+interface:
+  display_name: "Feature"
+  short_description: "Plan and ship scoped feature work"
+  default_prompt: "Use $feature to deliver a scoped feature by checking repo instructions first, running $research when the library or built-in choice is non-trivial, making that decision explicit, and then implementing a minimal modular solution."
+
+policy:
+  allow_implicit_invocation: false
+  priority: medium

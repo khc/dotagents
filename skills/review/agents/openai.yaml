@@ -1,0 +1,12 @@
+interface:
+  display_name: "Review"
+  short_description: "Review code with line-anchored findings"
+  default_prompt: "Use $review to review a file or code path, report concrete line-anchored findings grouped by bugs, design, performance, and security, and explicitly identify where standard, existing, or external library support should replace bespoke code."
+
+policy:
+  allow_implicit_invocation: false
+  priority: medium
+
+enforcement:
+  produces:
+    - findings
