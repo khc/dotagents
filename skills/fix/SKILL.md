@@ -94,9 +94,11 @@ Do not include broad analysis.
 
 After the plan (or immediately for Fast Path):
 
-- return only code or diff/patch
+- return:
+  - plan (if not Fast Path)
+  - followed by code or diff/patch
 - no chain-of-thought
-- no long explanations
+- do not add explanations beyond the plan
 - no alternative designs
 - no extra improvements
 - keep output as small as practical

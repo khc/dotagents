@@ -95,10 +95,10 @@ Do not repeat the plan.
 
 ## Code Output Rules
 
-- Return only:
-  - code OR
-  - diff/patch
-- No explanations
+- Return:
+  - plan (if not Fast Path)
+  - followed by code or diff/patch
+- Do not add explanations beyond the plan
 - Max ~150 lines unless required
 
 ## Testing

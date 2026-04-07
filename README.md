@@ -131,8 +131,10 @@ $switch → $feature
 
 Complex:
 ```
-$switch → $plan → $research → $feature → $audit
+$switch → $feature → $audit
 ```
+
+Use `$plan` or `$research` only when you explicitly want a separate step.
 
 ### Fix Bug
 

@@ -7,6 +7,12 @@ description: Use when the user explicitly asks for a code or file review on a sp
 
 Review only the user-specified target file or code path and report concrete, evidence-backed issues.
 
+## Workflow
+
+If a scoped context is not active:
+- STOP
+- run $switch first
+
 ## Scope
 
 - Read the target first.
