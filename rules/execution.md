@@ -1,3 +1,0 @@
-- Only one skill active at a time
-- Do not chain skills unless explicitly instructed
-- Always activate $switch before repo work

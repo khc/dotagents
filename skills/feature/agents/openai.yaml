@@ -6,3 +6,7 @@ interface:
 policy:
   allow_implicit_invocation: false
   priority: medium
+
+enforcement:
+  depends_on:
+    - switch

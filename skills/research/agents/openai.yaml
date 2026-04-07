@@ -7,6 +7,10 @@ policy:
   allow_implicit_invocation: false
   priority: high
 
+enforcement:
+  depends_on:
+    - switch
+
 constraints:
   - "Do not implement code"
   - "Recommend one final approach only"
