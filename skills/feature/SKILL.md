@@ -96,7 +96,7 @@ Do not repeat the plan.
 ## Code Output Rules
 
 - Return:
-  - plan (if not Fast Path)
+  - plan
   - followed by code or diff/patch
 - Do not add explanations beyond the plan
 - Max ~150 lines unless required
