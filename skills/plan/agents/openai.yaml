@@ -7,6 +7,10 @@ policy:
   allow_implicit_invocation: true
   priority: high
 
+enforcement:
+  depends_on:
+    - switch
+
 constraints:
   - "Do not implement code"
   - "Do not perform review, fix, or feature work during planning"

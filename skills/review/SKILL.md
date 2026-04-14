@@ -12,17 +12,19 @@ Review only the user-specified target file or code path and report concrete, evi
 If a scoped context is not active:
 - STOP
 - run $switch first
+- after $switch completes, confirm the active scope path before proceeding
+- do not infer scope from the review target path alone
 
 ## Scope
 
-- Read the target first.
+- Read the target first. If the target is a directory, use `Glob` to list contents first, then `Read` only files relevant to the review scope.
 - Stay focused on:
   - bugs
   - design issues
   - performance risks
   - security concerns
 - Include hardcoded secrets, tokens, credentials, unsafe defaults, insecure parsing, injection risks, and misuse of cryptography where applicable.
-- Do not expand scope beyond the requested target unless the issue requires minimal adjacent context to verify.
+- Do not expand scope beyond the requested target unless the issue requires adjacent context to verify. Adjacent context means at most one directly imported or called file. Do not traverse further.
 
 ## Review rules
 
@@ -63,6 +65,8 @@ For each finding:
 - Assign impact: `low`, `medium`, or `high`.
 - State whether it is a **confirmed issue** or **risk**.
 - Be explicit when bespoke code should be replaced by built-in or library support.
+
+Cap at 10 findings total. Merge overlapping symptoms into one root-cause finding before reporting. If more than 10 exist, note the total count and report the highest-impact ones only.
 
 Then include a summary table with columns:
 

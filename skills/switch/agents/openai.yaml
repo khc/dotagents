@@ -7,9 +7,3 @@ policy:
   allow_implicit_invocation: true
   priority: high
 
-enforcement:
-  required_before:
-    - feature
-    - fix
-    - review
-    - research

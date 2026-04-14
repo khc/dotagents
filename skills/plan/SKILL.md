@@ -17,8 +17,8 @@ If a scoped context is not active:
 - STOP
 - run $switch first
 
-1. Read `AGENTS.md` first.
-2. Identify the task type:
+1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
+2. Identify the task type from the user's request text only. Do not read files to determine task type.
    - review
    - fix
    - feature
@@ -28,7 +28,7 @@ If a scoped context is not active:
 3. Define the smallest useful scope:
    - target path
    - expected outcome
-   - likely touched files or areas
+   - likely touched files or areas (derived from the user's request and AGENTS.md only; do not read source files during planning)
 4. Choose the minimal execution sequence:
    - `$review`
    - `$fix`
@@ -63,7 +63,8 @@ Return:
 - one-line reason for each step
 
 ### Stop Conditions
-- what would require asking for approval or expanding scope
+- at most 2 concrete triggers that would require approval or scope expansion
+- state as specific conditions, not hypothetical risks
 
 ### Next Step
 - exactly one immediate next action

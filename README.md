@@ -11,18 +11,18 @@ This repository defines a structured, deterministic system for working with LLM 
 - **AGENTS.md**  
   Global agent policy, coding principles, and design rules (source of truth)
 
-- **rules/**  
-  Additional global constraints and execution rules
-
 - **skills/**  
   Custom agent skills:
   - `$switch` — scope control
   - `$plan` — workflow selection
   - `$research` — approach optimization
+  - `$bug` — symptom-to-fix in one pass
   - `$feature` — feature delivery
+  - `$refactor` — structural change without behavior change
   - `$review` — structured code review
   - `$fix` — scoped fixes (with fast path)
   - `$audit` — post-change verification
+  - `$commit` — Conventional Commit generation
 
 ---
 
@@ -104,12 +104,26 @@ Use for code analysis.
 - Outputs structured findings
 - Includes file + line references
 
+### $bug
+
+Use when there is a visible symptom (console error, stack trace, unexpected behavior).
+- Full lifecycle in one pass: locate → root cause → fix → verify
+- `Grep`-first location; reads at most 2–3 implicated files
+- No prior `$review` required
+
+### $refactor
+
+Use to restructure code without changing behavior.
+- `Grep` locates all call sites before renaming or moving
+- Plan is shown first; waits for confirmation before implementing
+- Surfaces incidentally found bugs as a post-completion note — does not fix them
+
 ### $fix
 
-Use to implement fixes.
+Use to implement findings from a prior `$review`.
 
 Modes:
-- Fast Path → trivial change → direct patch
+- Fast Path → single file, ≤5 lines → direct patch, no plan
 - Normal Path → plan → patch
 
 ### $audit
@@ -118,6 +132,13 @@ Use after changes.
 - Verifies behavior
 - Checks regressions
 - Does NOT re-review entire code
+
+### $commit
+
+Use to generate commit messages.
+- Inspects `git diff --staged` or `git diff`
+- Generates one Conventional Commit message
+- Commits only if all files are staged
 
 ---
 
@@ -136,16 +157,28 @@ $switch → $feature → $audit
 
 Use `$plan` or `$research` only when you explicitly want a separate step.
 
-### Fix Bug
+### Fix Bug from Symptom
 
 ```
-$switch → $review → $fix → $audit
+$switch → $bug → $commit
+```
+
+### Fix Bug from Code Review
+
+```
+$switch → $review → $fix → $audit → $commit
 ```
 
 ### Quick Fix
 
 ```
 $switch → $fix
+```
+
+### Refactor
+
+```
+$switch → $refactor → $audit → $commit
 ```
 
 ### Evaluate Approach
@@ -162,14 +195,29 @@ $switch → $plan
 
 ---
 
+## Token Efficiency
+
+All skills follow these rules consistently:
+
+- **Read hierarchy**: `Glob` → `Grep` → `Read` — never broad directory reads
+- **Traversal bound**: at most 1–3 files beyond the primary target
+- **AGENTS.md**: if absent, skip and proceed from scoped path only
+- **Output caps**: findings, options, stop conditions all have item limits
+- **Diff only**: no full file output — show only changed lines
+- **Commit diffs**: `--stat` before full diff; skip lock files and binaries
+
+---
+
 ## Anti-Patterns
 
 Avoid:
-- Working without $switch
+- Working without `$switch`
 - Mixing multiple skills in one run
-- Using $fix without $review (except trivial fixes)
-- Ignoring $research recommendations
+- Using `$fix` without `$review` (except trivial fixes)
+- Using `$review` when there is a visible symptom — use `$bug` instead
+- Ignoring `$research` recommendations
 - Expanding scope beyond target path
+- Running bare `git diff` without a file target
 
 ---
 

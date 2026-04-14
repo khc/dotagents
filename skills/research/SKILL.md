@@ -21,12 +21,12 @@ If a scoped context is not active:
 - STOP
 - run $switch first
 
-1. Read `AGENTS.md` first.
+1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. If a scoped path is active, obey that scope and nearest applicable `AGENTS.md`.
 3. Read only the minimum relevant context:
    - target files or path
-   - directly related modules
-   - dependency manifests
+   - at most 2–3 directly related files; use `Grep` to locate existing utilities rather than reading entire modules
+   - dependency manifests (`pyproject.toml`, `package.json`, etc.) only when the task involves library or dependency selection
    - existing utilities/helpers already used in the same area
 4. Define the concrete problem to solve in 1-3 bullets.
 5. Check options in this order:
@@ -66,6 +66,8 @@ Return these sections:
 - bespoke code risk or duplication, if present
 
 ### Options
+List at most 3 options. If more exist, pick the top 3 by fit with the current stack.
+
 For each option include:
 - name
 - type: standard / existing dependency / external / bespoke

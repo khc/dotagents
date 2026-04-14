@@ -19,15 +19,12 @@ If a scoped context is not active:
 - STOP
 - run $switch first
 
-1. Read `AGENTS.md` first.
-2. Identify the exact audit scope:
-   - changed files
-   - intended behavior
-   - related tests or validation commands
+1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
+2. Identify the exact audit scope using `git diff --name-only` (staged) or `git status --porcelain` (unstaged). Do not read files not listed in the diff.
 3. Read only:
-   - changed files
+   - changed files identified in step 2
    - directly affected tests
-   - minimal adjacent code needed to verify correctness
+   - at most one directly called or imported file from the changed site if required for correctness. Do not traverse further.
 4. Check only for:
    - whether the requested change was actually implemented
    - obvious regressions in touched flows
@@ -63,6 +60,7 @@ Return:
 - only issues directly related to the audited change
 - include file path and line number(s) when available
 - assign impact: low / medium / high
+- cap at 5 findings; focus on highest-impact issues caused by the audited change
 
 ### Gaps
 - missing validation, missing tests, or unresolved uncertainty

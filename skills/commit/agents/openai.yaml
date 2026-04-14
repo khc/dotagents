@@ -1,0 +1,13 @@
+interface:
+  display_name: "Commit"
+  short_description: "Generate a Conventional Commit message from the current git diff"
+  default_prompt: "Use $commit to generate exactly one Conventional Commit message from the current staged or unstaged diff, following CC 1.0.0 rules, and commit only when all files are staged."
+
+policy:
+  allow_implicit_invocation: false
+  priority: medium
+
+constraints:
+  - "Generate exactly one commit message"
+  - "Do not commit if any file is unstaged"
+  - "Follow Conventional Commits 1.0.0"

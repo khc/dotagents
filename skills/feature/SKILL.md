@@ -14,12 +14,23 @@ If a scoped context is not active:
 - run $switch first
 
 1. Read `AGENTS.md` first.
-2. If missing, inspect repo structure, conventions, and dependencies.
+2. If missing, inspect only:
+   - `pyproject.toml` or `package.json` (deps and tooling)
+   - top-level directory listing (structure)
+   - one representative source file (conventions)
+   - Do not crawl the full repo.
 3. Define minimal viable scope:
    - user-facing behavior
    - touched files/modules
    - edge cases (only if obvious)
    - tests/config/migrations if required
+
+## Method
+
+- Use `Glob` for repo structure exploration
+- Use `Grep` for symbol, function, or dependency lookup
+- Use `Read` only for files identified as direct touchpoints
+- Never read full directories or accumulate broad file contents into context
 
 ## Research Gate
 
@@ -47,6 +58,7 @@ Treat the choice as non-trivial if any of the following are true:
 
 If the best path is obvious and already supported by the standard library or existing project utilities:
 - proceed without `$research`
+- confirm the utility or function exists via a targeted `Grep` or `Read` before referencing it in the plan
 - state that decision briefly in the plan
 
 ## Planning Phase (MANDATORY)
@@ -99,7 +111,7 @@ Do not repeat the plan.
   - plan
   - followed by code or diff/patch
 - Do not add explanations beyond the plan
-- Max ~150 lines unless required
+- Prefer diffs over full file output; split large implementations across multiple edits
 
 ## Testing
 

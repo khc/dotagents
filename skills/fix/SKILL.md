@@ -9,7 +9,7 @@ Use this skill to implement fixes for existing review findings in a controlled, 
 
 ## Fast Path
 
-If the requested fix is trivial (e.g. small bug, typo, single-line change):
+If the fix touches a single file and requires ≤5 lines changed:
 
 - skip planning
 - return minimal patch directly
@@ -34,11 +34,11 @@ If a scoped context is not active:
 - STOP
 - run $switch first
 
-1. Read `AGENTS.md` first.
+1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. If a scoped path is active, obey the active scope and nearest applicable `AGENTS.md`.
 3. Read only:
-   - the reviewed file(s)
-   - directly adjacent code required to implement the fix safely
+   - the specific files named in the review findings, not the full target tree
+   - at most one directly called or imported file from the fix site if required for safety
    - existing tests for the touched area
 4. Start from the review findings, not from fresh exploration.
 5. For each requested fix:
