@@ -4,19 +4,21 @@ description: Generate a single Conventional Commit message from the current git 
 ---
 
 # Goal
-Generate exactly one Conventional Commit message from the current repo state.
+Generate exactly one Conventional Commit message from the current repo state, then ask whether to proceed with the commit when user confirmation is required.
 
 # Inputs
-- Prefer: `git diff --staged`
-- Fallback: `git diff`
+- Staged-only flow: `git diff --staged`
+- Any unstaged or untracked files present: current full repo change set, not just the staged subset
 
 # Method
 
-1. Run `git diff --stat` (or `git diff --staged --stat`) to determine scope.
-2. If stat output is sufficient to identify the dominant change, generate the message directly.
-3. Only pull `git diff <file>` for specific files when the stat alone is ambiguous.
-4. Never read saved tool output files. Never run bare `git diff` without a file target unless stat is insufficient.
-5. Skip the following when pulling per-file diffs — infer their change from stat only:
+1. Run `git diff --staged --stat` and `git diff --stat` to determine staged scope and full tracked-file scope.
+2. If unstaged or untracked files exist, generate the message from the full intended commit contents, not only the staged subset.
+3. If stat output is sufficient to identify the dominant change, generate the message directly.
+4. Only pull `git diff <file>` for specific tracked files when the stat alone is ambiguous.
+5. For untracked files, inspect only the specific files that are needed to understand the dominant change. Prefer direct file reads or `git diff --no-index -- /dev/null -- <file>` when a diff view is needed.
+6. Never read saved tool output files. Never run bare `git diff` without a file target unless stat is insufficient.
+7. Skip the following when pulling per-file diffs — infer their change from stat only:
    - lock files: `*.lock`, `*-lock.json`, `*.sum`
    - generated files: `*.min.js`, `*.min.css`, `dist/`, `build/`
    - binary files (detected via `git diff --stat` showing `Bin … bytes`)
@@ -26,6 +28,7 @@ Generate exactly one Conventional Commit message from the current repo state.
 1. Get:
    - staged_files = `git diff --staged --name-only`
    - unstaged_files = `git status --porcelain`
+   - repo_state_snapshot = exact output of `git status --porcelain`
 
 2. Cases:
 
@@ -33,29 +36,49 @@ Generate exactly one Conventional Commit message from the current repo state.
   → `Nothing to commit.`
 
 - Staged only  
-  → Generate commit message  
+  → Generate commit message from staged diff  
   → Output message in a code fence  
-  → Run commit
+  → Ask `Proceed with commit?`  
+  → Store `repo_state_snapshot` with the generated message  
+  → If user confirms and `git status --porcelain` still exactly matches `repo_state_snapshot`, run commit with the generated message
 
 - Staged + unstaged  
-  → `Unstaged/untracked files found (not committed):`  
+  → `Unstaged/untracked files found:`  
   → List files (Markdown bullets, backticked; max 10, then `…and N more`)  
-  → Generate message from staged diff  
+  → Generate message from the full intended commit contents, including the listed unstaged or untracked files  
   → Output message in a code fence  
-  → DO NOT commit
+  → Ask `Proceed with commit?`  
+  → Store `repo_state_snapshot` with the generated message  
+  → If user confirms and `git status --porcelain` still exactly matches `repo_state_snapshot`, add all unstaged/untracked files and run commit with the previously generated message
 
 - Unstaged only  
   → `Nothing staged. Unstaged/untracked files:`  
   → List files (Markdown bullets, backticked; max 10, then `…and N more`)  
-  → Generate message from unstaged diff  
+  → Generate message from the full intended commit contents, including the listed unstaged or untracked files  
   → Output message in a code fence  
-  → DO NOT commit
+  → Ask `Proceed with commit?`  
+  → Store `repo_state_snapshot` with the generated message  
+  → If user confirms and `git status --porcelain` still exactly matches `repo_state_snapshot`, add all unstaged/untracked files and run commit with the previously generated message
+
+- Confirmation follow-up  
+  → If the immediately previous `/commit` response asked `Proceed with commit?` and included a generated message  
+  → Recompute `repo_state_now` = exact output of `git status --porcelain`  
+  → If `repo_state_now` exactly matches the stored `repo_state_snapshot`, reuse that exact message  
+  → If there are any unstaged or untracked files, add them first  
+  → Run the commit  
+  → If `repo_state_now` does not exactly match the stored `repo_state_snapshot`, do not commit with the stale message  
+  → Regenerate the message from the current full intended commit contents, output it in a code fence, and ask `Proceed with commit?` again
 
 # Rules
 
-- Never commit if any unstaged files exist
-- Exactly one commit message
-- Commit message always in a code fence, always last in output
+- Ask `Proceed with commit?` whenever a commit message is generated and no commit has been run yet
+- When unstaged or untracked files exist, generate the message from the full intended commit contents, not the staged subset alone
+- Before reusing a previously generated message, compare the exact `git status --porcelain` output to the stored `repo_state_snapshot`
+- On confirmation, reuse the previously generated message only when that snapshot matches exactly
+- If the snapshot changed, regenerate the message and ask `Proceed with commit?` again instead of committing with a stale message
+- On confirmation, add any unstaged/untracked files before committing
+- Exactly one commit message per response
+- Commit message always in a code fence
 - Prefer dominant change from diff
 - Do not invent context
 - Avoid vague descriptions
@@ -92,7 +115,8 @@ Use only if clearly needed:
 
 # Guidance
 
-- Use staged diff if available, otherwise unstaged
+- Use staged diff only when every intended change is already staged
+- If unstaged or untracked files exist, reason about the final commit contents, not just the staged subset
 - Ignore unchanged context
 - Focus on meaningful hunks only
 - Do not mention filenames unless necessary

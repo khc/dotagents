@@ -4,7 +4,7 @@
     {
       "id": 0,
       "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/staged-only. I've staged some changes. Please run /commit.",
-      "expected_output": "Commit message in a code fence as last output, git commit is run.",
+      "expected_output": "Commit message in a code fence, asks 'Proceed with commit?', and does not run git commit until the user confirms.",
       "files": [],
       "assertions": [
         {
@@ -12,23 +12,23 @@
           "description": "The commit message is wrapped in a markdown code fence (```...```)"
         },
         {
-          "name": "commit-message-is-last",
-          "description": "The code-fenced commit message is the last element in the response (nothing comes after it)"
+          "name": "proceed-question-present",
+          "description": "The response asks 'Proceed with commit?' after generating the message"
         },
         {
           "name": "follows-conventional-commit-format",
           "description": "The commit message follows Conventional Commits: type[(scope)]: description, lowercase, no period"
         },
         {
-          "name": "git-commit-was-run",
-          "description": "git_log.txt shows a new commit beyond the initial commit (commit was actually executed)"
+          "name": "no-git-commit-before-confirmation",
+          "description": "git_log.txt shows only the initial commit until the user confirms"
         }
       ]
     },
     {
       "id": 1,
       "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/staged-and-unstaged. I've staged version.py but config.py has unstaged changes. Please run /commit.",
-      "expected_output": "Lists unstaged files, commit message in code fence at end, no git commit run.",
+      "expected_output": "Lists unstaged files, shows a commit message in a code fence, asks 'Proceed with commit?', and does not run git commit until the user confirms.",
       "files": [],
       "assertions": [
         {
@@ -36,23 +36,27 @@
           "description": "The response lists config.py as an unstaged file"
         },
         {
+          "name": "message-covers-final-commit-scope",
+          "description": "The generated commit message reflects the full intended commit contents rather than only the staged subset"
+        },
+        {
           "name": "commit-message-in-code-fence",
           "description": "The commit message is wrapped in a markdown code fence (```...```)"
         },
         {
-          "name": "commit-message-is-last",
-          "description": "The code-fenced commit message is the last element in the response"
+          "name": "proceed-question-present",
+          "description": "The response asks 'Proceed with commit?' after generating the message"
         },
         {
-          "name": "no-git-commit-run",
-          "description": "git_log.txt shows only the initial commit (no new commit was made)"
+          "name": "no-git-commit-before-confirmation",
+          "description": "git_log.txt shows only the initial commit until the user confirms"
         }
       ]
     },
     {
       "id": 2,
       "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/unstaged-only. I have modified auth.py but haven't staged anything. Please run /commit.",
-      "expected_output": "Lists unstaged files, commit message in code fence at end, no git commit run.",
+      "expected_output": "Lists unstaged files, shows a commit message in a code fence, asks 'Proceed with commit?', and does not run git commit until the user confirms.",
       "files": [],
       "assertions": [
         {
@@ -60,16 +64,92 @@
           "description": "The response lists auth.py as an unstaged file"
         },
         {
+          "name": "message-covers-final-commit-scope",
+          "description": "The generated commit message reflects the full intended commit contents that will be staged on confirmation"
+        },
+        {
           "name": "commit-message-in-code-fence",
           "description": "The commit message is wrapped in a markdown code fence (```...```)"
         },
         {
-          "name": "commit-message-is-last",
-          "description": "The code-fenced commit message is the last element in the response"
+          "name": "proceed-question-present",
+          "description": "The response asks 'Proceed with commit?' after generating the message"
         },
         {
-          "name": "no-git-commit-run",
-          "description": "git_log.txt shows only the initial commit (no new commit was made)"
+          "name": "no-git-commit-before-confirmation",
+          "description": "git_log.txt shows only the initial commit until the user confirms"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/staged-only. I've staged some changes. Please run /commit, and when I answer 'yes' in the next turn, complete the flow.",
+      "expected_output": "First response generates a message and asks 'Proceed with commit?'. After the user confirms, the skill reuses the previously generated message and runs git commit.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "commit-runs-after-confirmation",
+          "description": "git_log.txt shows a new commit only after the confirmation turn"
+        },
+        {
+          "name": "message-reused-after-confirmation",
+          "description": "The final commit uses the previously generated message rather than inventing a new one"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/staged-and-unstaged. I've staged version.py but config.py has unstaged changes. Please run /commit, and when I answer 'yes' in the next turn, complete the flow.",
+      "expected_output": "First response lists unstaged files, generates a message for the full intended commit, and asks 'Proceed with commit?'. After the user confirms, the skill stages the remaining files and commits with that stored message.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "remaining-files-staged-on-confirmation",
+          "description": "The confirmation turn stages config.py before committing"
+        },
+        {
+          "name": "commit-runs-after-confirmation",
+          "description": "git_log.txt shows a new commit only after the confirmation turn"
+        },
+        {
+          "name": "stored-message-used-for-final-commit",
+          "description": "The final commit uses the previously generated message that covered the full intended commit contents"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/unstaged-only. I have modified auth.py but haven't staged anything. Please run /commit, and when I answer 'yes' in the next turn, complete the flow.",
+      "expected_output": "First response lists unstaged files, generates a message for the full intended commit, and asks 'Proceed with commit?'. After the user confirms, the skill stages the files and commits with that stored message.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "unstaged-files-added-on-confirmation",
+          "description": "The confirmation turn stages auth.py before committing"
+        },
+        {
+          "name": "commit-runs-after-confirmation",
+          "description": "git_log.txt shows a new commit only after the confirmation turn"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/staged-and-unstaged. I've staged version.py and left config.py unstaged. Please run /commit. Before I answer the follow-up question, assume I make another edit that changes `git status --porcelain`, then I answer 'yes'.",
+      "expected_output": "The confirmation turn detects that the repo state changed, does not commit with the stale message, regenerates a new message for the current full intended commit contents, and asks 'Proceed with commit?' again.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "repo-state-change-detected",
+          "description": "The skill compares the stored and current `git status --porcelain` output before reusing the message"
+        },
+        {
+          "name": "stale-message-not-committed",
+          "description": "git_log.txt shows no new commit after the first confirmation when the repo state changed"
+        },
+        {
+          "name": "message-regenerated-after-state-change",
+          "description": "A new commit message is generated for the changed repo state and the user is asked 'Proceed with commit?' again"
         }
       ]
     }
