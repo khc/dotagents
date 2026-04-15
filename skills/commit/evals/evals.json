@@ -1,0 +1,77 @@
+{
+  "skill_name": "commit",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/staged-only. I've staged some changes. Please run /commit.",
+      "expected_output": "Commit message in a code fence as last output, git commit is run.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "commit-message-in-code-fence",
+          "description": "The commit message is wrapped in a markdown code fence (```...```)"
+        },
+        {
+          "name": "commit-message-is-last",
+          "description": "The code-fenced commit message is the last element in the response (nothing comes after it)"
+        },
+        {
+          "name": "follows-conventional-commit-format",
+          "description": "The commit message follows Conventional Commits: type[(scope)]: description, lowercase, no period"
+        },
+        {
+          "name": "git-commit-was-run",
+          "description": "git_log.txt shows a new commit beyond the initial commit (commit was actually executed)"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/staged-and-unstaged. I've staged version.py but config.py has unstaged changes. Please run /commit.",
+      "expected_output": "Lists unstaged files, commit message in code fence at end, no git commit run.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "unstaged-files-listed",
+          "description": "The response lists config.py as an unstaged file"
+        },
+        {
+          "name": "commit-message-in-code-fence",
+          "description": "The commit message is wrapped in a markdown code fence (```...```)"
+        },
+        {
+          "name": "commit-message-is-last",
+          "description": "The code-fenced commit message is the last element in the response"
+        },
+        {
+          "name": "no-git-commit-run",
+          "description": "git_log.txt shows only the initial commit (no new commit was made)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I'm in the repo at ~/.agents/skills/commit-workspace/test-repos/unstaged-only. I have modified auth.py but haven't staged anything. Please run /commit.",
+      "expected_output": "Lists unstaged files, commit message in code fence at end, no git commit run.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "unstaged-files-listed",
+          "description": "The response lists auth.py as an unstaged file"
+        },
+        {
+          "name": "commit-message-in-code-fence",
+          "description": "The commit message is wrapped in a markdown code fence (```...```)"
+        },
+        {
+          "name": "commit-message-is-last",
+          "description": "The code-fenced commit message is the last element in the response"
+        },
+        {
+          "name": "no-git-commit-run",
+          "description": "git_log.txt shows only the initial commit (no new commit was made)"
+        }
+      ]
+    }
+  ]
+}

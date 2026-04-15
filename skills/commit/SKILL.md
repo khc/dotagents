@@ -34,28 +34,28 @@ Generate exactly one Conventional Commit message from the current repo state.
 
 - Staged only  
   → Generate commit message  
-  → Output message  
+  → Output message in a code fence  
   → Run commit
 
 - Staged + unstaged  
-  → `Skipped commit. Unstaged files present:`  
+  → `Unstaged/untracked files found (not committed):`  
   → List files (Markdown bullets, backticked; max 10, then `…and N more`)  
   → Generate message from staged diff  
-  → Output message  
+  → Output message in a code fence  
   → DO NOT commit
 
 - Unstaged only  
-  → `Nothing staged. Unstaged files:`  
+  → `Nothing staged. Unstaged/untracked files:`  
   → List files (Markdown bullets, backticked; max 10, then `…and N more`)  
   → Generate message from unstaged diff  
-  → Output message  
+  → Output message in a code fence  
   → DO NOT commit
 
 # Rules
 
 - Never commit if any unstaged files exist
-- Output plain text only (no explanations, no code fences)
 - Exactly one commit message
+- Commit message always in a code fence, always last in output
 - Prefer dominant change from diff
 - Do not invent context
 - Avoid vague descriptions
