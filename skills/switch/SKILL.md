@@ -12,14 +12,16 @@ Activate and lock the working context to a specific repo path.
 1. Verify the provided path exists. If it does not, stop immediately and report: `Error: path <path> does not exist. Provide a valid path to activate scope.`
 2. Set the provided path as the active scope.
 2. Load:
+   - global `~/.agents/AGENTS.md`
    - repo-root `AGENTS.md`
-   - nearest `<path>/AGENTS.md` (takes precedence)
+   - nearest `<path>/AGENTS.md` (takes precedence over global and root)
 3. Confirm:
 
 ### Active Context
 - Path: <path>
 
 ### Instructions Loaded
+- Global AGENTS.md: yes/no
 - Root AGENTS.md: yes/no
 - Local AGENTS.md: yes/no
 
