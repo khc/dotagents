@@ -7,6 +7,8 @@ description: Use when a visible symptom (console error, stack trace, unexpected 
 
 Investigate a symptom, identify the root cause, apply a minimal fix, and confirm it resolves the issue — in one pass.
 
+See `examples/output.md` for a full example response.
+
 ## Workflow
 
 If a scoped context is not active:

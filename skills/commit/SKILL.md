@@ -27,35 +27,34 @@ Generate exactly one Conventional Commit message from the current repo state, th
 
 1. Get:
    - staged_files = `git diff --staged --name-only`
-   - unstaged_files = `git status --porcelain`
+   - unstaged_files = `git diff --name-only`
+   - untracked_files = `git ls-files --others --exclude-standard`
    - repo_state_snapshot = exact output of `git status --porcelain`
 
 2. Cases:
 
-- No staged + no unstaged  
+- No staged + no unstaged + no untracked  
   → `Nothing to commit.`
 
-- Staged only  
+- Staged only (no unstaged or untracked files)  
   → Generate commit message from staged diff  
-  → Output message in a code fence  
+  → Render the commit preview using the Output format  
   → Ask `Proceed with commit?`  
   → Store `repo_state_snapshot` with the generated message  
   → If user confirms and `git status --porcelain` still exactly matches `repo_state_snapshot`, run commit with the generated message
 
-- Staged + unstaged  
-  → `Unstaged/untracked files found:`  
-  → List files (Markdown bullets, backticked; max 10, then `…and N more`)  
+- Staged + unstaged/untracked  
+  → Show changed files in the Output table (max 10, then `…and N more`)  
   → Generate message from the full intended commit contents, including the listed unstaged or untracked files  
-  → Output message in a code fence  
+  → Render the commit preview using the Output format  
   → Ask `Proceed with commit?`  
   → Store `repo_state_snapshot` with the generated message  
   → If user confirms and `git status --porcelain` still exactly matches `repo_state_snapshot`, add all unstaged/untracked files and run commit with the previously generated message
 
-- Unstaged only  
-  → `Nothing staged. Unstaged/untracked files:`  
-  → List files (Markdown bullets, backticked; max 10, then `…and N more`)  
+- Unstaged/untracked only  
+  → Show changed files in the Output table (max 10, then `…and N more`)  
   → Generate message from the full intended commit contents, including the listed unstaged or untracked files  
-  → Output message in a code fence  
+  → Render the commit preview using the Output format  
   → Ask `Proceed with commit?`  
   → Store `repo_state_snapshot` with the generated message  
   → If user confirms and `git status --porcelain` still exactly matches `repo_state_snapshot`, add all unstaged/untracked files and run commit with the previously generated message
@@ -67,7 +66,40 @@ Generate exactly one Conventional Commit message from the current repo state, th
   → If there are any unstaged or untracked files, add them first  
   → Run the commit  
   → If `repo_state_now` does not exactly match the stored `repo_state_snapshot`, do not commit with the stale message  
-  → Regenerate the message from the current full intended commit contents, output it in a code fence, and ask `Proceed with commit?` again
+  → Regenerate the message from the current full intended commit contents, render the commit preview using the Output format, and ask `Proceed with commit?` again
+
+# Output
+
+When a commit message is generated and no commit has been run yet, use this response shape:
+
+````markdown
+# Commit
+
+- 2-3 concise bullets summarizing the intended commit; merge overlapping points when possible.
+
+## Files
+
+| File | Status | Diff |
+| --- | --- | --- |
+| `path/to/file` | `M`, `MM`, `??` | fixed-width `+N / -N` counts |
+
+If `git status --porcelain` still matches `repo_state_snapshot`, unstaged and untracked files will be staged before commit.
+
+## Message
+
+```text
+<type>[optional scope]: <description>
+```
+
+---
+Do you want to proceed with commit?
+````
+
+- Include the snapshot note only when unstaged or untracked files are present.
+- Use one table row per changed file, capped at 10 rows, then add `…and N more`.
+- Sort the file table by status from Modified to Untracked, or group rows by folder when that is easier to scan.
+- Pad diff counts so the `+` and `-` values line up visually in the table.
+- Keep exactly one commit message code fence.
 
 # Rules
 
