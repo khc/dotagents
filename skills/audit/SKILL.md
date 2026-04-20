@@ -48,25 +48,31 @@ If an issue is encountered outside the changed scope:
 
 ## Output
 
-Return:
+Use this shape:
+
+````markdown
+## Audit
 
 ### Audit Result
-- pass / partial / fail
+pass / partial / fail
 
 ### Verified
-- 1-5 bullets of what was confirmed
+- bullet
 
 ### Findings
-- only issues directly related to the audited change
-- include file path and line number(s) when available
-- assign impact: low / medium / high
-- cap at 5 findings; focus on highest-impact issues caused by the audited change
+| # | File | Line | Finding | Impact |
+|---|------|------|---------|--------|
 
 ### Gaps
-- missing validation, missing tests, or unresolved uncertainty
+- bullet
 
 ### Recommended Next Step
-- one concise next action only, if needed
+one action
+````
+
+- Include only sections that have content.
+- Cap Findings at 5; include file path and line number when available; assign impact: low / medium / high.
+- Omit Gaps and Recommended Next Step if there are none.
 
 ## Execution Rules
 
@@ -82,3 +88,7 @@ Return:
 - Narrow
 - Verification-first
 - No scope creep
+
+## Response format
+
+Start every response with the `## Audit` heading (plain, not in a code block). Render output directly beneath it.

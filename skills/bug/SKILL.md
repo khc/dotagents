@@ -1,19 +1,17 @@
 ---
 name: bug
-description: Use when a visible symptom (console error, stack trace, unexpected behavior) needs to be investigated and fixed in one pass. Covers the full bug lifecycle: locate → root cause → fix → verify.
+description: Use when a visible symptom (console error, stack trace, unexpected behavior) needs to be investigated and fixed in one pass. Trigger with "fix this bug", "investigate the error", or a pasted stack trace.
 ---
 
 # Bug
 
 Investigate a symptom, identify the root cause, apply a minimal fix, and confirm it resolves the issue — in one pass.
 
-See `examples/output.md` for a full example response.
-
 ## Workflow
 
 If a scoped context is not active:
 - STOP
-- run $switch first
+- run `/switch` first
 
 1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. Accept the symptom as input: error message, stack trace, log output, or behavior description.
@@ -22,7 +20,6 @@ If a scoped context is not active:
 
 - Use `Grep` to locate the error string, symbol, or call site. Do not read files speculatively.
 - Use `Glob` only if the error gives no direct location hint.
-- Read at most 2–3 files directly implicated by the symptom. Do not traverse further.
 - Do not read files not connected to the symptom.
 
 ## Investigation Phase
@@ -55,15 +52,23 @@ After the fix, confirm inline by reasoning over already-read code only. Do not r
 
 ## Output
 
+Use this shape:
+
+````markdown
+## Bug
+
 ### Root Cause
-- 1–3 bullets: what, why, what the fix must preserve
+- what is failing
+- why it is failing
+- what the fix must preserve
 
 ### Fix
-- file path(s) and changed lines only (diff or targeted edit; do not output unchanged content)
+`path/to/file:line` — diff or targeted edit
 
 ### Verification
-- confirmation that the fix addresses the root cause
-- any direct regression risk (1–2 lines max)
+- fix resolves root cause
+- regression risk (1–2 lines max)
+````
 
 ## Scope Gate
 
@@ -84,3 +89,7 @@ After the fix, confirm inline by reasoning over already-read code only. Do not r
 - Symptom-driven
 - Minimal fix, maximum confidence
 - No scope creep
+
+## Response format
+
+Start every response with the `## Bug` heading (plain, not in a code block). Render output directly beneath it.

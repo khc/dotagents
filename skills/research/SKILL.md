@@ -56,34 +56,30 @@ If a scoped context is not active:
 
 ## Output
 
-Return these sections:
+Use this shape:
+
+````markdown
+## Research
 
 ### Problem
-- 1-3 bullets
+- bullet
 
 ### Current Fit
-- relevant existing project support
-- bespoke code risk or duplication, if present
+- existing support or bespoke risk
 
 ### Options
-List at most 3 options. If more exist, pick the top 3 by fit with the current stack.
-
-For each option include:
-- name
-- type: standard / existing dependency / external / bespoke
-- why it fits
-- tradeoffs
-- expected LOC impact: lower / similar / higher
+| Option | Type | Fit | LOC Impact |
+|--------|------|-----|------------|
 
 ### Recommendation
-- chosen path
-- why this is the leanest solid choice
-- whether it should replace bespoke code
+chosen path and why
 
 ### Implementation Notes
-- touched areas
-- migration or test implications
-- major caveats only
+- touched areas, caveats
+````
+
+- List at most 3 options; for each: name, type (standard / existing dependency / external / bespoke), why it fits, tradeoffs, LOC impact.
+- Omit Options table if there is only one viable path.
 
 ## Style
 
@@ -92,3 +88,7 @@ For each option include:
 - No coding unless asked
 - No overthinking
 - No scope creep
+
+## Response format
+
+Start every response with the `## Research` heading (plain, not in a code block). Render output directly beneath it.

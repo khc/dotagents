@@ -1,11 +1,7 @@
 ---
 name: fix
-description: Use after a completed review when the user wants specific findings fixed with minimal scope, minimal code, and no re-analysis beyond what is required to implement the chosen fixes safely.
+description: Use after a completed review when the user wants specific findings fixed with minimal scope and no re-analysis. Trigger with `/fix`, "fix the findings", "apply fixes", or "fix finding N".
 ---
-
-# Fix
-
-Use this skill to implement fixes for existing review findings in a controlled, low-token way.
 
 ## Fast Path
 
@@ -28,6 +24,10 @@ If the user runs `/fix` immediately after a review and does not specify finding 
 - treat it as "fix all findings from the latest review"
 - do not ask for clarification
 
+If no prior review exists in the session:
+- STOP
+- report: `Error: no prior review found. Run $review first.`
+
 ## Workflow
 
 If a scoped context is not active:
@@ -49,7 +49,7 @@ If a scoped context is not active:
    - use existing project support first
    - otherwise use the standard library if it fits
    - only introduce a new library if the user asked for it or the review already established it as the better fit
-7. Implement the narrowest fix set first, then update tests.
+7. Implement the narrowest fix set first.
 8. Validate only what is needed for the changed area.
 
 ## Fix Scope Gate
@@ -66,29 +66,35 @@ If an issue is encountered that is not part of the provided review:
 - Do not ask for clarification if the intent can be reasonably inferred from the latest review or command
 - Do not pause or ask questions once execution has started unless blocked
 - Do not re-analyze architecture unless required for the fix
-- Do not search for additional issues unless the user asks
 - Do not refactor beyond what the fix requires
 - Do not rename, move, or reorganize code unless necessary for correctness
 - Do not re-run review or re-evaluate severity of findings
 - Keep edits local and reversible
 - Optimize for low LOC and clarity
 
-## Required Output Before Coding
+## Output
 
-If NOT using Fast Path:
+Fast Path — return patch directly with no preamble.
 
-Return a short execution plan:
+Full Path — use this shape:
+
+````markdown
+## Fix
 
 ### Fix Scope
-- Findings being fixed
-- Files to change
-- Tests to update
+- Findings: ...
+- Files: ...
+- Tests: ...
 
 ### Approach
-- built-in / existing project utility / existing dependency / minimal bespoke
+built-in / existing project utility / existing dependency / minimal bespoke
 
-Keep this to 3–6 bullets total.
-Do not include broad analysis.
+---
+
+{patch or targeted edit}
+````
+
+Keep the plan to 3–6 bullets. Do not include broad analysis.
 
 ## Code Output Rules
 
@@ -105,7 +111,8 @@ After the plan (or immediately for Fast Path):
 
 ## Testing
 
-- Add or update minimal tests for the fixed behavior
+- Skip entirely for Fast Path unless the finding explicitly requires a test change
+- Otherwise add or update minimal tests for the fixed behavior
 - Prefer existing test style and helpers
 - Do not add broad new test infrastructure
 
@@ -124,3 +131,7 @@ If a requested fix cannot be done safely within current scope:
 - Review-driven
 - No overthinking
 - No scope creep
+
+## Response format
+
+Start every response with the `## Fix` heading (plain, not in a code block). Render output directly beneath it.

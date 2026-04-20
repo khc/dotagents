@@ -1,16 +1,16 @@
 ---
 name: commit
-description: Generate a single Conventional Commit message from the current git diff.
+description: Generate a single Conventional Commit message from the current repo state (staged, unstaged, and untracked files). Trigger with `/commit`.
 ---
 
-# Goal
+## Goal
 Generate exactly one Conventional Commit message from the current repo state, then ask whether to proceed with the commit when user confirmation is required.
 
-# Inputs
+## Inputs
 - Staged-only flow: `git diff --staged`
 - Any unstaged or untracked files present: current full repo change set, not just the staged subset
 
-# Method
+## Method
 
 1. Run `git diff --staged --stat` and `git diff --stat` to determine staged scope and full tracked-file scope.
 2. If unstaged or untracked files exist, generate the message from the full intended commit contents, not only the staged subset.
@@ -23,15 +23,18 @@ Generate exactly one Conventional Commit message from the current repo state, th
    - generated files: `*.min.js`, `*.min.css`, `dist/`, `build/`
    - binary files (detected via `git diff --stat` showing `Bin … bytes`)
 
-# Decision
+## Decision
 
 1. Get:
    - staged_files = `git diff --staged --name-only`
    - unstaged_files = `git diff --name-only`
    - untracked_files = `git ls-files --others --exclude-standard`
-   - repo_state_snapshot = exact output of `git status --porcelain`
+   - repo_state_snapshot = exact output of `git status --porcelain` — captured now so it can be compared against after user confirmation to detect any changes that occurred in the interim
 
 2. Cases:
+
+- Not a git repo (no `.git` directory detected)
+  → Report: `Error: not a git repository. Navigate to a git repo root and try again.`
 
 - No staged + no unstaged + no untracked  
   → `Nothing to commit.`
@@ -43,17 +46,9 @@ Generate exactly one Conventional Commit message from the current repo state, th
   → Store `repo_state_snapshot` with the generated message  
   → If user confirms and `git status --porcelain` still exactly matches `repo_state_snapshot`, run commit with the generated message
 
-- Staged + unstaged/untracked  
+- Staged + unstaged/untracked, or unstaged/untracked only  
   → Show changed files in the Output table (max 10, then `…and N more`)  
-  → Generate message from the full intended commit contents, including the listed unstaged or untracked files  
-  → Render the commit preview using the Output format  
-  → Ask `Proceed with commit?`  
-  → Store `repo_state_snapshot` with the generated message  
-  → If user confirms and `git status --porcelain` still exactly matches `repo_state_snapshot`, add all unstaged/untracked files and run commit with the previously generated message
-
-- Unstaged/untracked only  
-  → Show changed files in the Output table (max 10, then `…and N more`)  
-  → Generate message from the full intended commit contents, including the listed unstaged or untracked files  
+  → Generate message from the full intended commit contents, including all unstaged or untracked files  
   → Render the commit preview using the Output format  
   → Ask `Proceed with commit?`  
   → Store `repo_state_snapshot` with the generated message  
@@ -68,7 +63,7 @@ Generate exactly one Conventional Commit message from the current repo state, th
   → If `repo_state_now` does not exactly match the stored `repo_state_snapshot`, do not commit with the stale message  
   → Regenerate the message from the current full intended commit contents, render the commit preview using the Output format, and ask `Proceed with commit?` again
 
-# Output
+## Output
 
 When a commit message is generated and no commit has been run yet, use this response shape:
 
@@ -101,7 +96,7 @@ Do you want to proceed with commit?
 - Pad diff counts so the `+` and `-` values line up visually in the table.
 - Keep exactly one commit message code fence.
 
-# Rules
+## Rules
 
 - Ask `Proceed with commit?` whenever a commit message is generated and no commit has been run yet
 - When unstaged or untracked files exist, generate the message from the full intended commit contents, not the staged subset alone
@@ -115,7 +110,7 @@ Do you want to proceed with commit?
 - Do not invent context
 - Avoid vague descriptions
 
-# Format
+## Format
 
 `<type>[optional scope]: <description>`
 
@@ -123,7 +118,7 @@ Do you want to proceed with commit?
 - short, imperative, no period
 - scope = short noun if obvious
 
-# Types
+## Types
 
 - feat — new feature
 - fix — bug fix
@@ -137,7 +132,7 @@ Do you want to proceed with commit?
 - style — formatting
 - revert — revert
 
-# Optional
+## Optional
 
 Use only if clearly needed:
 
@@ -145,7 +140,7 @@ Use only if clearly needed:
 - body (separate with one blank line)
 - footer (e.g. `BREAKING CHANGE: ...`, `Refs #123`)
 
-# Guidance
+## Guidance
 
 - Use staged diff only when every intended change is already staged
 - If unstaged or untracked files exist, reason about the final commit contents, not just the staged subset

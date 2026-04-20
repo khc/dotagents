@@ -69,15 +69,30 @@ After changes, confirm inline by reasoning over already-read code:
 
 ## Output
 
-### Plan
-- per Planning Phase above
+Use this shape:
+
+````markdown
+## Refactor
+
+### Target
+- what is being restructured
+
+### Behavior Preservation
+- how behavior will be confirmed unchanged
+
+### Touchpoints
+- files to change
+
+---
 
 ### Changes
-- diff or targeted edit only; no unchanged content
+{diff or targeted edit — no unchanged content}
 
 ### Preservation Check
-- 1–3 bullets confirming behavior is unchanged
-- Flag if tests are missing for the refactored area
+- call sites satisfied
+- no logic altered
+- test coverage note if missing
+````
 
 ## Execution Rules
 
@@ -93,3 +108,7 @@ After changes, confirm inline by reasoning over already-read code:
 - Structural, not behavioral
 - Minimal output
 - No scope creep
+
+## Response format
+
+Start every response with the `## Refactor` heading (plain, not in a code block). Render output directly beneath it.

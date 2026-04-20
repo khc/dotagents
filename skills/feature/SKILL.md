@@ -1,9 +1,7 @@
 ---
 name: feature
-description: Use when the user explicitly asks to add a new feature or a substantial behavior extension and wants a structured feature-delivery workflow that requires $research first when the library or built-in choice is non-trivial.
+description: Deliver a new feature or substantial behavior extension with a structured plan → implement workflow. Trigger with "add a feature", "implement X", or "build Y".
 ---
-
-# Feature
 
 Deliver features in a controlled, minimal, and modular way.
 
@@ -130,3 +128,28 @@ Do not repeat the plan.
 - Direct and minimal
 - Idiomatic to the repo
 - Optimize for readability and changeability
+
+## Output
+
+Use this shape:
+
+````markdown
+## Feature
+
+### Scope
+- what will be built
+
+### Touchpoints
+- files/modules to change or add
+
+### Approach
+standard library / existing project / external library / bespoke
+
+---
+
+{implementation — diff or edit follows}
+````
+
+## Response format
+
+Start every response with the `## Feature` heading (plain, not in a code block). Render output directly beneath it.

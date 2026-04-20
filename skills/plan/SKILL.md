@@ -49,25 +49,27 @@ If a scoped context is not active:
 
 ## Output
 
-Return:
+Use this shape:
+
+````markdown
+## Plan
 
 ### Task Type
-- one of: review / fix / feature / research / audit / mixed
+review / fix / feature / research / audit / mixed
 
 ### Scope
-- target path
-- intended outcome
+- Path: ...
+- Outcome: ...
 
 ### Chosen Workflow
-- ordered list of skills
-- one-line reason for each step
+1. `/skill` — reason
 
 ### Stop Conditions
-- at most 2 concrete triggers that would require approval or scope expansion
-- state as specific conditions, not hypothetical risks
+- condition
 
 ### Next Step
-- exactly one immediate next action
+immediate next action
+````
 
 ## Style
 
@@ -76,3 +78,7 @@ Return:
 - No coding
 - No deep analysis
 - No scope creep
+
+## Response format
+
+Start every response with the `## Plan` heading (plain, not in a code block). Render output directly beneath it.

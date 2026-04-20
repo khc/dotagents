@@ -52,29 +52,32 @@ If a scoped context is not active:
 
 ## Output
 
-Return findings under these sections, only including categories that have findings:
+Use this shape:
+
+````markdown
+## Review
 
 ### Bugs
+1. `file:line` — description (impact: high) — confirmed
+
 ### Design
+1. `file:line` — description (impact: medium) — likely
+
 ### Performance
+...
+
 ### Security
+...
 
-For each finding:
-- Use a numbered item.
-- Include file path and line number(s) when available.
-- Assign impact: `low`, `medium`, or `high`.
-- State whether it is a **confirmed issue** or **risk**.
-- Be explicit when bespoke code should be replaced by built-in or library support.
-
-Cap at 10 findings total. Merge overlapping symptoms into one root-cause finding before reporting. If more than 10 exist, note the total count and report the highest-impact ones only.
-
-Then include a summary table with columns:
+### Summary
 
 | # | Category | Impact | Confidence | Description |
 |---|----------|--------|------------|-------------|
+````
 
-- `Category` must be one of: `bug`, `design`, `performance`, `security`
-- `Confidence` must be `confirmed` or `likely`
+- Include only categories that have findings.
+- Cap at 10 findings; merge overlapping symptoms into one root-cause finding. If more than 10, note the count and report highest-impact only.
+- Confidence: `confirmed` (directly supported by code) or `likely` (strong indication).
 
 ## No-findings behavior
 
@@ -87,3 +90,7 @@ Then list brief residual risks or test gaps, if any, without inventing problems.
 - Prefer root-cause findings over surface-level nits.
 - Prefer concrete file/line references over general commentary.
 - Do not praise the code unless the user asks for balanced feedback.
+
+## Response format
+
+Start every response with the `## Review` heading (plain, not in a code block). Render output directly beneath it.

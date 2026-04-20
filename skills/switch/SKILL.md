@@ -21,9 +21,12 @@ Activate and lock the working context to a specific repo path.
 - Path: <path>
 
 ### Instructions Loaded
-- Global AGENTS.md: yes/no
-- Root AGENTS.md: yes/no
-- Local AGENTS.md: yes/no
+
+| File | Loaded |
+|------|--------|
+| Global AGENTS.md | yes/no |
+| Root AGENTS.md | yes/no |
+| Local AGENTS.md | yes/no |
 
 ### Scope Boundaries
 - Allowed: <path>/**
@@ -59,3 +62,30 @@ Do not proceed until this confirmation is returned.
 If the task cannot be completed within scope:
 - State limitation in 1–2 sentences
 - Ask for permission to expand scope
+
+## Output
+
+Use this shape:
+
+````markdown
+## Switch
+
+### Active Context
+- Path: `<path>`
+
+### Instructions Loaded
+
+| File | Loaded |
+|------|--------|
+| Global AGENTS.md | yes/no |
+| Root AGENTS.md | yes/no |
+| Local AGENTS.md | yes/no |
+
+### Scope Boundaries
+- Allowed: `<path>/**`
+- Disallowed: everything else unless explicitly approved
+````
+
+## Response format
+
+Start every response with the `## Switch` heading (plain, not in a code block). Render output directly beneath it.
