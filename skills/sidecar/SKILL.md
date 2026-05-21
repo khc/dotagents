@@ -4,7 +4,7 @@ description: Shared SQLite state store for agents working on the same project. U
 ---
 
 ## Overview
-Provides a shared SQLite state store at `{project_root}/.agents/sidecar.db`.
+Provides a shared SQLite state store at `{project_root}/.sidecar/sidecar.db`.
 Agents on the same project read and write this store to share context, pass intermediate results, and persist state across sessions.
 
 Read/write operations are performed by Python scripts. The skill defines the schema contract and initialization procedure.
@@ -50,7 +50,7 @@ Always resolve before any operation:
 ```bash
 git rev-parse --show-toplevel 2>/dev/null || pwd
 ```
-The DB lives at `{project_root}/.agents/sidecar.db`. Derive `project` as `basename` of the project root path.
+The DB lives at `{project_root}/.sidecar/sidecar.db`. Derive `project` as `basename` of the project root path.
 
 ## Agent & Model Identity
 
@@ -78,7 +78,7 @@ Auto-init if DB is absent, then invoke the write script:
 
 ```bash
 python3 ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
-  --db-path "{project_root}/.agents/sidecar.db" \
+  --db-path "{project_root}/.sidecar/sidecar.db" \
   --project "{project}" \
   --skill "{skill}" \
   --scope "{scope}" \
@@ -97,7 +97,7 @@ Query entries via the read script. All filters are optional; results are returne
 
 ```bash
 python3 ~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
-  --db-path "{project_root}/.agents/sidecar.db" \
+  --db-path "{project_root}/.sidecar/sidecar.db" \
   [--project "{project}"] [--skill "{skill}"] [--scope "{scope}"] \
   [--status open|pending|done|fixed|wontfix|superseded] \
   [--uuid "{uuid}"] [--limit N]
@@ -117,7 +117,7 @@ Update the status of an existing entry by UUID:
 
 ```bash
 python3 ~/.agents/skills/sidecar/scripts/update_sidecar_entry.py \
-  --db-path "{project_root}/.agents/sidecar.db" \
+  --db-path "{project_root}/.sidecar/sidecar.db" \
   --uuid "{uuid}" \
   --status open|pending|done|fixed|wontfix|superseded
 ```

@@ -146,7 +146,7 @@ If a requested fix cannot be done safely within current scope:
 
 ## Save to Sidecar
 
-After rendering fix output, if the source was sidecar (`fix sidecar` or `fix sidecar {uuid}`):
+After rendering fix output, if a review entry UUID is available from sidecar or from the current session:
 
 1. **Save fix entry** — invoke $sidecar `save` with:
    - `skill` — `fix`
@@ -168,7 +168,7 @@ After rendering fix output, if the source was sidecar (`fix sidecar` or `fix sid
 
 Run both steps after output is rendered, not before. If either fails, report the error in one line and continue — do not re-render the fix output.
 
-If source was session (no sidecar UUID available), skip both steps.
+If no review entry UUID is available, skip both steps.
 
 ## Response format
 
