@@ -123,6 +123,9 @@ After the plan (or immediately for Fast Path):
 
 ## Testing
 
+- Run available tests for the touched area after the fix unless the request is Fast Path.
+- Run the project linter if one is available.
+- Run static checks if the project provides them.
 - Skip entirely for Fast Path unless the finding explicitly requires a test change
 - Otherwise add or update minimal tests for the fixed behavior
 - Prefer existing test style and helpers
@@ -154,6 +157,7 @@ After rendering fix output, if a review entry UUID is available from sidecar or 
    - `agent` / `model` — current runtime identity
    - `parent_uuid` — UUID of the review entry
    - `relation` — `fix`
+   - `status` — `done`
    - `context` — JSON:
      ```json
      {
@@ -164,7 +168,7 @@ After rendering fix output, if a review entry UUID is available from sidecar or 
 
 2. **Update review entry** — invoke $sidecar `update` with:
    - `uuid` — UUID of the review entry
-   - `status` — `fixed`
+   - `status` — `done`
 
 Run both steps after output is rendered, not before. If either fails, report the error in one line and continue — do not re-render the fix output.
 
