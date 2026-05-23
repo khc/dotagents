@@ -178,7 +178,7 @@ After rendering the feature output, persist the entry using the direct sidecar s
 
 3. **Save feature entry** — run:
    ```bash
-   python3 ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
+   ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
      --db-path "{project_root}/.sidecar/sidecar.db" \
      --project "{project}" \
      --skill feature \

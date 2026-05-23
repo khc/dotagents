@@ -20,7 +20,7 @@ Resolve project root, then load the most recent `review` entry from the sidecar 
 ```bash
 project_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 project="$(basename "$project_root")"
-python3 ~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
+~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
   --db-path "$project_root/.sidecar/sidecar.db" \
   --project "$project" \
   --skill review \
@@ -40,7 +40,7 @@ Resolve project root, then load a specific review entry from the sidecar using t
 
 ```bash
 project_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-python3 ~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
+~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
   --db-path "$project_root/.sidecar/sidecar.db" \
   --uuid "{uuid}" \
   --limit 1
@@ -195,7 +195,7 @@ Before the final response, if a review entry UUID is available from sidecar or f
 
 3. **Save fix entry** — run:
    ```bash
-   python3 ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
+   ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
      --db-path "{project_root}/.sidecar/sidecar.db" \
      --project "{project}" \
      --skill fix \
@@ -222,7 +222,7 @@ Before the final response, if a review entry UUID is available from sidecar or f
 
 4. **Update review entry** — run:
    ```bash
-   python3 ~/.agents/skills/sidecar/scripts/update_sidecar_entry.py \
+   ~/.agents/skills/sidecar/scripts/update_sidecar_entry.py \
      --db-path "{project_root}/.sidecar/sidecar.db" \
      --uuid "{review_uuid}" \
      --status done

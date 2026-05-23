@@ -1,3 +1,4 @@
+#!/usr/bin/env -S uv run --script
 import argparse
 import json
 import sqlite3
@@ -48,7 +49,9 @@ def get_sidecar_entry(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Query entries from the sidecar SQLite store.")
+    parser = argparse.ArgumentParser(
+        description="Query entries from the sidecar SQLite store."
+    )
     parser.add_argument("--db-path", required=True)
     parser.add_argument("--project")
     parser.add_argument("--skill")

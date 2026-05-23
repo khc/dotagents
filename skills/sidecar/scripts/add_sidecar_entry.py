@@ -1,3 +1,4 @@
+#!/usr/bin/env -S uv run --script
 import argparse
 import sqlite3
 import uuid

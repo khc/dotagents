@@ -1,3 +1,4 @@
+#!/usr/bin/env -S uv run --script
 import argparse
 import sqlite3
 from datetime import datetime, timezone
@@ -25,7 +26,9 @@ def update_sidecar_entry(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Update the status of a sidecar entry.")
+    parser = argparse.ArgumentParser(
+        description="Update the status of a sidecar entry."
+    )
     parser.add_argument("--db-path", required=True)
     parser.add_argument("--uuid", required=True)
     parser.add_argument(

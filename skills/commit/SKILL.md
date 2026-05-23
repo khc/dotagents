@@ -59,9 +59,15 @@ Generate exactly one Conventional Commit message from the current repo state, th
   → Recompute `repo_state_now` = exact output of `git status --porcelain`  
   → If `repo_state_now` exactly matches the stored `repo_state_snapshot`, reuse that exact message  
   → If there are any unstaged or untracked files, add them first  
-  → Run the commit  
+  → Run pre-commit validation gates (see Validation Gates below)  
+  → If validation passes, run the commit  
+  → If validation fails, report the error in one line and do not commit  
   → If `repo_state_now` does not exactly match the stored `repo_state_snapshot`, do not commit with the stale message  
   → Regenerate the message from the current full intended commit contents, render the commit preview using the Output format, and ask `Proceed with commit?` again
+
+## Validation Gates
+
+Before running `git commit`, execute the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$switch`). If any command fails, report the error in one line and do not proceed with the commit. Only run the commands that are defined in `AGENTS.md` — do not guess or discover alternatives.
 
 ## Output
 

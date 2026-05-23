@@ -34,15 +34,25 @@ If a scoped context is not active:
    - framework-native utilities
    - dependencies already in the project
    - 1-2 well-established external libraries, only if materially better
-6. Compare options with focus on:
-   - LOC reduction
-   - fit with current stack
-   - maintenance burden
-   - correctness and edge-case coverage
-   - performance/security impact when relevant
-7. Recommend one path explicitly:
+   
+   **For external libraries**: if no external libraries are already known to fit, run a web search to vet candidates. First run `~/.agents/skills/research/scripts/today.py` to get the current date, then include it in search queries to ensure documentation and activity data are recent. Evaluate based on: current maintenance status, documentation quality, adoption/community size, fit with current stack. Do not evaluate libraries without checking recent data.
+6. Compare options using these criteria (weight them by task priority):
+   - LOC reduction (higher weight if code size is a constraint)
+   - fit with current stack (highest weight if integration burden is high)
+   - maintenance burden (higher weight for long-lived projects)
+   - correctness and edge-case coverage (highest weight for security/stability-critical tasks)
+   - performance/security impact (higher weight if task involves those domains)
+   When criteria conflict (e.g., LOC vs. correctness), prioritize the criterion most relevant to the stated problem.
+7. Recommend one path explicitly with a confidence signal:
+   - **clear winner** — one option dominates across most criteria
+   - **reasonable choice** — best option within constraints, but tradeoffs exist
+   - **close call** — multiple options are similar; recommendation based on tiebreaker criterion
    - built-in / existing dependency / external library / bespoke
-8. Do not implement unless the user explicitly asks.
+8. Check: is research sufficient?
+   - If you have evaluated 2–3 realistic options and weighed the key tradeoffs: research is sufficient, proceed to output
+   - If you are uncertain or key information is missing: note it explicitly in Implementation Notes or Caveats; do not continue researching
+   - Do not research beyond this point without explicit user request
+9. Do not implement unless the user explicitly asks.
 
 ## Guardrails
 
@@ -68,18 +78,19 @@ Use this shape:
 - existing support or bespoke risk
 
 ### Options
-| Option | Type | Fit | LOC Impact |
-|--------|------|-----|------------|
+| Option | Type | Pros | Cons | LOC Impact |
+|--------|------|------|------|------------|
 
 ### Recommendation
-chosen path and why
+**[confidence: clear winner / reasonable choice / close call]** — chosen path and why
 
 ### Implementation Notes
-- touched areas, caveats
+- touched areas, caveats, uncertainty
 ````
 
-- List at most 3 options; for each: name, type (standard / existing dependency / external / bespoke), why it fits, tradeoffs, LOC impact.
-- Omit Options table if there is only one viable path.
+- List at most 3 options; for each: name, type (standard / existing dependency / external / bespoke), pros (what it gains), cons (what it loses), LOC impact.
+- Confidence signal required: clear winner / reasonable choice / close call.
+- Omit Options table if there is only one viable path; state why directly in Recommendation.
 
 ## Style
 

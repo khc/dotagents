@@ -77,7 +77,7 @@ When calling `save`, the caller must supply `agent` and `model`.
 Auto-init if DB is absent, then invoke the write script:
 
 ```bash
-python3 ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
+~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
   --db-path "{project_root}/.sidecar/sidecar.db" \
   --project "{project}" \
   --skill "{skill}" \
@@ -96,7 +96,7 @@ python3 ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
 Query entries via the read script. All filters are optional; results are returned as JSON ordered by `created_at DESC`.
 
 ```bash
-python3 ~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
+~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
   --db-path "{project_root}/.sidecar/sidecar.db" \
   [--project "{project}"] [--skill "{skill}"] [--scope "{scope}"] \
   [--status open|pending|done|fixed|wontfix|superseded] \
@@ -116,7 +116,7 @@ python3 ~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
 Update the status of an existing entry by UUID:
 
 ```bash
-python3 ~/.agents/skills/sidecar/scripts/update_sidecar_entry.py \
+~/.agents/skills/sidecar/scripts/update_sidecar_entry.py \
   --db-path "{project_root}/.sidecar/sidecar.db" \
   --uuid "{uuid}" \
   --status open|pending|done|fixed|wontfix|superseded
