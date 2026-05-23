@@ -15,15 +15,38 @@ Use the review findings from the current session.
 - If the user does not specify finding IDs: treat as "fix all findings from the latest review" — do not ask for clarification.
 
 ### `fix sidecar`
-Resolve project root, then load the most recent `review` entry from the sidecar using the $sidecar `read` operation filtered by `project`, `skill=review`, and `status=open`. Extract:
-- `scope` — top-level row field; use as the active scope, do not re-derive from $switch
+Resolve project root, then load the most recent `review` entry from the sidecar using the direct read script filtered by `project`, `skill=review`, and `status=open`. Do not invoke or activate the $sidecar skill.
+
+```bash
+project_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+project="$(basename "$project_root")"
+python3 ~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
+  --db-path "$project_root/.sidecar/sidecar.db" \
+  --project "$project" \
+  --skill review \
+  --status open \
+  --limit 1
+```
+
+Extract:
+- `scope` — top-level row field; use as the required work scope and require matching active $switch scope before edits
 - `context.findings` — source of truth for what to fix; each finding has `category`, `location`, `description`, `severity` (`critical|high|medium|low`), `confidence`, and `fix_direction`
 - `context.reasoning` — analytical context explaining why each finding matters
 
 If no entry is found: STOP — report `Error: no review entry found in sidecar.`
 
 ### `fix sidecar {uuid}`
-Resolve project root, then load a specific review entry from the sidecar using the $sidecar `read` operation filtered by `uuid={uuid}`. Extract the same fields as above.
+Resolve project root, then load a specific review entry from the sidecar using the direct read script filtered by `uuid={uuid}`. Do not invoke or activate the $sidecar skill.
+
+```bash
+project_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+python3 ~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
+  --db-path "$project_root/.sidecar/sidecar.db" \
+  --uuid "{uuid}" \
+  --limit 1
+```
+
+Extract the same fields as above.
 
 If no entry is found: STOP — report `Error: no sidecar entry found for uuid {uuid}.`
 
@@ -50,8 +73,9 @@ If a scoped context is not active and source is session:
 - run $switch first
 
 If source is sidecar:
-- resolve project root per $sidecar Locate Project Root; derive `project` as `basename` of that path
-- use the top-level `scope` field from the loaded entry as the active scope — do not run $switch
+- resolve project root with `git rev-parse --show-toplevel 2>/dev/null || pwd`; derive `project` as `basename` of that path
+- use the top-level `scope` field from the loaded entry as the required work scope
+- if active $switch scope is absent or differs from the loaded `scope`: STOP — report `Run $switch <scope> before applying this sidecar fix.`
 
 1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. Obey the active scope and nearest applicable `AGENTS.md`.
@@ -59,10 +83,20 @@ If source is sidecar:
    - the specific files named in the review findings, not the full target tree
    - at most one directly called or imported file from the fix site if required for safety
    - existing tests for the touched area
-4. Start from the review findings and reasoning, not from fresh exploration.
-5. When fixing multiple findings, address in severity order: `critical` → `high` → `medium` → `low`. For each fix: follow `fix_direction` from the finding; apply the smallest safe change using existing project utilities or stdlib before introducing anything new.
-6. Implement the narrowest fix set first.
-7. Validate only what is needed for the changed area.
+4. For multi-hunk or non-trivial fixes, run `git log -5 --oneline -- {file}` and `git blame -L {start},{end} {file}` on the affected lines before editing. Use this to understand recent change history and avoid re-introducing reverted patterns.
+5. Start from the review findings and reasoning, not from fresh exploration.
+6. When fixing multiple findings, address in severity order: `critical` → `high` → `medium` → `low`. For each fix: follow `fix_direction` from the finding; apply the smallest safe change using existing project utilities or stdlib before introducing anything new.
+7. Implement the narrowest fix set first.
+8. Validate only what is needed for the changed area.
+
+## Post-Edit Validation
+
+After each edit, re-read the changed lines and confirm:
+- the change addresses the finding's `description` and follows its `fix_direction`
+- no new issues are introduced in the changed block
+- the surrounding call sites are not broken by the change
+
+If a change does not satisfy these checks: revert it, state why in one line, and stop — do not attempt an alternative fix without user input.
 
 ## Fix Scope Gate
 
@@ -123,13 +157,11 @@ After the plan (or immediately for Fast Path):
 
 ## Testing
 
-- Run available tests for the touched area after the fix unless the request is Fast Path.
-- Run the project linter if one is available.
-- Run static checks if the project provides them.
-- Skip entirely for Fast Path unless the finding explicitly requires a test change
-- Otherwise add or update minimal tests for the fixed behavior
-- Prefer existing test style and helpers
-- Do not add broad new test infrastructure
+- **Fast Path**: skip tests unless the finding explicitly requires a test change.
+- **Full Path**: draft the minimal test alongside the fix in the same output block — not as a separate step after. Co-locating patch and test in the same context window improves correctness of both.
+- Add or update only the test case(s) directly covering the fixed behavior; do not add broad new test infrastructure.
+- Prefer existing test style, helpers, and fixtures.
+- After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$switch`). Use only those commands — do not guess or discover alternatives.
 
 ## Failure Mode
 
@@ -149,12 +181,34 @@ If a requested fix cannot be done safely within current scope:
 
 ## Save to Sidecar
 
-After rendering fix output, if a review entry UUID is available from sidecar or from the current session:
+Before the final response, if a review entry UUID is available from sidecar or from the current session, persist the fix using the direct sidecar scripts. Do not invoke or activate the $sidecar skill.
 
-1. **Save fix entry** — invoke $sidecar `save` with:
-   - `skill` — `fix`
+1. **Resolve project root**:
+   ```bash
+   git rev-parse --show-toplevel 2>/dev/null || pwd
+   ```
+   Derive `project` as `basename` of that path.
+
+2. **Derive agent and model**:
+   - `agent` — stable snake_case runtime identifier: `claude_code` (Claude Code), `gemini_cli` (Gemini CLI), `codex` (Codex/OpenAI CLI), or a descriptive snake_case name for custom runtimes
+   - `model` — active model name from the runtime (e.g. `claude-sonnet-4-6`); use `{agent}/unknown` if unavailable
+
+3. **Save fix entry** — run:
+   ```bash
+   python3 ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
+     --db-path "{project_root}/.sidecar/sidecar.db" \
+     --project "{project}" \
+     --skill fix \
+     --scope "{scope}" \
+     --agent "{agent}" \
+     --model "{model}" \
+     --context '{context_json}' \
+     --status done \
+     --parent-uuid "{review_uuid}" \
+     --relation fix
+   ```
+   with:
    - `scope` — same scope as the loaded review entry
-   - `agent` / `model` — current runtime identity
    - `parent_uuid` — UUID of the review entry
    - `relation` — `fix`
    - `status` — `done`
@@ -166,13 +220,25 @@ After rendering fix output, if a review entry UUID is available from sidecar or 
      }
      ```
 
-2. **Update review entry** — invoke $sidecar `update` with:
+4. **Update review entry** — run:
+   ```bash
+   python3 ~/.agents/skills/sidecar/scripts/update_sidecar_entry.py \
+     --db-path "{project_root}/.sidecar/sidecar.db" \
+     --uuid "{review_uuid}" \
+     --status done
+   ```
+   with:
    - `uuid` — UUID of the review entry
    - `status` — `done`
 
-Run both steps after output is rendered, not before. If either fails, report the error in one line and continue — do not re-render the fix output.
+5. **Output the UUID** — the add_sidecar_entry script prints the fix UUID to stdout. Append it to the response:
+   ```
+   Fix saved — UUID: {fix_uuid}
+   ```
 
-If no review entry UUID is available, skip both steps.
+If either persistence step fails, report the error in one line in the final response and continue — do not re-render the fix output.
+
+If no review entry UUID is available, skip steps 3–5.
 
 ## Response format
 

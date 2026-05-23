@@ -43,7 +43,7 @@ Do not assume triviality without explicitly checking the criteria above.
 If the library or built-in choice is non-trivial:
 - STOP
 - run $research
-- do not proceed to Planning Phase
+- when $research returns, use its findings to make the library decision; record it in the plan's **Library Decision** section, then proceed to Planning Phase
 
 If the choice is trivial:
 - proceed to Planning Phase
@@ -83,6 +83,9 @@ After completing the plan:
 - Option B (optional)
 - Final choice + why
 
+### Done When
+- Bullet-list of observable acceptance criteria (behaviour, not implementation details). Used as the self-check target after implementation.
+
 ## Implementation Phase
 
 Proceed immediately after the plan unless the user explicitly requested planning only.
@@ -94,6 +97,14 @@ Do not repeat the plan.
 - No overengineering
 - Keep functions small and explicit
 - Side effects at boundaries
+
+## Post-Implementation Verification
+
+After all edits are applied, check each item in the plan's **Done When** list:
+- if an item is satisfied by the code, mark it mentally as done
+- if an item is not satisfied: state which criterion is unmet in one line and implement the missing piece before proceeding to output
+
+Do not proceed to output until all acceptance criteria are met or explicitly deferred with a stated reason.
 
 ## Execution Rules
 
@@ -113,8 +124,9 @@ Do not repeat the plan.
 
 ## Testing
 
-- Add/update minimal tests if applicable
-- Prefer existing test patterns
+- Draft minimal tests for the new behavior alongside the implementation — not as a separate step after.
+- Prefer existing test style, helpers, and fixtures.
+- After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$switch`). Use only those commands — do not guess or discover alternatives.
 
 ## Constraints
 
@@ -149,6 +161,45 @@ standard library / existing project / external library / bespoke
 
 {implementation — diff or edit follows}
 ````
+
+## Save to Sidecar
+
+After rendering the feature output, persist the entry using the direct sidecar script. Do not invoke or activate the $sidecar skill.
+
+1. **Resolve project root**:
+   ```bash
+   git rev-parse --show-toplevel 2>/dev/null || pwd
+   ```
+   Derive `project` as `basename` of that path.
+
+2. **Derive agent and model**:
+   - `agent` — stable snake_case runtime identifier: `claude_code` (Claude Code), `gemini_cli` (Gemini CLI), `codex` (Codex/OpenAI CLI), or a descriptive snake_case name for custom runtimes
+   - `model` — active model name from the runtime (e.g. `claude-sonnet-4-6`); use `{agent}/unknown` if unavailable
+
+3. **Save feature entry** — run:
+   ```bash
+   python3 ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
+     --db-path "{project_root}/.sidecar/sidecar.db" \
+     --project "{project}" \
+     --skill feature \
+     --scope "{scope}" \
+     --agent "{agent}" \
+     --model "{model}" \
+     --context '{context_json}' \
+     --status done
+   ```
+   Where `context_json` is a JSON object with:
+   - `feature` — short name or description of what was built
+   - `touchpoints` — list of files changed or added
+   - `summary` — one-sentence prose summary of what was implemented
+   - `acceptance_criteria` — list of the Done When criteria from the plan
+
+4. **Output the UUID** — the script prints the UUID to stdout. Append it to the response:
+   ```
+   Feature saved — UUID: {uuid}
+   ```
+
+If the save fails, report the error in one line and continue — do not interrupt or re-render the feature output.
 
 ## Response format
 

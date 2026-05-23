@@ -1,6 +1,6 @@
 ---
 name: review
-description: Use when the user explicitly asks for a code or file review on a specific target path and wants concrete, evidence-backed findings with file references, severity, and explicit guidance across bugs, design, performance, security, maintainability, and library/reuse.
+description: Use when the user explicitly asks for a code or file review on a specific target path and wants concrete, evidence-backed findings with file references, severity, and explicit guidance across bugs, design, performance, security, maintainability, observability, and library/reuse.
 ---
 
 You are an experienced senior engineer reviewing code for production readiness and correctness.
@@ -24,9 +24,11 @@ If a scoped context is not active:
   - design issues
   - performance risks
   - maintainability (complexity, readability, naming that obscures intent)
+  - observability (silent failures, swallowed exceptions, missing structured logging, absent error propagation)
   - Library / Reuse (bespoke code that should use stdlib, framework utilities, or existing dependencies)
 - Include hardcoded secrets, tokens, credentials, unsafe defaults, insecure parsing, injection risks, and misuse of cryptography where applicable.
 - Do not expand scope beyond the requested target unless the issue requires adjacent context to verify. Adjacent context means at most one directly imported or called file. Do not traverse further.
+- Exception: for Security findings where exploitability depends on the caller chain, traverse up to two hops. Stop if the chain becomes wide (more than 3 callers at any hop).
 
 ## Review rules
 
@@ -51,6 +53,7 @@ If a scoped context is not active:
    - why it matters
    - the likely impact
    - the most appropriate fix direction
+9. `fix_direction` must be concrete enough for a downstream fix agent to act without re-reading the file — name the specific function, pattern, or replacement; do not write "improve error handling" or "refactor this section".
 
 ## Output
 
@@ -74,6 +77,9 @@ Use this shape:
 ### Maintainability
 1. `file:line` — description (severity: low) — confirmed
 
+### Observability
+1. `file:line` — description (severity: medium) — confirmed
+
 ### Library / Reuse
 1. `file:line` — bespoke X should use stdlib/framework Y (severity: medium) — confirmed
 
@@ -84,6 +90,7 @@ Use this shape:
 ````
 
 - Include only categories that have findings; omit empty ones.
+- Within each category section, sort findings by severity descending: critical → high → medium → low.
 - Sort Summary rows by severity: critical → high → medium → low.
 - Severity: `critical` (exploitable / breaks in prod), `high` (fix before merge), `medium` (real issue, not urgent), `low` (optional improvement).
 - Cap at 3 findings per category; merge overlapping symptoms into one root-cause finding. If a category exceeds 3, note the count and report highest-severity only.
@@ -107,19 +114,38 @@ Start every response with the `## Review` heading (plain, not in a code block). 
 
 ## Save to Sidecar
 
-After rendering the review output, resolve project root per $sidecar Locate Project Root. Derive `project` as `basename` of that path.
+After rendering the review output, persist the entry using the direct sidecar script. Do not invoke or activate the $sidecar skill.
 
-Invoke the $sidecar `save` operation (CLI: `/sidecar`, agents: `$sidecar`) with `db-path` = `{project_root}/.agents/sidecar.db`. Pass:
+1. **Resolve project root**:
+   ```bash
+   git rev-parse --show-toplevel 2>/dev/null || pwd
+   ```
+   Derive `project` as `basename` of that path.
 
-- `project` — project folder name (e.g. `my-repo`)
-- `skill` — `review`
-- `scope` — active $switch scope path (e.g. `src/api`)
-- `agent` — agent runtime identifier (e.g. `claude_code`, `codex`, `gemini_cli`)
-- `model` — current model name (e.g. `claude-sonnet-4-6`)
-- `context` — JSON with these fields:
-  - `target` — the file or path reviewed
-  - `findings` — list of dicts, one per finding: `{"category": "Security|Bugs|Design|Performance|Maintainability|Library / Reuse", "location": ..., "description": ..., "severity": "critical|high|medium|low", "confidence": ..., "fix_direction": ...}`
-  - `summary` — one-sentence prose summary of the review
-  - `reasoning` — analytical context for downstream agents: dominant concern, what was deprioritized and why, any constraints or scope limits observed
+2. **Derive agent and model**:
+   - `agent` — stable snake_case runtime identifier: `claude_code` (Claude Code), `gemini_cli` (Gemini CLI), `codex` (Codex/OpenAI CLI), or a descriptive snake_case name for custom runtimes
+   - `model` — active model name from the runtime (e.g. `claude-sonnet-4-6`); use `{agent}/unknown` if unavailable
 
-Run after output is rendered, not before. If the save fails, report the error in one line and continue — do not interrupt or re-render the review.
+3. **Save review entry** — run:
+   ```bash
+   python3 ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
+     --db-path "{project_root}/.sidecar/sidecar.db" \
+     --project "{project}" \
+     --skill review \
+     --scope "{scope}" \
+     --agent "{agent}" \
+     --model "{model}" \
+     --context '{context_json}'
+   ```
+   Where `context_json` is a JSON object with:
+   - `target` — the file or path reviewed
+   - `findings` — list of dicts, one per finding: `{"category": "Security|Bugs|Design|Performance|Maintainability|Observability|Library / Reuse", "location": ..., "description": ..., "severity": "critical|high|medium|low", "confidence": ..., "fix_direction": ...}`
+   - `summary` — one-sentence prose summary of the review
+   - `reasoning` — analytical context for downstream agents: dominant concern, what was deprioritized and why, any constraints or scope limits observed
+
+4. **Output the UUID** — the script prints the UUID to stdout. Append it to the response:
+   ```
+   Review saved — UUID: {uuid}
+   ```
+
+If the save fails, report the error in one line and continue — do not interrupt or re-render the review.
