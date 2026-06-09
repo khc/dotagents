@@ -166,27 +166,23 @@ standard library / existing project / external library / bespoke
 
 After rendering the feature output, persist the entry using the direct sidecar script. Do not invoke or activate the $sidecar skill.
 
-1. **Resolve project root**:
-   ```bash
-   git rev-parse --show-toplevel 2>/dev/null || pwd
-   ```
-   Derive `project` as `basename` of that path.
-
-2. **Derive agent and model**:
+1. **Derive agent and model**:
    - `agent` — stable snake_case runtime identifier: `claude_code` (Claude Code), `gemini_cli` (Gemini CLI), `codex` (Codex/OpenAI CLI), or a descriptive snake_case name for custom runtimes
    - `model` — active model name from the runtime (e.g. `claude-sonnet-4-6`); use `{agent}/unknown` if unavailable
 
-3. **Save feature entry** — run:
+2. **Save feature entry** — run:
    ```bash
-   ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
-     --db-path "{project_root}/.sidecar/sidecar.db" \
-     --project "{project}" \
+   ~/.agents/.venv/bin/python ~/.agents/scripts/sidecar_workflow.py save \
      --skill feature \
      --scope "{scope}" \
      --agent "{agent}" \
      --model "{model}" \
-     --context '{context_json}' \
+     --context - \
+     --context_input stdin \
      --status done
+   <<'JSON'
+   {context_json}
+   JSON
    ```
    Where `context_json` is a JSON object with:
    - `feature` — short name or description of what was built
@@ -194,7 +190,7 @@ After rendering the feature output, persist the entry using the direct sidecar s
    - `summary` — one-sentence prose summary of what was implemented
    - `acceptance_criteria` — list of the Done When criteria from the plan
 
-4. **Output the UUID** — the script prints the UUID to stdout. Append it to the response:
+3. **Output the UUID** — the workflow prints the UUID to stdout. Append it to the response:
    ```
    Feature saved — UUID: {uuid}
    ```

@@ -1,5 +1,10 @@
+# Dots
 .claude
 .obsidian
+.venv/
+.antigravitycli/
+.sidecar/
+.task-cache/
 
 # macOS
 .DS_Store
@@ -13,7 +18,14 @@
 Thumbs.db
 ehthumbs.db
 Desktop.ini
-uv.lock
-.claude
-.obsidian
-.venv
+
+# Python
+__pycache__/
+
+# JS
+node_modules/
+
+# External skills
+skills/tma1
+skills/tma1-peer
+skills/nlm-skill

@@ -10,6 +10,7 @@ Review only the user-specified target file or code path and report concrete, evi
 ## Workflow
 
 If a scoped context is not active:
+
 - STOP
 - run $switch first
 - after $switch completes, confirm the active scope path, then proceed with the review
@@ -59,35 +60,35 @@ If a scoped context is not active:
 
 Use this shape:
 
-````markdown
+```md
 ## Review
 
 ### Security
-1. `file:line` — description (severity: critical) — confirmed
+1. `file:line` — description (severity: critical) — confirmed — Fix direction: ...
 
 ### Bugs
-1. `file:line` — description (severity: high) — confirmed
+1. `file:line` — description (severity: high) — confirmed — Fix direction: ...
 
 ### Design
-1. `file:line` — description (severity: medium) — likely
+1. `file:line` — description (severity: medium) — likely — Fix direction: ...
 
 ### Performance
-1. `file:line` — description (severity: medium) — confirmed
+1. `file:line` — description (severity: medium) — confirmed — Fix direction: ...
 
 ### Maintainability
-1. `file:line` — description (severity: low) — confirmed
+1. `file:line` — description (severity: low) — confirmed — Fix direction: ...
 
 ### Observability
-1. `file:line` — description (severity: medium) — confirmed
+1. `file:line` — description (severity: medium) — confirmed — Fix direction: ...
 
 ### Library / Reuse
-1. `file:line` — bespoke X should use stdlib/framework Y (severity: medium) — confirmed
+1. `file:line` — bespoke X should use stdlib/framework Y (severity: medium) — confirmed — Fix direction: ...
 
 ### Summary
 
-| Severity | # | Category | Confidence | Description | Fix Direction |
-|----------|---|----------|------------|-------------|---------------|
-````
+| # | Severity | Category | Confidence |
+|---|----------|----------|------------|
+```
 
 - Include only categories that have findings; omit empty ones.
 - Within each category section, sort findings by severity descending: critical → high → medium → low.
@@ -114,37 +115,36 @@ Start every response with the `## Review` heading (plain, not in a code block). 
 
 ## Save to Sidecar
 
-After rendering the review output, persist the entry using the direct sidecar script. Do not invoke or activate the $sidecar skill.
+After composing the review output and before sending the final response, persist the entry using the direct sidecar script. Do not invoke or activate the $sidecar skill.
 
-1. **Resolve project root**:
-   ```bash
-   git rev-parse --show-toplevel 2>/dev/null || pwd
-   ```
-   Derive `project` as `basename` of that path.
-
-2. **Derive agent and model**:
+1. **Derive agent and model**:
    - `agent` — stable snake_case runtime identifier: `claude_code` (Claude Code), `gemini_cli` (Gemini CLI), `codex` (Codex/OpenAI CLI), or a descriptive snake_case name for custom runtimes
    - `model` — active model name from the runtime (e.g. `claude-sonnet-4-6`); use `{agent}/unknown` if unavailable
 
-3. **Save review entry** — run:
+2. **Save review entry** — run:
+
    ```bash
-   ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
-     --db-path "{project_root}/.sidecar/sidecar.db" \
-     --project "{project}" \
-     --skill review \
+   ~/.agents/.venv/bin/python ~/.agents/scripts/review_workflow.py \
+     --context - \
+     --context-input stdin \
      --scope "{scope}" \
      --agent "{agent}" \
      --model "{model}" \
-     --context '{context_json}'
+     <<'JSON'
+   {context_json}
+   JSON
    ```
-   Where `context_json` is a JSON object with:
+
+   This helper resolves `{project_root}`, creates `{project_root}/.sidecar`, and persists the review entry. If `{project_root}/.sidecar` is outside the active scope and the runtime enforces scoped writes, request approval for this persistence write before invoking the helper.
+   The JSON payload must contain:
    - `target` — the file or path reviewed
    - `findings` — list of dicts, one per finding: `{"category": "Security|Bugs|Design|Performance|Maintainability|Observability|Library / Reuse", "location": ..., "description": ..., "severity": "critical|high|medium|low", "confidence": ..., "fix_direction": ...}`
    - `summary` — one-sentence prose summary of the review
    - `reasoning` — analytical context for downstream agents: dominant concern, what was deprioritized and why, any constraints or scope limits observed
 
-4. **Output the UUID** — the script prints the UUID to stdout. Append it to the response:
-   ```
+3. **Output the UUID** — the script prints the UUID to stdout. Append it to the response:
+
+   ```text
    Review saved — UUID: {uuid}
    ```
 

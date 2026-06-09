@@ -18,6 +18,7 @@ Improvements and open items identified during skill review session (2026-04-14).
 
 ### `fix`
 - [ ] Fast Path threshold (single file, ≤5 lines) may be too strict for closely related two-file changes (e.g. implementation + test); consider relaxing to "≤2 files, ≤10 lines total"
+- [ ] Update `fix` to use `fix_workflow.py get_review` and `fix_workflow.py save_fix`, then trim `sidecar` to generic schema/storage guidance only
 
 ---
 

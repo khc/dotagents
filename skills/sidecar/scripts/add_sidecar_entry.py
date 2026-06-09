@@ -1,5 +1,6 @@
 #!/usr/bin/env -S uv run --script
 import argparse
+import json
 import sqlite3
 import uuid
 from datetime import datetime, timezone
@@ -30,6 +31,7 @@ def add_sidecar_entry(
     parent_uuid: Annotated[str | None, "UUID of the parent entry"] = None,
     relation: Annotated[str | None, "Relation to parent entry"] = None,
 ) -> str:
+    json.loads(context)
     ensure_db(db_path)
 
     entry_uuid = str(uuid.uuid4())
@@ -70,7 +72,12 @@ if __name__ == "__main__":
     parser.add_argument("--skill", required=True)
     parser.add_argument("--agent", required=True)
     parser.add_argument("--model", required=True)
-    parser.add_argument("--context", required=True)
+    context_group = parser.add_mutually_exclusive_group(required=True)
+    context_group.add_argument("--context")
+    context_group.add_argument(
+        "--context-file",
+        help="Path to a file containing the JSON context payload.",
+    )
     parser.add_argument("--scope", default=None)
     parser.add_argument(
         "--status",
@@ -82,6 +89,10 @@ if __name__ == "__main__":
         "--relation", default=None, choices=["followup", "fix", "review", "supersedes"]
     )
     args = parser.parse_args()
+    if args.context_file is not None:
+        context = Path(args.context_file).read_text()
+    else:
+        context = args.context
     print(
         add_sidecar_entry(
             db_path=args.db_path,
@@ -89,7 +100,7 @@ if __name__ == "__main__":
             skill=args.skill,
             agent=args.agent,
             model=args.model,
-            context=args.context,
+            context=context,
             scope=args.scope,
             status=args.status,
             parent_uuid=args.parent_uuid,

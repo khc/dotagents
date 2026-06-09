@@ -35,7 +35,7 @@ If a scoped context is not active:
    - dependencies already in the project
    - 1-2 well-established external libraries, only if materially better
    
-   **For external libraries**: if no external libraries are already known to fit, run a web search to vet candidates. First run `~/.agents/skills/research/scripts/today.py` to get the current date, then include it in search queries to ensure documentation and activity data are recent. Evaluate based on: current maintenance status, documentation quality, adoption/community size, fit with current stack. Do not evaluate libraries without checking recent data.
+   **For external libraries**: if no external libraries are already known to fit, run a web search to vet candidates. First run `~/.agents/.venv/bin/python ~/.agents/skills/research/scripts/today.py` to get the current date, then include it in search queries to ensure documentation and activity data are recent. Evaluate based on: current maintenance status, documentation quality, adoption/community size, fit with current stack. Do not evaluate libraries without checking recent data.
 6. Compare options using these criteria (weight them by task priority):
    - LOC reduction (higher weight if code size is a constraint)
    - fit with current stack (highest weight if integration burden is high)

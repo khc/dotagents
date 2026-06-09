@@ -77,27 +77,34 @@ When calling `save`, the caller must supply `agent` and `model`.
 Auto-init if DB is absent, then invoke the write script:
 
 ```bash
-~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
-  --db-path "{project_root}/.sidecar/sidecar.db" \
-  --project "{project}" \
+~/.agents/.venv/bin/python ~/.agents/scripts/sidecar_workflow.py save \
   --skill "{skill}" \
-  --scope "{scope}" \
   --agent "{agent}" \
   --model "{model}" \
-  --context '{context_json}' \
+  --scope "{scope}" \
+  --context "{project_root}/.sidecar/context.json" \
+  --context_input file \
   [--status open|pending|done|fixed|wontfix|superseded] \
   [--parent-uuid "{uuid}"] \
   [--relation followup|fix|review|supersedes]
 ```
 
-`context_json` must be a valid JSON string. On success, prints the new entry UUID.
+Create `{project_root}/.sidecar`, then write `context_json` to `{project_root}/.sidecar/context.json` before invoking the script:
+
+```bash
+mkdir -p "{project_root}/.sidecar"
+cat > "{project_root}/.sidecar/context.json" <<'JSON'
+{context_json}
+JSON
+```
+
+The context file must contain valid JSON. Use `--context "{context_json}"` only for simple one-line JSON that contains no shell-sensitive characters. On success, prints the new entry UUID.
 
 ### read
 Query entries via the read script. All filters are optional; results are returned as JSON ordered by `created_at DESC`.
 
 ```bash
-~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
-  --db-path "{project_root}/.sidecar/sidecar.db" \
+~/.agents/.venv/bin/python ~/.agents/scripts/sidecar_workflow.py read \
   [--project "{project}"] [--skill "{skill}"] [--scope "{scope}"] \
   [--status open|pending|done|fixed|wontfix|superseded] \
   [--uuid "{uuid}"] [--limit N]
@@ -116,8 +123,7 @@ Query entries via the read script. All filters are optional; results are returne
 Update the status of an existing entry by UUID:
 
 ```bash
-~/.agents/skills/sidecar/scripts/update_sidecar_entry.py \
-  --db-path "{project_root}/.sidecar/sidecar.db" \
+~/.agents/.venv/bin/python ~/.agents/scripts/sidecar_workflow.py update \
   --uuid "{uuid}" \
   --status open|pending|done|fixed|wontfix|superseded
 ```

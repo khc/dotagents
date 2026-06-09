@@ -6,29 +6,27 @@ description: Use after a completed review when the user wants specific findings 
 ## Invocation Modes
 
 Invocation syntax varies by runtime:
+
 - Claude / Gemini CLI: `/fix`, `/fix sidecar`, `/fix sidecar {uuid}`
 - Agent-to-agent (any model): `$fix`, `$fix sidecar`, `$fix sidecar {uuid}`
 
 ### `fix` (no args)
+
 Use the review findings from the current session.
+
 - If no prior review exists in the session: STOP — report `Error: no prior review found. Run $review first.`
 - If the user does not specify finding IDs: treat as "fix all findings from the latest review" — do not ask for clarification.
 
 ### `fix sidecar`
-Resolve project root, then load the most recent `review` entry from the sidecar using the direct read script filtered by `project`, `skill=review`, and `status=open`. Do not invoke or activate the $sidecar skill.
+
+Load the most recent open `review` entry from the sidecar using the fix workflow helper. Do not invoke or activate the $sidecar skill.
 
 ```bash
-project_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-project="$(basename "$project_root")"
-~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
-  --db-path "$project_root/.sidecar/sidecar.db" \
-  --project "$project" \
-  --skill review \
-  --status open \
-  --limit 1
+~/.agents/.venv/bin/python ~/.agents/scripts/fix_workflow.py get_review
 ```
 
 Extract:
+
 - `scope` — top-level row field; use as the required work scope and require matching active $switch scope before edits
 - `context.findings` — source of truth for what to fix; each finding has `category`, `location`, `description`, `severity` (`critical|high|medium|low`), `confidence`, and `fix_direction`
 - `context.reasoning` — analytical context explaining why each finding matters
@@ -36,14 +34,12 @@ Extract:
 If no entry is found: STOP — report `Error: no review entry found in sidecar.`
 
 ### `fix sidecar {uuid}`
-Resolve project root, then load a specific review entry from the sidecar using the direct read script filtered by `uuid={uuid}`. Do not invoke or activate the $sidecar skill.
+
+Load a specific review entry from the sidecar using the fix workflow helper. Do not invoke or activate the $sidecar skill.
 
 ```bash
-project_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-~/.agents/skills/sidecar/scripts/get_sidecar_entry.py \
-  --db-path "$project_root/.sidecar/sidecar.db" \
-  --uuid "{uuid}" \
-  --limit 1
+~/.agents/.venv/bin/python ~/.agents/scripts/fix_workflow.py get_review \
+  --review_uuid "{uuid}"
 ```
 
 Extract the same fields as above.
@@ -69,13 +65,14 @@ If the fix touches a single file and requires ≤5 lines changed — regardless 
 ## Workflow
 
 If a scoped context is not active and source is session:
+
 - STOP
 - run $switch first
 
 If source is sidecar:
-- resolve project root with `git rev-parse --show-toplevel 2>/dev/null || pwd`; derive `project` as `basename` of that path
+
 - use the top-level `scope` field from the loaded entry as the required work scope
-- if active $switch scope is absent or differs from the loaded `scope`: STOP — report `Run $switch <scope> before applying this sidecar fix.`
+- if active $switch scope is absent or differs from the loaded `scope`: STOP — report `Run $switch {scope} before applying this sidecar fix.`
 
 1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. Obey the active scope and nearest applicable `AGENTS.md`.
@@ -92,6 +89,7 @@ If source is sidecar:
 ## Post-Edit Validation
 
 After each edit, re-read the changed lines and confirm:
+
 - the change addresses the finding's `description` and follows its `fix_direction`
 - no new issues are introduced in the changed block
 - the surrounding call sites are not broken by the change
@@ -103,6 +101,7 @@ If a change does not satisfy these checks: revert it, state why in one line, and
 Do not introduce new findings.
 
 If an issue is encountered that is not part of the provided review:
+
 - ignore it
 - do not fix it
 - do not mention it unless it blocks the requested fix
@@ -124,7 +123,7 @@ Fast Path — return patch directly with no preamble.
 
 Full Path — use this shape:
 
-````markdown
+```md
 ## Fix
 
 ### Fix Scope
@@ -138,7 +137,7 @@ built-in / existing project utility / existing dependency / minimal bespoke
 ---
 
 {patch or targeted edit}
-````
+```
 
 Keep the plan to 3–6 bullets. Do not include broad analysis.
 
@@ -181,38 +180,29 @@ If a requested fix cannot be done safely within current scope:
 
 ## Save to Sidecar
 
-Before the final response, if a review entry UUID is available from sidecar or from the current session, persist the fix using the direct sidecar scripts. Do not invoke or activate the $sidecar skill.
+Before the final response, if a review entry UUID is available from sidecar or from the current session, persist the fix using the fix workflow helper. Do not invoke or activate the $sidecar skill.
 
-1. **Resolve project root**:
-   ```bash
-   git rev-parse --show-toplevel 2>/dev/null || pwd
-   ```
-   Derive `project` as `basename` of that path.
-
-2. **Derive agent and model**:
+1. **Derive agent and model**:
    - `agent` — stable snake_case runtime identifier: `claude_code` (Claude Code), `gemini_cli` (Gemini CLI), `codex` (Codex/OpenAI CLI), or a descriptive snake_case name for custom runtimes
    - `model` — active model name from the runtime (e.g. `claude-sonnet-4-6`); use `{agent}/unknown` if unavailable
 
-3. **Save fix entry** — run:
+2. **Save fix entry** — run:
+
    ```bash
-   ~/.agents/skills/sidecar/scripts/add_sidecar_entry.py \
-     --db-path "{project_root}/.sidecar/sidecar.db" \
-     --project "{project}" \
-     --skill fix \
-     --scope "{scope}" \
+   ~/.agents/.venv/bin/python ~/.agents/scripts/fix_workflow.py save_fix \
      --agent "{agent}" \
      --model "{model}" \
-     --context '{context_json}' \
-     --status done \
-     --parent-uuid "{review_uuid}" \
-     --relation fix
+     --review_uuid "{review_uuid}" \
+     --scope "{scope}" \
+     --context - \
+     --context_input stdin \
+     <<'JSON'
+   {context_json}
+   JSON
    ```
-   with:
-   - `scope` — same scope as the loaded review entry
-   - `parent_uuid` — UUID of the review entry
-   - `relation` — `fix`
-   - `status` — `done`
-   - `context` — JSON:
+
+   The JSON payload must contain:
+
      ```json
      {
        "findings_fixed": [{"location": "...", "description": "..."}],
@@ -220,25 +210,15 @@ Before the final response, if a review entry UUID is available from sidecar or f
      }
      ```
 
-4. **Update review entry** — run:
-   ```bash
-   ~/.agents/skills/sidecar/scripts/update_sidecar_entry.py \
-     --db-path "{project_root}/.sidecar/sidecar.db" \
-     --uuid "{review_uuid}" \
-     --status done
-   ```
-   with:
-   - `uuid` — UUID of the review entry
-   - `status` — `done`
+3. **Output the UUID** — the workflow prints the fix UUID to stdout. Append it to the response:
 
-5. **Output the UUID** — the add_sidecar_entry script prints the fix UUID to stdout. Append it to the response:
-   ```
+   ```text
    Fix saved — UUID: {fix_uuid}
    ```
 
-If either persistence step fails, report the error in one line in the final response and continue — do not re-render the fix output.
+If persistence fails, report the error in one line in the final response and continue — do not re-render the fix output.
 
-If no review entry UUID is available, skip steps 3–5.
+If no review entry UUID is available, skip steps 2–3.
 
 ## Response format
 
