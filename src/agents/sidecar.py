@@ -4,7 +4,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 Status = Literal["open", "pending", "done", "fixed", "wontfix", "superseded"]
 Relation = Literal["followup", "fix", "review", "supersedes"]
@@ -101,6 +101,8 @@ def load_add_entry_context(args: AddEntryArgs) -> str:
         raise ValueError("exactly one of --context or --context-file is required")
     if args.context_file is not None:
         return Path(args.context_file).read_text()
+    if args.context is None:
+        raise ValueError("context payload is empty")
     return args.context
 
 
@@ -112,12 +114,12 @@ def get_sidecar_entry(
     status: str | None = None,
     uuid: str | None = None,
     limit: int = 1,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     if not Path(db_path).exists():
         return []
 
-    conditions = []
-    params: list = []
+    conditions: list[str] = []
+    params: list[str | int] = []
 
     if uuid:
         conditions.append("uuid = ?")

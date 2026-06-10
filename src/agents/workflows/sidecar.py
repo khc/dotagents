@@ -5,7 +5,6 @@ from typing import Annotated
 from agents.context_loader import ContextInput, load_context
 from agents.project_root import project_root
 from agents.sidecar import (
-    AddEntryArgs,
     Relation,
     Status,
     UpdateEntryArgs,

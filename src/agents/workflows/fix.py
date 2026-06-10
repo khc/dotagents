@@ -56,7 +56,10 @@ def get_review(args: GetReviewArgs) -> str:
             raise ValueError("no review entry found in sidecar")
 
     entry = entries[0]
-    entry["context"] = json.loads(entry["context"])
+    context_data = entry.get("context")
+    if not isinstance(context_data, str):
+        raise TypeError("Expected context to be a string")
+    entry["context"] = json.loads(context_data)
     return json.dumps(entry, indent=2)
 
 

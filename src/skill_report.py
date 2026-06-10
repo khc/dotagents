@@ -4,7 +4,7 @@ import re
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal, cast
 
 from agents.project_root import project_root
 
@@ -106,6 +106,7 @@ def _run_skillcheck(root_dir: Path, skill_file: Path) -> ToolReport:
     result, payload, failure = _run_json_tool(root_dir, command, "skillcheck")
     if failure is not None:
         return failure
+    payload = cast(dict[str, Any], payload)
     findings: list[Finding] = []
     for file_result in payload.get("results", []):
         for diagnostic in file_result.get("diagnostics", []):
@@ -166,6 +167,7 @@ def _run_skill_validator(root_dir: Path, skill_dir: Path) -> ToolReport:
     result, payload, failure = _run_json_tool(root_dir, command, "skill-validator")
     if failure is not None:
         return failure
+    payload = cast(dict[str, Any], payload)
     findings: list[Finding] = []
     for item in payload.get("results", []):
         level = item.get("level")
@@ -186,7 +188,9 @@ def _run_skill_validator(root_dir: Path, skill_dir: Path) -> ToolReport:
         status = "warn"
     else:
         status = "pass"
-    summary = f"{payload.get('errors', 0)} errors, {payload.get('warnings', 0)} warnings"
+    summary = (
+        f"{payload.get('errors', 0)} errors, {payload.get('warnings', 0)} warnings"
+    )
     return ToolReport(
         name="skill-validator",
         command=command,
@@ -204,6 +208,7 @@ def _run_cclint(root_dir: Path, skill_file: Path) -> ToolReport:
     result, payload, failure = _run_json_tool(root_dir, command, "cclint")
     if failure is not None:
         return failure
+    payload = cast(dict[str, Any], payload)
     findings = [
         Finding(
             tool="cclint",
@@ -280,9 +285,9 @@ def _parse_markdownlint_output(output: str) -> list[Finding]:
     findings: list[Finding] = []
     pattern = re.compile(
         r"^(?P<path>.+?):(?P<line>\d+)(?::(?P<column>\d+))?\s+"
-        r"(?P<severity>error|warning)\s+"
-        r"(?P<rule>[A-Za-z0-9/.-]+)\s+"
-        r"(?P<message>.+)$"
+        + r"(?P<severity>error|warning)\s+"
+        + r"(?P<rule>[A-Za-z0-9/.-]+)\s+"
+        + r"(?P<message>.+)$"
     )
     for line in output.splitlines():
         match = pattern.match(line.strip())
@@ -308,23 +313,33 @@ def _run_json_tool(
     root_dir: Path,
     command: list[str],
     tool_name: str,
-) -> tuple[subprocess.CompletedProcess[str], dict[str, object] | None, ToolReport | None]:
+) -> tuple[
+    subprocess.CompletedProcess[str], dict[str, object] | None, ToolReport | None
+]:
     result = _run(root_dir, command)
     if not result.stdout.strip():
-        return result, None, _failure_report(
-            tool_name,
-            command,
+        return (
             result,
-            "validator exited without JSON output",
+            None,
+            _failure_report(
+                tool_name,
+                command,
+                result,
+                "validator exited without JSON output",
+            ),
         )
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        return result, None, _failure_report(
-            tool_name,
-            command,
+        return (
             result,
-            f"invalid JSON output: {exc.msg}",
+            None,
+            _failure_report(
+                tool_name,
+                command,
+                result,
+                f"invalid JSON output: {exc.msg}",
+            ),
         )
     return result, payload, None
 
@@ -354,7 +369,7 @@ def _failure_report(
 
 
 def _failure_message(
-    tool_name: str,
+    _tool_name: str,
     result: subprocess.CompletedProcess[str],
     message: str,
 ) -> str:
@@ -465,8 +480,6 @@ def _to_markdown(report: CombinedReport) -> str:
         for finding in tool.findings:
             location = f" `{finding.location}`" if finding.location else ""
             rule = f" [{finding.rule}]" if finding.rule else ""
-            lines.append(
-                f"- `{finding.severity}`{rule}{location} {finding.message}"
-            )
+            lines.append(f"- `{finding.severity}`{rule}{location} {finding.message}")
         lines.append("")
     return "\n".join(lines)

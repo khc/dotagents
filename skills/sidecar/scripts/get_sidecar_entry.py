@@ -3,6 +3,7 @@ import argparse
 import json
 import sqlite3
 from pathlib import Path
+from typing import Any
 
 
 def get_sidecar_entry(
@@ -13,12 +14,12 @@ def get_sidecar_entry(
     status: str | None = None,
     uuid: str | None = None,
     limit: int = 1,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     if not Path(db_path).exists():
         return []
 
-    conditions = []
-    params: list = []
+    conditions: list[str] = []
+    params: list[str | int] = []
 
     if uuid:
         conditions.append("uuid = ?")

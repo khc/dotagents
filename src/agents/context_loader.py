@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Literal
+from typing import Literal, assert_never
 
 ContextInput = Literal["inline", "file", "stdin"]
 
@@ -12,4 +12,4 @@ def load_context(context: str, context_input: ContextInput) -> str:
         return Path(context).read_text()
     if context_input == "stdin":
         return sys.stdin.read()
-    raise ValueError(f"unsupported context input mode: {context_input}")
+    assert_never(context_input)

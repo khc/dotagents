@@ -3,15 +3,15 @@
 Quick validation script for skills - minimal version
 """
 
-import os
 import re
 import sys
 from pathlib import Path
+from typing import cast
 
 import yaml
 
 
-def validate_skill(skill_path):
+def validate_skill(skill_path: str | Path) -> tuple[bool, str]:
     """Basic validation of a skill"""
     skill_path = Path(skill_path)
 
@@ -37,6 +37,7 @@ def validate_skill(skill_path):
         frontmatter = yaml.safe_load(frontmatter_text)
         if not isinstance(frontmatter, dict):
             return False, "Frontmatter must be a YAML dictionary"
+        typed_frontmatter = cast(dict[str, object], frontmatter)
     except yaml.YAMLError as e:
         return False, f"Invalid YAML in frontmatter: {e}"
 
@@ -51,7 +52,7 @@ def validate_skill(skill_path):
     }
 
     # Check for unexpected properties (excluding nested keys under metadata)
-    unexpected_keys = set(frontmatter.keys()) - ALLOWED_PROPERTIES
+    unexpected_keys = set(typed_frontmatter.keys()) - ALLOWED_PROPERTIES
     if unexpected_keys:
         return False, (
             f"Unexpected key(s) in SKILL.md frontmatter: {', '.join(sorted(unexpected_keys))}. "
@@ -59,13 +60,13 @@ def validate_skill(skill_path):
         )
 
     # Check required fields
-    if "name" not in frontmatter:
+    if "name" not in typed_frontmatter:
         return False, "Missing 'name' in frontmatter"
-    if "description" not in frontmatter:
+    if "description" not in typed_frontmatter:
         return False, "Missing 'description' in frontmatter"
 
     # Extract name for validation
-    name = frontmatter.get("name", "")
+    name = typed_frontmatter.get("name", "")
     if not isinstance(name, str):
         return False, f"Name must be a string, got {type(name).__name__}"
     name = name.strip()
@@ -89,7 +90,7 @@ def validate_skill(skill_path):
             )
 
     # Extract and validate description
-    description = frontmatter.get("description", "")
+    description = typed_frontmatter.get("description", "")
     if not isinstance(description, str):
         return False, f"Description must be a string, got {type(description).__name__}"
     description = description.strip()
@@ -105,7 +106,7 @@ def validate_skill(skill_path):
             )
 
     # Validate compatibility field if present (optional)
-    compatibility = frontmatter.get("compatibility", "")
+    compatibility = typed_frontmatter.get("compatibility", "")
     if compatibility:
         if not isinstance(compatibility, str):
             return (

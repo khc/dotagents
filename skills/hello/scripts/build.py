@@ -11,7 +11,7 @@ def get_date():
     return date.today().strftime("%d.%m.%Y")
 
 
-def render(date_val=None):
+def render(date_val: str | None = None) -> str:
     import os
     import sys
     from jinja2 import Environment, FileSystemLoader

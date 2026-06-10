@@ -1,13 +1,14 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import tyro
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from agents.workflows.fix import GetReviewArgs, SaveFixArgs, get_review, save_fix
 
-
 if __name__ == "__main__":
+
     def _get_review(args: GetReviewArgs) -> None:
         print(get_review(args))
 
