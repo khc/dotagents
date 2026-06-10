@@ -31,31 +31,23 @@ Generate exactly one Conventional Commit message from the current repo state, th
    - Not a git repo? → `Error: not a git repository.`
    - No staged, unstaged, or untracked files? → `Nothing to commit.`
 
-2. Get State:
-   - `repo_state_snapshot` = exact output of `git status --porcelain` (used to detect interim changes)
-
-3. Workflow:
+2. Workflow:
    - Generation Phase (No pending confirmation prompt):
      → Determine intended scope: staged files only (if no unstaged/untracked exist), otherwise the full tracked and untracked changeset.
      → Generate the commit message from the intended scope.
-     → Render the commit preview using the Output format.
-     → Store `repo_state_snapshot` with the generated message.
+     → Save the generated message and baseline snapshot by calling:
+       `python scripts/commit_workflow.py save --agent "{agent}" --commit-message "{message}"`
+     → Render the commit preview using the Output format, including the generated sidecar entry UUID.
      → Ask `Proceed with commit?`
 
    - Confirmation Phase (User replied to `Proceed with commit?`):
-     → Recompute `repo_state_now` = exact output of `git status --porcelain`.
-     → If `repo_state_now` differs from `repo_state_snapshot`:
-       - Do not commit with the stale message.
-       - Restart the Generation Phase with the current state.
-     → If `repo_state_now` exactly matches `repo_state_snapshot`:
-       - If unstaged or untracked files exist, add them first (`git add -A`).
-       - Run pre-commit validation gates (see Validation Gates below).
-       - If validation passes, run `git commit` using the exact stored message.
-       - If validation fails, report the error in one line and do not commit.
-
-## Validation Gates
-
-Before running `git commit`, execute the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$switch`). If any command fails, report the error in one line and do not proceed with the commit. Only run the commands that are defined in `AGENTS.md` — do not guess or discover alternatives.
+     → Execute the commit by calling:
+       `python scripts/commit_workflow.py execute --uuid "{uuid}"`
+     → If the execution succeeds:
+       - Output the commit success message.
+     → If the execution fails (due to state drift or validation gate failure):
+       - If failure is due to state drift: Restart the Generation Phase with the current repository state.
+       - If failure is due to validation gate: Report the validation failure message and stop.
 
 ## Output
 
@@ -79,6 +71,8 @@ When a commit message is generated and no commit has been run yet, use this resp
 ```text
 <type>[optional scope]: <description>
 ```
+
+*(Sidecar entry: `{uuid}`)*
 
 ---
 Do you want to proceed with commit?
