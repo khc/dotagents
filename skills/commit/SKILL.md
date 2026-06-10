@@ -36,13 +36,13 @@ Generate exactly one Conventional Commit message from the current repo state, th
      → Determine intended scope: staged files only (if no unstaged/untracked exist), otherwise the full tracked and untracked changeset.
      → Generate the commit message from the intended scope.
      → Save the generated message and baseline snapshot by calling:
-       `python scripts/commit_workflow.py save --agent "{agent}" --commit-message "{message}"`
+       `~/.agents/.venv/bin/python ~/.agents/scripts/commit_workflow.py save --agent "{agent}" --commit-message "{message}"`
      → Render the commit preview using the Output format, including the generated sidecar entry UUID.
      → Ask `Proceed with commit?`
 
    - Confirmation Phase (User replied to `Proceed with commit?`):
      → Execute the commit by calling:
-       `python scripts/commit_workflow.py execute --uuid "{uuid}"`
+       `~/.agents/.venv/bin/python ~/.agents/scripts/commit_workflow.py execute --uuid "{uuid}"`
      → If the execution succeeds:
        - Output the commit success message.
      → If the execution fails (due to state drift or validation gate failure):
