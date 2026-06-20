@@ -18,8 +18,8 @@ Generate exactly one Conventional Commit message, save it with the commit workfl
 5. Use only files listed by `git status --porcelain`. Never inspect any other file.
 6. Build bounded context from status-listed files only:
    - inspect enough non-skipped status-listed files to describe the whole intended commit
-   - for staged-only tracked files, you may batch multiple files in one `git diff --staged -- <file1> <file2> ...`
-   - for unstaged tracked files, you may batch multiple files in one `git diff -- <file1> <file2> ...`
+   - for staged-only tracked files, you should batch multiple files in one `git diff --staged -- <file1> <file2> ...`
+   - for unstaged tracked files, you should batch multiple files in one `git diff -- <file1> <file2> ...`
    - for untracked files, run only `git diff --no-index -- /dev/null -- <file>` one file at a time
    - skip lock, generated, and binary files
 7. Never run bare `git diff`, never inspect files outside `git status --porcelain`, never read saved tool output files, and never run helper commands with `--help`.
