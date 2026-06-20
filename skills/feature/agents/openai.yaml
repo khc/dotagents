@@ -9,4 +9,4 @@ policy:
 
 enforcement:
   depends_on:
-    - switch
+    - context

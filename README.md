@@ -13,7 +13,7 @@ This repository defines a structured, deterministic system for working with LLM 
 
 - **skills/**  
   Custom agent skills:
-  - `$switch` — scope control
+  - `$context` — scope control
   - `$plan` — workflow selection
   - `$research` — approach optimization
   - `$bug` — symptom-to-fix in one pass
@@ -28,7 +28,7 @@ This repository defines a structured, deterministic system for working with LLM 
 
 ## Core Principles
 
-- Scope first (`$switch`)
+- Scope first (`$context`)
 - One skill at a time
 - Prefer minimal, correct solutions
 - Prefer existing over new
@@ -62,7 +62,7 @@ Optional:
 Always start with scope:
 
 ```
-/switch <path>
+/context <path>
 ```
 
 This:
@@ -74,7 +74,7 @@ This:
 
 ## Skills Guide
 
-### $switch
+### $context
 
 Scope work to a specific path and load rules.
 
@@ -147,12 +147,12 @@ Use to generate commit messages.
 ### Add Feature
 
 ```
-$switch → $feature
+$context → $feature
 ```
 
 Complex:
 ```
-$switch → $feature → $audit
+$context → $feature → $audit
 ```
 
 Use `$plan` or `$research` only when you explicitly want a separate step.
@@ -160,37 +160,37 @@ Use `$plan` or `$research` only when you explicitly want a separate step.
 ### Fix Bug from Symptom
 
 ```
-$switch → $bug → $commit
+$context → $bug → $commit
 ```
 
 ### Fix Bug from Code Review
 
 ```
-$switch → $review → $fix → $audit → $commit
+$context → $review → $fix → $audit → $commit
 ```
 
 ### Quick Fix
 
 ```
-$switch → $fix
+$context → $fix
 ```
 
 ### Refactor
 
 ```
-$switch → $refactor → $audit → $commit
+$context → $refactor → $audit → $commit
 ```
 
 ### Evaluate Approach
 
 ```
-$switch → $research
+$context → $research
 ```
 
 ### Understand Task
 
 ```
-$switch → $plan
+$context → $plan
 ```
 
 ---
@@ -211,7 +211,7 @@ All skills follow these rules consistently:
 ## Anti-Patterns
 
 Avoid:
-- Working without `$switch`
+- Working without `$context`
 - Mixing multiple skills in one run
 - Using `$fix` without `$review` (except trivial fixes)
 - Using `$review` when there is a visible symptom — use `$bug` instead

@@ -27,7 +27,7 @@ Load the most recent open `review` entry from the sidecar using the fix workflow
 
 Extract:
 
-- `scope` — top-level row field; use as the required work scope and require matching active $switch scope before edits
+- `scope` — top-level row field; use as the required work scope and require matching active $context scope before edits
 - `context.findings` — source of truth for what to fix; each finding has `category`, `location`, `description`, `severity` (`critical|high|medium|low`), `confidence`, and `fix_direction`
 - `context.reasoning` — analytical context explaining why each finding matters
 
@@ -67,12 +67,12 @@ If the fix touches a single file and requires ≤5 lines changed — regardless 
 If a scoped context is not active and source is session:
 
 - STOP
-- run $switch first
+- run $context first
 
 If source is sidecar:
 
 - use the top-level `scope` field from the loaded entry as the required work scope
-- if active $switch scope is absent or differs from the loaded `scope`: STOP — report `Run $switch {scope} before applying this sidecar fix.`
+- if active $context scope is absent or differs from the loaded `scope`: STOP — report `Run $context {scope} before applying this sidecar fix.`
 
 1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. Obey the active scope and nearest applicable `AGENTS.md`.
@@ -160,7 +160,7 @@ After the plan (or immediately for Fast Path):
 - **Full Path**: draft the minimal test alongside the fix in the same output block — not as a separate step after. Co-locating patch and test in the same context window improves correctness of both.
 - Add or update only the test case(s) directly covering the fixed behavior; do not add broad new test infrastructure.
 - Prefer existing test style, helpers, and fixtures.
-- After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$switch`). Use only those commands — do not guess or discover alternatives.
+- After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$context`). Use only those commands — do not guess or discover alternatives.
 
 ## Failure Mode
 

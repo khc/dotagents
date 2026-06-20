@@ -7,9 +7,9 @@ Remove unused transitive dependencies from a package and add missing direct ones
 
 ## Reqs
 
-Requires a scoped package path set via `$switch <path>` (e.g., `$switch packages/crawl`). Context = the package directory where `pyproject.toml` is located.
+Requires a scoped package path set via `$context <path>` (e.g., `$context packages/crawl`). Context = the package directory where `pyproject.toml` is located.
 
-If no scope is active, ask the user to run: `$switch {packages/crawl,packages/flows,packages/notebooklm}` for the target package.
+If no scope is active, ask the user to run: `$context {packages/crawl,packages/flows,packages/notebooklm}` for the target package.
 
 
 ## Workflow

@@ -15,7 +15,7 @@ Select the right workflow with the least scope, least token usage, and least rew
 
 If a scoped context is not active:
 - STOP
-- run $switch first
+- run $context first
 
 1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. Identify the task type from the user's request text only. Do not read files to determine task type.

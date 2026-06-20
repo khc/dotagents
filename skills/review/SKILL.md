@@ -12,8 +12,8 @@ Review only the user-specified target file or code path and report concrete, evi
 If a scoped context is not active:
 
 - STOP
-- run $switch first
-- after $switch completes, confirm the active scope path, then proceed with the review
+- run $context first
+- after $context completes, confirm the active scope path, then proceed with the review
 - do not infer scope from the review target path alone
 
 ## Scope

@@ -6,7 +6,7 @@ Improvements and open items identified during skill review session (2026-04-14).
 
 ## Skills — Open Gaps
 
-### `switch`
+### `context`
 - [ ] Approval path for out-of-scope dependencies is undefined — "ask for approval" has no spec for what constitutes a valid approval response
 
 ### `commit`

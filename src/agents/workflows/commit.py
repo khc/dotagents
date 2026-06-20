@@ -56,7 +56,7 @@ def get_validation_commands(root_dir: Path) -> list[str]:
     if not agents_md_path.exists():
         return []
     content = agents_md_path.read_text()
-    
+
     commands = []
     in_validation_gates = False
     for line in content.splitlines():
@@ -70,11 +70,10 @@ def get_validation_commands(root_dir: Path) -> list[str]:
             if line_stripped.startswith("-"):
                 match = re.search(r"`([^`]+)`", line_stripped)
                 if match:
-                    commands.append(match.group(1))
-                else:
-                    cmd = line_stripped.lstrip("-* ").strip()
-                    if cmd:
-                        commands.append(cmd)
+                    command = match.group(1).strip()
+                    if "<" in command or ">" in command:
+                        continue
+                    commands.append(command)
     return commands
 
 

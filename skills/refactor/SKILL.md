@@ -11,7 +11,7 @@ Restructure existing code to improve clarity, reduce duplication, or simplify st
 
 If a scoped context is not active:
 - STOP
-- run $switch first
+- run $context first
 
 1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. Identify the refactor target from the user's request text only. Do not read source files before the planning phase.

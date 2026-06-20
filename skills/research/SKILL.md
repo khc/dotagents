@@ -19,7 +19,7 @@ Find the leanest dependable approach with emphasis on:
 
 If a scoped context is not active:
 - STOP
-- run $switch first
+- run $context first
 
 1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. If a scoped path is active, obey that scope and nearest applicable `AGENTS.md`.

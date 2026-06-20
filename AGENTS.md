@@ -2,7 +2,7 @@
 
 - Only one skill may be active at a time
 - Do not chain skills unless explicitly instructed
-- Always activate $switch before any repo work
+- Always activate $context before any repo work
 - Do not proceed without confirmed scope
 - Follow the active skill strictly; do not mix behaviors
 

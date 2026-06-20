@@ -17,7 +17,7 @@ Use this skill to verify a recent change in a controlled, low-token way.
 
 If a scoped context is not active:
 - STOP
-- run $switch first
+- run $context first
 
 1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. Identify the exact audit scope using `git diff --name-only` (staged) or `git status --porcelain` (unstaged). Do not read files not listed in the diff.

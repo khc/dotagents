@@ -9,7 +9,7 @@ policy:
 
 enforcement:
   depends_on:
-    - switch
+    - context
 
 constraints:
   - "Audit only the changed scope"

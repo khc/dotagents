@@ -11,7 +11,7 @@ Investigate a symptom, identify the root cause, apply a minimal fix, and confirm
 
 If a scoped context is not active:
 - STOP
-- run `/switch` first
+- run `/context` first
 
 1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
 2. Accept the symptom as input: error message, stack trace, log output, or behavior description.

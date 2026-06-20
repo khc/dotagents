@@ -9,7 +9,7 @@ policy:
 
 enforcement:
   depends_on:
-    - switch
+    - context
 
 constraints:
   - "Do not implement code"

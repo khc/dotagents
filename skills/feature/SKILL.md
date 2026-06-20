@@ -9,7 +9,7 @@ Deliver features in a controlled, minimal, and modular way.
 
 If a scoped context is not active:
 - STOP
-- run $switch first
+- run $context first
 
 1. Read `AGENTS.md` first.
 2. If missing, inspect only:
@@ -126,7 +126,7 @@ Do not proceed to output until all acceptance criteria are met or explicitly def
 
 - Draft minimal tests for the new behavior alongside the implementation — not as a separate step after.
 - Prefer existing test style, helpers, and fixtures.
-- After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$switch`). Use only those commands — do not guess or discover alternatives.
+- After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$context`). Use only those commands — do not guess or discover alternatives.
 
 ## Constraints
 
