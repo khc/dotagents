@@ -4,7 +4,8 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"check": "bunx --bun @biomejs/biome check --write"
 	},
 	"keywords": [],
 	"author": "",
@@ -17,11 +18,9 @@
 	},
 	"dependencies": {
 		"@clack/prompts": "^1.6.0",
-		"gulp": "^5.0.1",
 		"markdownlint-cli2": "^0.22.1",
 		"openai": "^6.45.0",
 		"openredaction": "^1.1.2",
-		"secretlint": "^13.0.2",
 		"tiktoken": "^1.0.22"
 	},
 	"private": true,

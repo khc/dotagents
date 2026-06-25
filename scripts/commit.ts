@@ -239,7 +239,9 @@ async function promptAndPush(): Promise<void> {
 		} catch (error) {
 			s.stop("Failed to push");
 			const err = error as GitError;
-			cancel(`Error: Push failed: ${err.stderr?.toString().trim() || err.message}`);
+			cancel(
+				`Error: Push failed: ${err.stderr?.toString().trim() || err.message}`,
+			);
 			process.exit(1);
 		}
 	}
