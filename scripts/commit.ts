@@ -190,7 +190,7 @@ async function generateCommitMessage(
 }
 
 // 7. Prompt and commit
-async function promptAndCommit(commitMessage: string): Promise<void> {
+async function promptAndCommit(commitMessage: string): Promise<boolean> {
 	const shouldCommit = await confirm({
 		message: "Do you want to stage all changes and commit?",
 	});
@@ -204,7 +204,8 @@ async function promptAndCommit(commitMessage: string): Promise<void> {
 		try {
 			await $`git add -A`;
 			await $`git commit -m ${commitMessage}`;
-			outro("Staged and committed successfully!");
+			log.success("Staged and committed successfully!");
+			return true;
 		} catch (error) {
 			const err = error as GitError;
 			cancel(
@@ -214,6 +215,33 @@ async function promptAndCommit(commitMessage: string): Promise<void> {
 		}
 	} else {
 		outro("Commit aborted.");
+		return false;
+	}
+}
+
+// 8. Prompt and push
+async function promptAndPush(): Promise<void> {
+	const shouldPush = await confirm({
+		message: "Do you want to push to remote repository?",
+	});
+
+	if (isCancel(shouldPush)) {
+		cancel("Push aborted.");
+		process.exit(0);
+	}
+
+	if (shouldPush) {
+		const s = spinner();
+		s.start("Pushing to remote repository");
+		try {
+			await $`git push`.quiet();
+			s.stop("Pushed successfully!");
+		} catch (error) {
+			s.stop("Failed to push");
+			const err = error as GitError;
+			cancel(`Error: Push failed: ${err.stderr?.toString().trim() || err.message}`);
+			process.exit(1);
+		}
 	}
 }
 
@@ -257,7 +285,11 @@ async function main() {
 
 	note(commitMessage, "Proposed Commit Message");
 
-	await promptAndCommit(commitMessage);
+	const committed = await promptAndCommit(commitMessage);
+	if (committed) {
+		await promptAndPush();
+		outro("Session complete.");
+	}
 }
 
 main().catch((error) => {
