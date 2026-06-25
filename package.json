@@ -11,9 +11,20 @@
   "license": "ISC",
   "packageManager": "pnpm@10.32.1",
   "devDependencies": {
-    "@felixgeelhaar/cclint": "^0.15.0"
+    "@felixgeelhaar/cclint": "^0.15.0",
+    "@types/bun": "latest"
   },
   "dependencies": {
-    "markdownlint-cli2": "^0.22.1"
+    "@clack/prompts": "^1.6.0",
+    "gulp": "^5.0.1",
+    "markdownlint-cli2": "^0.22.1",
+    "openai": "^6.45.0",
+    "openredaction": "^1.1.2",
+    "secretlint": "^13.0.2",
+    "tiktoken": "^1.0.22"
+  },
+  "private": true,
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }

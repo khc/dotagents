@@ -1,0 +1,9 @@
+# Node.js
+bun.lock -diff
+package-lock.json -diff
+yarn.lock -diff
+pnpm-lock.yaml -diff
+
+# Python
+uv.lock -diff
+Pipfile.lock -diff
