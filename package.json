@@ -18,9 +18,11 @@
 	},
 	"dependencies": {
 		"@clack/prompts": "^1.6.0",
+		"dotenv": "^17.4.2",
 		"markdownlint-cli2": "^0.22.1",
 		"openai": "^6.45.0",
 		"openredaction": "^1.1.2",
+		"picocolors": "^1.1.1",
 		"tiktoken": "^1.0.22"
 	},
 	"private": true,
