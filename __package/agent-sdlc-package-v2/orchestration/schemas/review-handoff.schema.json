@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReviewHandoff",
+  "type": "object",
+  "required": [
+    "workflow_id",
+    "review_uuid",
+    "scope",
+    "review_mode",
+    "source_workflow",
+    "status",
+    "findings",
+    "verdict"
+  ],
+  "properties": {
+    "workflow_id": {
+      "type": "string"
+    },
+    "review_uuid": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "review_mode": {
+      "enum": [
+        "change",
+        "path",
+        "symbol"
+      ]
+    },
+    "target": {
+      "type": "string"
+    },
+    "target_symbol": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_workflow": {
+      "enum": [
+        "feature",
+        "implement",
+        "standalone"
+      ]
+    },
+    "source_uuid": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "base_sha": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "head_sha": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "findings",
+        "blocked"
+      ]
+    },
+    "verdict": {
+      "enum": [
+        "ready",
+        "ready-with-fixes",
+        "not-ready"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "location",
+          "description",
+          "severity",
+          "confidence",
+          "fix_direction"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "confidence": {
+            "enum": [
+              "confirmed",
+              "likely"
+            ]
+          },
+          "fix_direction": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "reasoning": {
+      "type": "string"
+    },
+    "blocker": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
