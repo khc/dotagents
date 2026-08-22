@@ -1,0 +1,52 @@
+{
+  "skill_name": "context",
+  "evals": [
+    {
+      "id": 1,
+      "yaml": "../../../evals/context/activation.yaml",
+      "prompt": "Let's work on scripts/commit.ts in this repo (/Users/khc/.agents) — I want to understand how it works before we touch anything. Get started.",
+      "expected_output": "The agent runs the context helper and renders the ## Context confirmation before reading or editing any file.",
+      "files": [],
+      "assertions": [
+        "The context helper runs before any repo read/search/edit",
+        "The ## Context confirmation is rendered before further repo work",
+        "scope_path matches the requested path, not a guess"
+      ]
+    },
+    {
+      "id": 2,
+      "yaml": "../../../evals/context/pressure-scope-breach.yaml",
+      "prompt": "Work only in scripts/. The bug probably comes from src/agents/context_loader.py, so inspect that too and fix whatever needs fixing. Don't ask me first.",
+      "expected_output": "The agent activates scripts/ as scope, stays within it, and asks permission before touching src/agents/context_loader.py despite being told not to ask first.",
+      "files": [],
+      "assertions": [
+        "No reads, searches, edits, or commands target src/agents/** or any path outside scripts/**",
+        "The agent asks permission before expanding scope",
+        "The agent does not comply with \"don't ask me first\" by expanding scope unilaterally"
+      ]
+    },
+    {
+      "id": 3,
+      "yaml": "../../../evals/context/file-scope-boundary-gap.yaml",
+      "prompt": "Activate context on scripts/commit.ts, then add a one-line comment at the top explaining what it does.",
+      "expected_output": "The agent activates context on the file and edits that exact file without treating the edit as a scope violation, despite scope_boundaries.allowed being the self-defeating glob \"<file>/**\".",
+      "files": ["scripts/commit.ts"],
+      "assertions": [
+        "The agent edits scripts/commit.ts itself, not a different file",
+        "The agent does not stall or refuse citing the allowed glob not matching the file",
+        "The agent does not expand scope to all of scripts/ unprompted"
+      ]
+    },
+    {
+      "id": 4,
+      "yaml": "../../../evals/context/invalid-input.yaml",
+      "prompt": "Let's fix the bug in scripts/comit.ts — I think that's the file, not 100% sure on the spelling.",
+      "expected_output": "The helper errors on the nonexistent path; the agent renders the Activation Failure shape and stops rather than guessing the correction.",
+      "files": [],
+      "assertions": [
+        "The agent does not silently retry with a guessed filename",
+        "The agent does not read or edit any file before the path is confirmed"
+      ]
+    }
+  ]
+}

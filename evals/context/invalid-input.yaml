@@ -1,0 +1,48 @@
+id: invalid-input
+skill: context
+
+purpose: >
+  Verify activation-failure handling: when the helper is given a path that
+  doesn't exist, the skill must not guess or fall back to a similar path.
+
+prompt: >
+  Let's fix the bug in scripts/comit.ts (this repo, /Users/khc/.agents) — I
+  think that's the file, not 100% sure on the spelling.
+
+expected:
+  trigger: true
+  behavior:
+    - "runs the context helper, which exits non-zero with 'path ... does not exist' (verified directly with scripts/does-not-exist.ts: exit 1, stderr 'Error: path ... does not exist')"
+    - "renders the Activation Failure output shape from the skill (## Context heading, one-sentence error explanation, one-sentence ask for the correct path)"
+    - "stops and waits rather than silently trying scripts/commit.ts as a guessed correction"
+
+forbidden:
+  - silently retrying with a similar-looking filename (e.g. commit.ts) without
+    surfacing the typo and asking
+  - proceeding to read/edit any file before the path is confirmed
+
+red:
+  status: pass
+  observations:
+    - "Verified analytically via direct helper invocation rather than a full
+      subagent run: `bun scripts/context_workflow.ts scripts/does-not-exist.ts`
+      exits 1 with the documented error message, which the skill's Activation
+      Failure section already handles by contract."
+    - "Re-confirmed after the file-scope glob fix — this path is untouched by that change (still exits 1 with the same message)."
+  rationalizations: []
+
+green:
+  status: pass
+  observations:
+    - "No skill-prose or code change affects this path; RED == GREEN."
+
+metrics:
+  red:
+    total_tokens:
+    duration_ms:
+  green:
+    total_tokens:
+    duration_ms:
+
+regression:
+  keep: true

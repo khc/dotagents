@@ -9,11 +9,13 @@ import {
   spinner,
 } from "@clack/prompts";
 import { $ } from "bun";
+import { config } from "dotenv";
 import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
+
 import { OpenRedaction } from "openredaction";
 import pc from "picocolors";
 import { get_encoding } from "tiktoken";
-import { config } from "dotenv";
 
 config({ path: new URL("../.env", import.meta.url).pathname });
 
@@ -32,74 +34,55 @@ class CleanExitError extends Error {
 }
 
 const redactor = new OpenRedaction();
-const lockfileNames = new Set([
-  "bun.lock",
-  "package-lock.json",
-  "yarn.lock",
-  "pnpm-lock.yaml",
-  "uv.lock",
-  "Pipfile.lock",
-]);
-
-const isLockfileDiff = (chunk: string) => {
-  const match = chunk.match(/^diff --git a\/(.+?) b\/(.+?)(?:\n|$)/);
-  if (!match) return false;
-  const rawPath = match[1].replace(/^"+|"+$/g, "");
-  const filename = rawPath.split("/").pop() || "";
-  return lockfileNames.has(filename);
-};
 
 const llm_provider = {
+  huggingface: {
+    api_key: process.env.HF_TOKEN,
+    baseURL: "https://router.huggingface.co/v1",
+    model: process.env.HF_MODEL || "openai/gpt-oss-20b",
+  },
   inceptionlabs: {
     api_key: process.env.INCEPTIONLABS_API_KEY,
     baseURL: "https://api.inceptionlabs.ai/v1",
     model: process.env.INCEPTIONLABS_MODEL || "mercury-2",
-  },
-  openrouter: {
-    api_key: process.env.OPENROUTER_API_KEY,
-    baseURL: "https://openrouter.ai/api/v1",
-    model: process.env.OPENROUTER_MODEL || "google/gemini-3-pro-preview",
   },
   openai: {
     api_key: process.env.OPENAI_API_KEY,
     baseURL: "https://api.openai.com/v1",
     model: process.env.OPENAI_MODEL || "gpt-5-nano",
   },
-  huggingface: {
-    api_key: process.env.HF_TOKEN,
-    baseURL: "https://router.huggingface.co/v1",
-    model: process.env.HF_MODEL || "openai/gpt-oss-20b",
+  openrouter: {
+    api_key: process.env.OPENROUTER_API_KEY,
+    baseURL: "https://openrouter.ai/api/v1",
+    model: process.env.OPENROUTER_MODEL || "google/gemini-3-pro-preview",
+  },
+  googleai: {
+    api_key: process.env.GOOGLEAI_API_KEY,
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+    model: process.env.GOOGLEAI_MODEL || "gemini-3.5-turbo",
   },
 } as const;
 
 const getProvider = (): keyof typeof llm_provider => {
-  const envProvider = process.env.LLM_PROVIDER;
-  if (envProvider && envProvider in llm_provider) {
-    return envProvider as keyof typeof llm_provider;
+  const environmentProvider = process.env.LLM_PROVIDER;
+  if (environmentProvider && Object.hasOwn(llm_provider, environmentProvider)) {
+    return environmentProvider as keyof typeof llm_provider;
   }
   return "huggingface";
 };
 
 const provider = getProvider();
 
-// 1. Config validation
-function validateConfig(prov: keyof typeof llm_provider): string {
-  const apiKey = llm_provider[prov].api_key;
-  if (!apiKey) {
-    throw new Error(
-      `API key for provider "${prov}" is not set in environment.`,
-    );
-  }
-  return apiKey;
-}
-
-// 2. Check for changes
+// Check for changes
 async function checkChanges(): Promise<string[]> {
   try {
     await $`git add -N .`;
   } catch (error) {
     throw new Error(
       `Command 'git add -N .' failed: ${(error as GitError).message}`,
+      {
+        cause: error,
+      },
     );
   }
 
@@ -118,50 +101,15 @@ async function checkChanges(): Promise<string[]> {
     return statusOutput;
   } catch (error) {
     if (error instanceof CleanExitError) throw error;
-    const err = error as GitError;
+    const error_ = error as GitError;
     throw new Error(
-      `Command 'git status --porcelain' failed: ${err.stderr?.toString().trim() || err.message}`,
+      `Command 'git status --porcelain' failed: ${error_.stderr?.toString().trim() || error_.message}`,
+      { cause: error },
     );
   }
 }
 
-// 3. Get the diff of all changes (staged and unstaged)
-async function getDiff(): Promise<string> {
-  let rawDiff: string;
-  try {
-    const result = await $`git diff HEAD --no-color --no-ext-diff`.quiet();
-    rawDiff = result.text().trim();
-  } catch (error) {
-    const err = error as GitError;
-    throw new Error(
-      `Command 'git diff HEAD' failed: ${err.stderr?.toString().trim() || err.message}`,
-    );
-  }
-
-  // Filter out lockfiles before running redaction for performance
-  const filteredDiff = rawDiff
-    .split("\ndiff --git ")
-    .reduce((acc, chunk, index) => {
-      const diffChunk = index === 0 ? chunk : `diff --git ${chunk}`;
-      if (!diffChunk.trim() || isLockfileDiff(diffChunk)) {
-        return acc;
-      }
-      return acc ? `${acc}\n${diffChunk}` : diffChunk;
-    }, "");
-
-  if (!filteredDiff) {
-    throw new CleanExitError("No changes found to generate a commit message.");
-  }
-
-  try {
-    const detectionResult = await redactor.detect(filteredDiff);
-    return detectionResult.redacted;
-  } catch (error) {
-    throw new Error(`Redaction failed: ${(error as Error).message}`);
-  }
-}
-
-// 4. Craft prompt
+// Craft prompt
 function craftPrompt(diffOutput: string): string {
   return `You are an expert software engineer.
 
@@ -188,15 +136,7 @@ Diff:
 ${diffOutput}`;
 }
 
-// 5. Get token count
-function getTokenCount(prompt: string): number {
-  const encoding = get_encoding("o200k_base");
-  const promptTokenCount = encoding.encode(prompt).length;
-  encoding.free();
-  return promptTokenCount;
-}
-
-// 6. Generate commit message
+// Generate commit message
 async function generateCommitMessage(
   openai: OpenAI,
   model: string,
@@ -207,8 +147,8 @@ async function generateCommitMessage(
 
   try {
     const chatCompletion = await openai.chat.completions.create({
+      messages: [{ content: prompt, role: "user" }],
       model: model,
-      messages: [{ role: "user", content: prompt }],
     });
 
     const commitMessage =
@@ -218,8 +158,8 @@ async function generateCommitMessage(
     }
     if (chatCompletion.usage) {
       const {
-        prompt_tokens = 0,
         completion_tokens = 0,
+        prompt_tokens = 0,
         total_tokens = prompt_tokens + completion_tokens,
       } = chatCompletion.usage;
       log.info(
@@ -232,61 +172,48 @@ async function generateCommitMessage(
     s.stop("Failed to generate commit message");
     throw new Error(
       `Error generating commit message: ${(error as Error).message}`,
+      {
+        cause: error,
+      },
     );
   }
 }
 
-// 7. Prompt and commit
-async function promptAndCommit(commitMessage: string): Promise<boolean> {
-  const shouldCommit = await confirm({
-    message: "Do you want to stage all changes and commit?",
-  });
-
-  if (isCancel(shouldCommit)) {
-    throw new CleanExitError("Commit aborted.");
+// Get the diff of all changes (staged and unstaged)
+async function getDiff(): Promise<string> {
+  let rawDiff: string;
+  try {
+    const result =
+      await $`git diff HEAD --no-color --no-ext-diff -- . ${":(exclude)bun.lock"} ${":(exclude)package-lock.json"} ${":(exclude)Pipfile.lock"} ${":(exclude)pnpm-lock.yaml"} ${":(exclude)uv.lock"} ${":(exclude)yarn.lock"}`.quiet();
+    rawDiff = result.text().trim();
+  } catch (error) {
+    const error_ = error as GitError;
+    throw new Error(
+      `Command 'git diff HEAD' failed: ${error_.stderr?.toString().trim() || error_.message}`,
+      { cause: error },
+    );
   }
 
-  if (shouldCommit) {
-    try {
-      await $`git add -A`;
-      await $`git commit -m ${commitMessage}`;
-      log.success("Staged and committed successfully!");
-      return true;
-    } catch (error) {
-      const err = error as GitError;
-      throw new Error(
-        `Staging or committing failed: ${err.stderr?.toString().trim() || err.message}`,
-      );
-    }
-  } else {
-    throw new CleanExitError("Commit aborted.");
+  if (!rawDiff) {
+    throw new CleanExitError("No changes found to generate a commit message.");
+  }
+
+  try {
+    const detectionResult = await redactor.detect(rawDiff);
+    return detectionResult.redacted;
+  } catch (error) {
+    throw new Error(`Redaction failed: ${(error as Error).message}`, {
+      cause: error,
+    });
   }
 }
 
-// 8. Prompt and push
-async function promptAndPush(): Promise<void> {
-  const shouldPush = await confirm({
-    message: "Do you want to push to remote repository?",
-  });
-
-  if (isCancel(shouldPush)) {
-    throw new CleanExitError("Push aborted.");
-  }
-
-  if (shouldPush) {
-    const s = spinner();
-    s.start("Pushing to remote repository");
-    try {
-      await $`git push`.quiet();
-      s.stop("Pushed successfully!");
-    } catch (error) {
-      s.stop("Failed to push");
-      const err = error as GitError;
-      throw new Error(
-        `Push failed: ${err.stderr?.toString().trim() || err.message}`,
-      );
-    }
-  }
+// Get token count
+function getTokenCount(prompt: string): number {
+  const encoding = get_encoding("o200k_base");
+  const promptTokenCount = encoding.encode(prompt).length;
+  encoding.free();
+  return promptTokenCount;
 }
 
 async function main() {
@@ -336,13 +263,87 @@ async function main() {
   }
 }
 
-main().catch((error) => {
+// Prompt and commit
+async function promptAndCommit(commitMessage: string): Promise<boolean> {
+  const shouldCommit = await confirm({
+    message: "Do you want to stage all changes and commit?",
+  });
+
+  if (isCancel(shouldCommit)) {
+    throw new CleanExitError("Commit aborted.");
+  }
+
+  if (shouldCommit) {
+    try {
+      await $`git add -A`;
+      await $`git commit -m ${commitMessage}`;
+      log.success("Staged and committed successfully!");
+      return true;
+    } catch (error) {
+      const error_ = error as GitError;
+      throw new Error(
+        `Staging or committing failed: ${error_.stderr?.toString().trim() || error_.message}`,
+        { cause: error },
+      );
+    }
+  }
+  throw new CleanExitError("Commit aborted.");
+}
+
+// Prompt and push
+async function promptAndPush(): Promise<void> {
+  const shouldPush = await confirm({
+    message: "Do you want to push to remote repository?",
+  });
+
+  if (isCancel(shouldPush)) {
+    throw new CleanExitError("Push aborted.");
+  }
+
+  if (shouldPush) {
+    const s = spinner();
+    s.start("Pushing to remote repository");
+    try {
+      await $`git push`.quiet();
+      s.stop("Pushed successfully!");
+    } catch (error) {
+      s.stop("Failed to push");
+      const error_ = error as GitError;
+      throw new Error(
+        `Push failed: ${error_.stderr?.toString().trim() || error_.message}`,
+        {
+          cause: error,
+        },
+      );
+    }
+  }
+}
+
+// Config validation
+function validateConfig(prov: keyof typeof llm_provider): string {
+  const apiKey = llm_provider[prov].api_key;
+  if (!apiKey) {
+    throw new Error(
+      `API key for provider "${prov}" is not set in environment.`,
+    );
+  }
+  return apiKey;
+}
+
+try {
+  await main();
+} catch (error) {
   if (error instanceof CleanExitError) {
+    try {
+      await $`git reset`.quiet();
+    } catch {}
     if (error.message) {
       outro(error.message);
     }
-    process.exit(0);
+  } else {
+    cancel(
+      `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    process.exitCode = 1;
   }
-  cancel(`An unexpected error occurred: ${error.message || error}`);
-  process.exit(1);
-});
+}

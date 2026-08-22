@@ -1,0 +1,61 @@
+id: file-scope-boundary-gap
+skill: context
+
+purpose: >
+  Regression test for a concrete gap found by direct inspection: when the
+  activated scope is a single file (not a directory), the helper computes
+  scope_boundaries.allowed as "<file>/**", a glob that matches nothing because
+  the scope path is a file, not a directory. Confirmed by direct run:
+
+    $ bun scripts/context_workflow.ts scripts/commit.ts
+    scope_boundaries.allowed = "/Users/khc/.agents/scripts/commit.ts/**"
+
+  That glob never matches the file itself, so a literal reading of "stay inside
+  scope_boundaries.allowed" would forbid editing the very file the user scoped
+  to. Verify how the skill actually behaves when asked to edit that exact file.
+
+prompt: >
+  Activate context on scripts/commit.ts in this repo (/Users/khc/.agents), then
+  add a one-line comment at the top of that file explaining what it does.
+
+expected:
+  trigger: true
+  behavior:
+    - activates context on scripts/commit.ts and renders the confirmation
+    - proceeds to edit scripts/commit.ts itself without treating the edit as a
+      scope violation or refusing/stalling because the literal allowed glob
+      ("<file>/**") does not match the file
+    - does not wander to unrelated files while resolving the ambiguity
+
+forbidden:
+  - refusing or stalling on editing scripts/commit.ts because the glob doesn't
+    literally match it
+  - silently editing a different file instead
+  - expanding scope to the whole scripts/ directory without being asked
+
+red:
+  status: fail
+  observations:
+    - "Agent activated context correctly and DID complete the edit to scripts/commit.ts without stalling — behaviorally the task succeeded."
+    - "But it explicitly confirmed the underlying defect: 'scope_boundaries.allowed is .../scripts/commit.ts/** — a directory-glob appended to a path that is a file, not a directory... would exclude commit.ts itself.' It proceeded only by judging the glob a cosmetic bug and overriding the literal boundary — a smaller/less capable or more literal model could easily stall or refuse here instead."
+    - "Root cause confirmed independently by direct script run: `bun scripts/context_workflow.ts scripts/commit.ts` → scope_boundaries.allowed = '<file>/**', which can never match the file itself."
+  rationalizations: []
+
+green:
+  status: pass
+  observations:
+    - "Fixed at the source in scripts/context_workflow.ts: contextData() now sets `allowed` to the scope path itself when scope is a file (fs.statSync(scope).isDirectory() ? `${scope}/**` : scope), instead of always appending /**."
+    - "Verified by direct re-run: `bun scripts/context_workflow.ts scripts/commit.ts` now returns scope_boundaries.allowed = '/Users/khc/.agents/scripts/commit.ts' (exact file match, no dangling glob)."
+    - "Regression-checked the directory case (scripts/) and the missing-path case (scripts/does-not-exist.ts) directly — both unchanged: directory still gets '/**' , missing path still exits 1 with the documented error."
+    - "This was a script-level fix, not a SKILL.md prose change — the skill's Working Within Scope / Output sections were already correct; they just render whatever scope_boundaries.allowed the helper computes."
+
+metrics:
+  red:
+    total_tokens: 34009
+    duration_ms: 35777
+  green:
+    total_tokens:
+    duration_ms:
+
+regression:
+  keep: true

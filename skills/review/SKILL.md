@@ -1,6 +1,6 @@
 ---
 name: review
-description: Use when the user explicitly asks for a code or file review on a specific target path and wants concrete, evidence-backed findings with file references, severity, and explicit guidance across bugs, design, performance, security, maintainability, observability, and library/reuse.
+description: Use when the user explicitly asks for a code or file review on a specific target path and wants concrete, evidence-backed findings with file references, severity, and explicit guidance across bugs, design, performance, security, maintainability (including DRY/KISS and language idiomacy), observability, and library/reuse.
 ---
 
 You are an experienced senior engineer reviewing code for production readiness and correctness.
@@ -18,13 +18,14 @@ If a scoped context is not active:
 
 ## Scope
 
-- Read the target first. If the target is a directory, use `Glob` to list contents first, then `Read` only files relevant to the review scope.
+- If the target path does not exist: STOP — report `Error: target "<path>" not found.`
+- Determine whether the target is a file or a directory before reading anything. A single file can be read directly. A directory must be listed first (`Glob`, or that runtime's equivalent directory-listing tool) so you know what's there, then `Read` only the files relevant to the review scope — don't open a file inside the target until you've seen the listing.
 - Stay focused on, in this priority order:
   - security concerns (scan first — hardcoded secrets, injection, auth, OWASP Top 10)
   - bugs
   - design issues
   - performance risks
-  - maintainability (complexity, readability, naming that obscures intent)
+  - maintainability (complexity, readability, naming that obscures intent, duplicated logic that should be consolidated (DRY), complexity beyond what the problem requires (KISS), non-idiomatic patterns where a language/framework-native construct exists)
   - observability (silent failures, swallowed exceptions, missing structured logging, absent error propagation)
   - Library / Reuse (bespoke code that should use stdlib, framework utilities, or existing dependencies)
 - Include hardcoded secrets, tokens, credentials, unsafe defaults, insecure parsing, injection risks, and misuse of cryptography where applicable.
@@ -33,7 +34,7 @@ If a scoped context is not active:
 
 ## Review rules
 
-1. Report only findings that are supported by the code you inspected.
+1. Report only findings that are supported by the code you inspected. When a finding cites a heading, section name, function, or identifier as evidence, quote it exactly as it appears in the file — never reconstruct it from memory or paraphrase it, since a misquoted name is unverifiable and undermines the finding.
 2. Prefer high-signal findings over broad commentary.
 3. Avoid duplicate findings; merge related symptoms into one root-cause finding.
 4. Distinguish:
@@ -94,7 +95,7 @@ Use this shape:
 - Within each category section, sort findings by severity descending: critical → high → medium → low.
 - Sort Summary rows by severity: critical → high → medium → low.
 - Severity: `critical` (exploitable / breaks in prod), `high` (fix before merge), `medium` (real issue, not urgent), `low` (optional improvement).
-- Cap at 3 findings per category; merge overlapping symptoms into one root-cause finding. If a category exceeds 3, note the count and report highest-severity only.
+- Merge overlapping symptoms into one root-cause finding first, then cap at 3 findings per category. If the merged set exceeds 3, note the count and report highest-severity only.
 - Confidence: `confirmed` (directly supported by code) or `likely` (strong indication).
 
 ## No-findings behavior
@@ -111,7 +112,7 @@ Then list brief residual risks or test gaps, if any, without inventing problems.
 
 ## Response format
 
-Start every response with the `## Review` heading (plain, not in a code block). Render output directly beneath it.
+The review itself starts with the `## Review` heading (plain, not in a code block); render findings directly beneath it. If the Workflow gate above required activating context first, that renders as its own `## Context` block ahead of this one — that's expected, not a violation of this rule. Keep the two sections distinct: never fold review findings under the `## Context` heading, and don't repeat context's confirmation details under `## Review`.
 
 ## Save to Sidecar
 
@@ -127,15 +128,15 @@ After composing the review output and before sending the final response, persist
    ~/.agents/.venv/bin/python ~/.agents/scripts/review_workflow.py \
      --context - \
      --context-input stdin \
-     --scope "{scope}" \
-     --agent "{agent}" \
-     --model "{model}" \
+     --scope '{scope}' \
+     --agent '{agent}' \
+     --model '{model}' \
      <<'JSON'
    {context_json}
    JSON
    ```
 
-   This helper resolves `{project_root}`, creates `{project_root}/.sidecar`, and persists the review entry. If `{project_root}/.sidecar` is outside the active scope and the runtime enforces scoped writes, request approval for this persistence write before invoking the helper.
+   This helper resolves `{project_root}`, creates `{project_root}/.sidecar`, and persists the review entry. If `{project_root}/.sidecar` is outside the active scope and the runtime enforces scoped writes, request approval for this persistence write before invoking the helper. Single-quote `{scope}`, `{agent}`, and `{model}` when substituting, and escape any embedded `'` as `'\''`, to prevent `$()`/backtick shell expansion from a scope path.
    The JSON payload must contain:
    - `target` — the file or path reviewed
    - `findings` — list of dicts, one per finding: `{"category": "Security|Bugs|Design|Performance|Maintainability|Observability|Library / Reuse", "location": ..., "description": ..., "severity": "critical|high|medium|low", "confidence": ..., "fix_direction": ...}`
