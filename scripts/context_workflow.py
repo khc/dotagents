@@ -15,15 +15,18 @@ def _resolve_scope(path_arg: str) -> Path:
 
 def _repo_root(scope: Path) -> Path:
     cwd = scope if scope.is_dir() else scope.parent
-    result = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode == 0 and result.stdout.strip():
-        return Path(result.stdout.strip()).resolve()
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return Path(result.stdout.strip()).resolve()
+    except OSError:
+        pass
     return cwd.resolve()
 
 
@@ -62,12 +65,13 @@ def _loaded_paths(scope: Path) -> dict[str, bool]:
 def context_data(path_arg: str) -> dict[str, object]:
     scope = _resolve_scope(path_arg)
     loaded = _loaded_paths(scope)
+    allowed = f"{scope}/**" if scope.is_dir() else str(scope)
 
     return {
         "scope_path": str(scope),
         "instructions_loaded": loaded,
         "scope_boundaries": {
-            "allowed": f"{scope}/**",
+            "allowed": allowed,
             "disallowed": "everything else unless explicitly approved",
         },
     }
@@ -79,7 +83,7 @@ def main() -> None:
     args = parser.parse_args()
     try:
         print(json.dumps(context_data(args.path), indent=2))
-    except ValueError as error:
+    except (ValueError, OSError) as error:
         raise SystemExit(str(error)) from error
 
 
