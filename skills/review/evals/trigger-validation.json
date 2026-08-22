@@ -1,0 +1,26 @@
+{
+  "skill_name": "review",
+  "split": "validation",
+  "note": "Run with the corrected design directly (context stipulated as already active from the start). All 8 validation queries passed. Includes the two hardest near-misses: N4 (review vs. code-review, both of which can target a path) and the softer N5/N8 shallow-request negatives.",
+  "queries": [
+    { "id": "P4", "query": "I want an evidence-backed review of app/api/routes.ts — bugs, security, and performance, with severity ratings.", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "P6", "query": "Please review scripts/review_workflow.py for library/reuse opportunities and code smells, cite exact lines.", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "P8", "query": "Review src/db/queries.py for SQL injection risks and other security concerns, with fix directions.", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "P10", "query": "Take a pass at reviewing lib/cache.ts for correctness and give me confidence levels on each finding.", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "N4", "query": "Review this PR #482 and post inline comments with --comment.", "should_trigger": false, "near_miss_of": "code-review", "observed_skill": "code-review", "correct": true, "disambiguator_cited": "PR number + --comment flag are code-review's territory; review has no --comment/--fix mechanism at all" },
+    { "id": "N5", "query": "Just skim this file and tell me what it does, no need for a deep dive.", "should_trigger": false, "near_miss_of": "none (too shallow for review's evidence-backed contract)", "observed_skill": "none", "correct": true },
+    { "id": "N8", "query": "What does this code do? Can you explain it to me?", "should_trigger": false, "near_miss_of": "none (explanation, not review)", "observed_skill": "none", "correct": true },
+    { "id": "N10", "query": "Let's brainstorm ways to improve the architecture of this service.", "should_trigger": false, "near_miss_of": "brainstorming", "observed_skill": "brainstorming", "correct": true }
+  ],
+  "result": "8/8 correct, 0 failures. No description change made.",
+  "description_v2_new_coverage": {
+    "date": "2026-08-22",
+    "purpose": "skills/review/SKILL.md was rewritten out-of-band to add a 'Change review' mode (requirements/plan compliance, diff integrity, verdict). New queries probe this capability's boundary with its closest new competitors (audit, fix) and whether review fires without the literal word 'review'.",
+    "queries": [
+      { "id": "NP1", "query": "The auth refactor for ENG-482 is implemented. Check it against docs/auth-plan.md and tell me if anything's missing or broken, with a ready/not-ready call.", "should_trigger": true, "observed_skill": "review", "correct": true, "note": "No literal 'review' word. Agent matched on plan-compliance + ready/not-ready verdict shape, which is review's change-review output contract specifically." },
+      { "id": "NN1", "query": "Quickly check that my last commit didn't break the build — nothing fancy, just a sanity pass.", "should_trigger": false, "near_miss_of": "audit", "observed_skill": "audit", "correct": true, "note": "'Quickly'/'nothing fancy'/'sanity pass' signaled the narrow audit pass over review's now-broader change-review mode." },
+      { "id": "NN2", "query": "Apply the review feedback from finding #3 and #5, nothing else.", "should_trigger": false, "near_miss_of": "fix", "observed_skill": "fix", "correct": true, "note": "Contains the literal word 'review' but refers to acting on prior findings, not requesting a new one — correctly avoided a lexical false trigger." }
+    ],
+    "result": "3/3 correct, 0 failures. No description change made."
+  }
+}

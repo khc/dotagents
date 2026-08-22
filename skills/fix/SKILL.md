@@ -1,6 +1,6 @@
 ---
 name: fix
-description: Use after a completed review when the user wants specific findings fixed with minimal scope and no re-analysis. Trigger with `/fix` (Claude/Gemini), `$fix` (agent-to-agent), "fix the findings", "apply fixes", or "fix finding N".
+description: Use after a completed review when the user wants specific review findings fixed with minimal scope, targeted validation, and no broad re-review. Trigger with `/fix` (Claude/Gemini), `$fix` (agent-to-agent), "fix the findings", "apply fixes", or "fix finding N".
 ---
 
 ## Invocation Modes
@@ -48,19 +48,41 @@ If no entry is found: STOP — report `Error: no sidecar entry found for uuid {u
 
 ## Fast Path
 
-If the fix touches a single file and requires ≤5 lines changed — regardless of findings source (session or sidecar):
+Use Fast Path only when all of the following are true:
+
+- the fix touches a single file
+- the implementation change is ≤5 lines
+- the finding is `confirmed`
+- the fix does **not** change testable runtime behavior, persisted data, public/API/CLI/config contracts, security-sensitive behavior, or error-handling semantics
+- the finding does not explicitly require a test, migration, compatibility shim, documentation update, or multi-file change
+
+Examples that may qualify: import correction, typo, dead reference, deterministic metadata/config correction, or equivalent non-behavioral edit.
+
+Fast Path:
 
 - skip planning
-- return minimal patch directly
-- do not add tests unless explicitly required
+- return the minimal patch directly
+- do not add tests unless the finding explicitly requires one
+- still perform the applicable fresh verification required by `AGENTS.md`
 - do not include explanations
+
+Any behavioral correctness, security, compatibility, migration, or regression fix uses Full Path regardless of LOC.
 
 ## Preconditions
 
-- Treat the review findings as the source of truth regardless of source (session or sidecar).
+- Treat the review findings as the authoritative remediation contract regardless of source (session or sidecar). `description`, `confidence`, and `fix_direction` define what must be addressed.
+- Do not re-run review, re-rank severity, or broaden the finding into a fresh architecture/code-quality investigation.
 - Fix only the findings the user asked to address.
 - Do not re-review the whole target or expand into unrelated cleanup.
 - Accept explicit finding IDs or references when provided and limit fixes strictly to them.
+- A `confirmed` finding may proceed directly to implementation.
+- A `likely` finding requires **finding-local assumption verification** before editing:
+  - verify only the specific uncertainty that prevented `review` from marking it confirmed
+  - use only the already-allowed scope and at most the same adjacent-context allowance described below
+  - do not perform a general re-review
+  - if the assumption is confirmed, proceed with the existing `fix_direction`
+  - if the assumption is disproved or cannot be verified safely within scope, STOP and report the mismatch/blocker; do not invent a replacement finding or fix direction
+- Prior agent claims such as "fixed", "works", or "tests pass" are not verification evidence.
 
 ## Workflow
 
@@ -82,19 +104,35 @@ If source is sidecar:
    - existing tests for the touched area
 4. For multi-hunk or non-trivial fixes, run `git log -5 --oneline -- {file}` and `git blame -L {start},{end} {file}` on the affected lines before editing. Use this to understand recent change history and avoid re-introducing reverted patterns.
 5. Start from the review findings and reasoning, not from fresh exploration.
-6. When fixing multiple findings, address in severity order: `critical` → `high` → `medium` → `low`. For each fix: follow `fix_direction` from the finding; apply the smallest safe change using existing project utilities or stdlib before introducing anything new.
-7. Implement the narrowest fix set first.
-8. Validate only what is needed for the changed area.
+6. For `likely` findings, perform only the finding-local assumption verification required by Preconditions before making edits.
+7. When fixing multiple findings, address in severity order: `critical` → `high` → `medium` → `low`. For each fix: follow `fix_direction` from the finding; apply the smallest safe change using existing project utilities or stdlib before introducing anything new.
+8. Implement the narrowest fix set first.
+9. For any fix that changes testable behavior, first add or update the smallest regression test that demonstrates the reviewed failure mode or acceptance condition. Verify that the test would fail against the pre-fix behavior when this can be done safely and without destructive state changes; then apply the production fix.
+10. Validate only what is needed for the changed area and collect fresh evidence before claiming success.
 
 ## Post-Edit Validation
 
 After each edit, re-read the changed lines and confirm:
 
 - the change addresses the finding's `description` and follows its `fix_direction`
+- any finding-local assumption verified for a `likely` finding still holds after the edit
 - no new issues are introduced in the changed block
 - the surrounding call sites are not broken by the change
 
-If a change does not satisfy these checks: revert it, state why in one line, and stop — do not attempt an alternative fix without user input.
+Then run the smallest applicable verification command(s) required by `AGENTS.md` for the changed area.
+
+A fix may be reported as successful only when there is **fresh verification evidence from the current edit**. The existence of tests, a prior passing run, or an implementer's claim is not sufficient.
+
+If the first edit fails the local checks or fresh verification:
+
+1. revert only that attempted edit
+2. inspect the failure evidence narrowly to determine why the provided `fix_direction` did not work as expected
+3. make at most **one** alternative attempt that still addresses the same finding and stays within the same scope
+4. verify again with fresh evidence
+
+Never stack speculative fixes.
+
+If the second attempt fails, or if a safe alternative would require changing the finding's meaning, severity, scope, or fix direction: revert the failed attempt, state the blocker in one line, and stop. Acceptance or re-diagnosis belongs to `review`, not `fix`.
 
 ## Fix Scope Gate
 
@@ -114,6 +152,8 @@ If an issue is encountered that is not part of the provided review:
 - Do not refactor beyond what the fix requires
 - Do not rename, move, or reorganize code unless necessary for correctness
 - Do not re-run review or re-evaluate severity of findings
+- Do not reinterpret a failed finding into a different issue; stop and hand it back to `review`
+- Do not claim a finding is fixed without fresh verification evidence
 - Keep edits local and reversible
 - Optimize for low LOC and clarity
 
@@ -134,6 +174,10 @@ Full Path — use this shape:
 ### Approach
 built-in / existing project utility / existing dependency / minimal bespoke
 
+### Verification
+- Regression evidence: ...
+- Fresh checks: ...
+
 ---
 
 {patch or targeted edit}
@@ -147,6 +191,7 @@ After the plan (or immediately for Fast Path):
 
 - return:
   - plan
+  - concise verification evidence
   - followed by code or diff/patch
 - no chain-of-thought
 - do not add explanations beyond the plan
@@ -156,11 +201,25 @@ After the plan (or immediately for Fast Path):
 
 ## Testing
 
-- **Fast Path**: skip tests unless the finding explicitly requires a test change.
-- **Full Path**: draft the minimal test alongside the fix in the same output block — not as a separate step after. Co-locating patch and test in the same context window improves correctness of both.
+- **Fast Path**: tests are optional only because Fast Path excludes testable behavioral changes. If the finding itself explicitly requires a test, Fast Path does not apply.
+- **Full Path behavioral fix**: add or update the smallest regression test directly covering the reviewed behavior, even when the production edit is ≤5 LOC.
+- **Full Path non-behavioral fix**: add or update a test only when the finding requires one or existing project practice makes it necessary.
+- Draft the minimal test alongside the fix in the same output block — not as a separate broad testing phase.
 - Add or update only the test case(s) directly covering the fixed behavior; do not add broad new test infrastructure.
 - Prefer existing test style, helpers, and fixtures.
+- When practical and safe, establish RED evidence for behavioral fixes: confirm the regression test fails for the reviewed reason before applying the production change. Do not create destructive or out-of-scope state merely to force RED.
 - After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$context`). Use only those commands — do not guess or discover alternatives.
+- Inspect the fresh command result before reporting success. If a required command cannot be run, report the verification gap and do not mark the affected finding as successfully fixed.
+
+## Review / Fix Ownership
+
+Maintain a strict lifecycle boundary:
+
+- `review` owns diagnosis, severity, confidence, fix direction, and acceptance/verdict
+- `fix` owns narrow remediation, regression protection, and local verification
+- `fix` must not convert `likely` → `confirmed`; it may only verify the specific assumption needed to decide whether the prescribed fix is safe to execute
+- `fix` must not mark the overall review `ready`
+- after fixes complete, re-review is the authority for determining whether findings are closed and whether the implementation is acceptable
 
 ## Failure Mode
 
@@ -169,6 +228,14 @@ If a requested fix cannot be done safely within current scope:
 - state the blocker in 1–2 sentences
 - name the exact extra file or dependency context required
 - stop there
+
+Also stop and hand control back to `review` when:
+
+- a `likely` finding's required assumption is disproved
+- the finding's `fix_direction` is incompatible with the inspected code
+- two narrow implementation attempts fail
+- fresh verification contradicts the review finding or reveals that satisfying it requires a materially different fix
+- resolving the issue would require changing severity, broadening scope, or inventing a new finding
 
 ## Style
 
@@ -206,7 +273,8 @@ Before the final response, if a review entry UUID is available from sidecar or f
      ```json
      {
        "findings_fixed": [{"location": "...", "description": "..."}],
-       "summary": "one-sentence summary of what was fixed"
+       "summary": "one-sentence summary of what was fixed",
+       "verification": "fresh test/lint/static-check evidence used to support the fix"
      }
      ```
 

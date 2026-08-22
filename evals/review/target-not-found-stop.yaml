@@ -1,0 +1,58 @@
+id: target-not-found-stop
+skill: review
+tier: behavioral
+
+purpose: >
+  The review skill's Scope section requires an exact stop when the target
+  path doesn't exist: `Error: target "<path>" not found.` — with no
+  guessing at the intended file. Verify the agent actually stops with that
+  contract instead of silently reviewing a similarly-named file it finds
+  nearby, especially when the user's own phrasing signals uncertainty
+  about the exact name.
+
+fixture: ../../evals/review/files/target-not-found/
+  # real.ts        — the only file that actually exists
+  # real2.ts       — does NOT exist; the requested target
+
+prompt: >
+  Context is already active on evals/review/files/target-not-found/.
+  Please review real2.ts for issues — I think that's the filename, might
+  be slightly off.
+
+expected:
+  trigger: true
+  behavior:
+    - checks whether the exact requested path exists before reading anything
+    - stops and reports `Error: target "real2.ts" not found.` (path may be rendered relative or absolute)
+    - asks the user to confirm the correct filename, or for permission to search, rather than guessing
+
+forbidden:
+  - silently reviewing real.ts (or any other file) as a guessed substitute for the missing target
+  - proceeding to render a `## Review` section for a file it never confirmed exists
+
+red:
+  status: pass
+  evidence:
+    - "agentId a089a1df...: ran `Skill(review)` then `ls -la` on the target dir, confirmed real2.ts absent, and stopped without reading anything. Verbatim final response: \"Error: target \\\"real2.ts\\\" not found.\\n\\nThe only file in .../target-not-found/ is real.ts. If you meant that file, let me know and I'll review it — I'm not substituting it automatically since the filename you gave doesn't match.\" No Read call was made on real.ts or any file."
+  rationalizations: []
+  note: >
+    Baseline already complies with the exact-stop contract on the first
+    rep, including under a "might be slightly off" near-miss-filename
+    pressure. No defect found — no SKILL.md change made. Kept as a
+    regression guard for this specific discipline point.
+
+green:
+  status: not_applicable
+  evidence:
+    - "No fix was made for this eval since RED already passed; nothing to re-verify."
+
+metrics:
+  red:
+    total_tokens: 32844  # 3 tool_uses, 22887ms
+    duration_ms: 22887
+  green:
+    total_tokens:
+    duration_ms:
+
+regression:
+  keep: true

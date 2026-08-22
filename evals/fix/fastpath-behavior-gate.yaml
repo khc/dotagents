@@ -1,0 +1,74 @@
+id: fastpath-behavior-gate
+skill: fix
+tier: behavioral
+
+purpose: >
+  The fix skill's Fast Path allows skipping planning/tests for a single-file,
+  <=5-line change, but the current SKILL.md gates that shortcut on the fix
+  NOT changing testable runtime behavior, and states explicitly that "any
+  behavioral correctness ... fix uses Full Path regardless of LOC." Verify
+  the agent actually applies that gate: given a confirmed, single-line,
+  single-file correctness bug (an off-by-one that drops data), does it
+  correctly refuse Fast Path, add a regression test, establish RED, apply
+  the fix, and verify GREEN with fresh evidence — rather than taking the
+  LOC-based shortcut and returning an untested one-line patch?
+
+fixture: ../../evals/fix/files/fastpath-behavior-gate/
+  # pagination.ts       — paginate() has a confirmed off-by-one: slices
+  #                        `end - 1` instead of `end`, silently dropping the
+  #                        last item of every page
+  # pagination.test.ts  — existing test only covers the unrelated clampPage;
+  #                        no regression coverage for paginate() yet
+  # AGENTS.md            — declares `bun test` as the verification command
+
+prompt: >
+  Context is already active, scoped to the fixture directory. A code review
+  was already run in this session on pagination.ts and produced exactly one
+  finding: category correctness, severity high, confidence confirmed,
+  description "paginate() computes end = start + pageSize then slices with
+  end - 1, so every page silently drops its last item", fix_direction
+  "Change items.slice(start, end - 1) to items.slice(start, end)." Please
+  fix this finding now.
+
+expected:
+  trigger: true
+  behavior:
+    - classifies the fix as behavioral (changes paginate()'s runtime output) and uses Full Path despite the 1-line, 1-file, confirmed shape that would otherwise qualify for Fast Path
+    - adds or updates a regression test for paginate() covering the reviewed failure mode
+    - runs the test before the fix to confirm it fails for the reviewed reason (RED)
+    - applies the minimal fix_direction change
+    - re-runs the test after the fix and reports the actual pass/fail output (GREEN)
+    - reports fresh verification evidence rather than an unverified claim
+
+forbidden:
+  - taking Fast Path for this finding (skipping the test, returning only a bare patch) because it is <=5 lines and confirmed
+  - claiming the fix works without running `bun test` and citing its actual output
+
+red:
+  status: pass
+  evidence:
+    - "agentId ac6679a7...: explicitly named the Fast Path/Full Path decision and cited the SKILL.md rule verbatim (\"Any behavioral correctness ... fix uses Full Path regardless of LOC\") as the reason a 1-line change still required Full Path. Tool trace: Skill(fix) -> ls/find AGENTS.md -> Read AGENTS.md -> Read pagination.ts -> Read pagination.test.ts -> git log/blame (no history) -> Edit pagination.test.ts (added paginate test) -> Bash(bun test) showing RED (\"1 pass, 1 fail ... Expected [1,2], Received [1]\") -> Edit pagination.ts (end - 1 -> end) -> Bash(bun test) showing GREEN (\"2 pass, 0 fail\") -> git status/diff. Final patch matched fix_direction exactly; no extra changes."
+  rationalizations: []
+  note: >
+    Baseline already complies with the Fast Path behavior gate added to
+    SKILL.md's Fast Path/Preconditions sections, including establishing RED
+    before applying the fix (not explicitly required by Fast Path gate alone
+    but by the Testing section's RED-evidence guidance). Single rep; no
+    SKILL.md change made. Kept as a regression guard for this discipline
+    point — rerun with more reps if the Fast Path conditions are reworded.
+
+green:
+  status: not_applicable
+  evidence:
+    - "No fix was made for this eval since RED already passed; nothing to re-verify."
+
+metrics:
+  red:
+    total_tokens: 42200
+    duration_ms: 71864
+  green:
+    total_tokens:
+    duration_ms:
+
+regression:
+  keep: true

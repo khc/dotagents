@@ -1,0 +1,32 @@
+{
+  "skill_name": "review",
+  "split": "train",
+  "note": "Each query run once against a fresh subagent that already had context activated (isolating the review-vs-competitor decision from the user's global 'always activate $context first' policy, which otherwise confounds a naive first-skill-invoked measurement — see run_note below). All 12 train queries passed on the first pass; no description changes were made.",
+  "run_note": "Initial run design asked agents to invoke and report only the FIRST skill call, which the global CLAUDE.md's 'always activate $context before any repo work' turned into a uniform 'context' answer for every repo-path query, masking the review-vs-competitor signal entirely. Corrected by stipulating context was already active and asking for the task skill specifically.",
+  "queries": [
+    { "id": "P1", "query": "Can you review scripts/commit.ts for security and correctness issues?", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "P2", "query": "Give me a full code review of src/agents/context_loader.py — I want findings with file/line references and severity.", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "P3", "query": "Review the file skills/context/SKILL.md for maintainability and design issues, please.", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "P5", "query": "Do a thorough review of the auth module at app/auth/token.ts, flag any security or observability gaps.", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "P7", "query": "Can you look over utils/parser.ts and tell me what's wrong with it — bugs, design, DRY/KISS violations?", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "P9", "query": "I need a code review of the whole billing/ directory before we merge — concrete findings only, no fluff.", "should_trigger": true, "observed_skill": "review", "correct": true },
+    { "id": "N1", "query": "Can you fix the bug in scripts/commit.ts where it crashes on empty diffs?", "should_trigger": false, "near_miss_of": "bug", "observed_skill": "bug", "correct": true },
+    { "id": "N2", "query": "Please refactor utils/parser.ts to extract the duplicated validation logic.", "should_trigger": false, "near_miss_of": "refactor", "observed_skill": "refactor", "correct": true },
+    { "id": "N3", "query": "Run a security review of the pending changes on this branch.", "should_trigger": false, "near_miss_of": "security-review", "observed_skill": "security-review (agent deviated from the stop-after-decision protocol and ran a full review, but its own output format and framing confirm review was not the skill it used)", "correct": true },
+    { "id": "N6", "query": "Simplify this function, it's way too complex.", "should_trigger": false, "near_miss_of": "simplify", "observed_skill": "refactor (chose refactor over simplify — a different competitor than predicted, but review still correctly did not fire)", "correct": true },
+    { "id": "N7", "query": "Can you audit the recent fix to make sure it didn't break anything?", "should_trigger": false, "near_miss_of": "audit", "observed_skill": "audit", "correct": true },
+    { "id": "N9", "query": "Review my grocery list draft for typos.", "should_trigger": false, "near_miss_of": "out-of-domain", "observed_skill": "none", "correct": true }
+  ],
+  "result": "12/12 correct, 0 failures. No description change made.",
+  "description_v2_regression": {
+    "date": "2026-08-22",
+    "trigger": "skills/review/SKILL.md was rewritten out-of-band (outside this session) to add a 'Change review' mode, verdict system, and Testing/Requirements-Plan/Production-Readiness/Documentation categories. description also expanded to mention requirements/plan compliance, changed-code impact, tests, compatibility/production readiness, documentation. Per policy this requires re-running trigger validation.",
+    "scope": "Spot-checked the 3 highest-risk old negatives (closest new-description overlap) rather than the full 12, since the path-review positives and unrelated negatives (bug/refactor/brainstorming/out-of-domain) are untouched by what changed.",
+    "results": [
+      { "id": "N3", "query": "Run a security review of the pending changes on this branch.", "observed_skill": "security-review", "correct": true, "note": "Agent ran the actual security-review workflow end-to-end rather than stopping after the decision (deviated from the stop-after-decision test protocol), but its own output format and category framing confirm it used security-review, not review, even though review's description now explicitly names 'security'." },
+      { "id": "N4", "query": "Review this PR #482 and post inline comments with --comment.", "observed_skill": "code-review", "correct": true, "disambiguator_cited": "PR number + --comment flag are code-review's territory; review produces a narrative writeup with no --comment mechanism, even though its description now covers 'changed-code impact' and 'implemented-change review'." },
+      { "id": "N7", "query": "Can you audit the recent fix to make sure it didn't break anything?", "observed_skill": "audit", "correct": true, "disambiguator_cited": "audit is a narrow, changed-files-only regression pass; review's change-review mode is the broader multi-dimensional evidence-backed review with a verdict — 'did it break anything' maps to the narrow check even though review's description now also covers changed-code impact." }
+    ],
+    "result": "3/3 correct, 0 regressions from the description/behavior expansion."
+  }
+}
