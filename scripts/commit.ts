@@ -68,14 +68,21 @@ const getProvider = (): keyof typeof llm_provider => {
   if (environmentProvider && Object.hasOwn(llm_provider, environmentProvider)) {
     return environmentProvider as keyof typeof llm_provider;
   }
-  return "huggingface";
+  return "openai";
 };
 
 const provider = getProvider();
+const emptyTree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+let intentToAddPaths: string[] = [];
 
 // Check for changes
 async function checkChanges(): Promise<string[]> {
   try {
+    const untrackedFiles = await $`git ls-files --others --exclude-standard -z`.quiet();
+    intentToAddPaths = untrackedFiles
+      .text()
+      .split("\0")
+      .filter(Boolean);
     await $`git add -N .`;
   } catch (error) {
     throw new Error(
@@ -183,8 +190,14 @@ async function generateCommitMessage(
 async function getDiff(): Promise<string> {
   let rawDiff: string;
   try {
+    let baseRevision = "HEAD";
+    try {
+      await $`git rev-parse --verify HEAD`.quiet();
+    } catch {
+      baseRevision = emptyTree;
+    }
     const result =
-      await $`git diff HEAD --no-color --no-ext-diff -- . ${":(exclude)bun.lock"} ${":(exclude)package-lock.json"} ${":(exclude)Pipfile.lock"} ${":(exclude)pnpm-lock.yaml"} ${":(exclude)uv.lock"} ${":(exclude)yarn.lock"}`.quiet();
+      await $`git diff ${baseRevision} --no-color --no-ext-diff -- . ${":(exclude)bun.lock"} ${":(exclude)package-lock.json"} ${":(exclude)Pipfile.lock"} ${":(exclude)pnpm-lock.yaml"} ${":(exclude)uv.lock"} ${":(exclude)yarn.lock"}`.quiet();
     rawDiff = result.text().trim();
   } catch (error) {
     const error_ = error as GitError;
@@ -334,9 +347,11 @@ try {
   await main();
 } catch (error) {
   if (error instanceof CleanExitError) {
-    try {
-      await $`git reset`.quiet();
-    } catch {}
+    if (intentToAddPaths.length > 0) {
+      try {
+        await $`git reset -- ${intentToAddPaths}`.quiet();
+      } catch {}
+    }
     if (error.message) {
       outro(error.message);
     }
