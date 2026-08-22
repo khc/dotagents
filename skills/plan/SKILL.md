@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Use when the user wants a repo change planned before implementation, especially when the work contains multiple independently testable tasks, coordinated interfaces, material risk, migrations, security-sensitive design, or other changes that benefit from explicit decomposition. Inspect the scoped codebase, turn requirements into the smallest independently executable and testable tasks, identify exact files/interfaces/tests/verification, and hand off to `$implement` without modifying code. For one coherent bounded change, recommend `$feature` instead of over-planning.
+description: Use when a repo change needs planning before implementation -- multiple independently testable tasks, coordinated interfaces, material risk, migrations, or security-sensitive design. Break requirements into the smallest executable, testable tasks with exact files/interfaces/verification, then hand off to `$implement` without modifying code. For one coherent bounded change, use `$feature` instead.
 ---
 
 # Plan

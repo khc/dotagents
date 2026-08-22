@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Use when a completed implementation plan already exists and the user wants it executed faithfully. Consume the plan's tasks, files, interfaces, acceptance criteria, and verification steps; implement tasks in dependency order with minimal scope, targeted tests, and fresh verification. Do not redesign the plan, perform independent review, or absorb unrelated work. If no executable plan exists, route to `$plan` instead; use `$feature` for bounded work that does not need a prior plan.
+description: Use when a completed implementation plan already exists and the user wants it executed faithfully. Implement tasks in dependency order with minimal scope, targeted tests, and fresh verification -- without redesigning the plan, reviewing independently, or absorbing unrelated work. If no plan exists, route to `$plan`; use `$feature` for bounded work needing no prior plan.
 ---
 
 # Implement

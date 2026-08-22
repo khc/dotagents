@@ -1,3 +1,7 @@
+---
+name: deps
+description: Removes unused transitive dependencies and adds missing direct ones for a uv-managed package. Use when `uv sync` fails due to unresolved or unused dependency errors, or the user asks to clean up or audit dependencies.
+---
 
 # Dependency manager
 
