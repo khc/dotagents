@@ -24,22 +24,30 @@ If a scoped context is not active:
 
 Determine the review mode from evidence supplied by the user or already available in the active workflow:
 
-- **Path review** — review the current state of a specific file or directory when no implementation requirements or Git change range are available.
+- **Symbol review** — review a specific function, method, class, or named symbol within a file. Center the review on that symbol and inspect only the minimum surrounding code required to understand its contract, direct callers/callees, and dependencies.
+- **Path review** — review the current state of a specific file or directory when no implementation requirements or Git change range are available and no narrower symbol target was requested.
 - **Change review** — when requirements/plan evidence and/or a Git base/head range are available, review the implementation as a change, not only as resulting files.
-- Never invent a plan, requirement, base revision, or head revision. If change-level evidence is unavailable, continue as a path review and record the missing requirements/diff evidence under residual risks.
+- If the user names a specific function, method, class, or symbol, use Symbol review even when the containing file is known, unless change-level evidence makes Change review the stronger applicable mode.
+- A review may be invoked after `implement`, after `feature`, or directly by the user. Workflow origin changes what evidence may be available; it does not change the review standard or make prior implementation claims trustworthy.
+- Never invent a plan, requirement, base revision, or head revision. If change-level evidence is unavailable, use Symbol review or Path review as applicable and record only materially relevant missing evidence under residual risks.
 
 For change review:
 
-1. Treat the supplied plan, task, acceptance criteria, specification, or equivalent requirement artifact as authoritative review input.
+1. Treat any supplied plan, task, acceptance criteria, specification, or equivalent requirement artifact as authoritative review input.
 2. If a base/head Git range is available, inspect `git diff --stat BASE..HEAD` and the relevant `git diff BASE..HEAD` before judging the resulting implementation.
-3. Check for missing planned behavior, unjustified deviations, incomplete acceptance criteria, accidental deletions, unrelated changes within the allowed scope, and behavior present in the diff but unsupported by the requirements.
-4. If the implementation exposes a defect in the plan/requirements themselves, report it explicitly as a plan/requirements issue rather than misclassifying it as an implementation defect.
-5. Requirements and Git history do not expand filesystem scope. All reads remain subject to the active context's `scope_boundaries.allowed` and the traversal limits below.
+3. Apply the strongest review supported by available evidence:
+   - **requirements only** — check the scoped implementation against the supplied requirements/acceptance criteria
+   - **diff only** — review the change for correctness, regressions, unintended edits, testing, and production readiness
+   - **requirements + diff** — perform full change review: requirements compliance plus diff integrity
+4. Check, when supported by the available evidence, for missing planned behavior, unjustified deviations, incomplete acceptance criteria, accidental deletions, unrelated changes within the allowed scope, and behavior present in the diff but unsupported by the requirements.
+5. If the implementation exposes a defect in the plan/requirements themselves, report it explicitly as a plan/requirements issue rather than misclassifying it as an implementation defect.
+6. Requirements and Git history do not expand filesystem scope. All reads remain subject to the active context's `scope_boundaries.allowed` and the traversal limits below.
 
 ## Scope
 
 - If the target path does not exist: STOP — report `Error: target "<path>" not found.`
 - Determine whether the target is a file or a directory before reading anything. A single file can be read directly. A directory must be listed first (`Glob`, or that runtime's equivalent directory-listing tool) so you know what's there, then `Read` only the files relevant to the review scope — don't open a file inside the target until you've seen the listing.
+- For Symbol review, treat the named symbol as the primary reporting boundary. You may inspect surrounding code in the same file and the normal adjacent context allowed below only when needed to verify that symbol's behavior or contract. Do not report unrelated findings elsewhere in the containing file or adjacent files.
 - Stay focused on, in this priority order:
   - security concerns (scan first — hardcoded secrets, injection, auth, OWASP Top 10)
   - bugs

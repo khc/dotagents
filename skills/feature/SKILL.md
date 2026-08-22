@@ -1,6 +1,6 @@
 ---
 name: feature
-description: Deliver a new feature or substantial behavior extension with a structured plan → implement workflow. Trigger with "add a feature", "implement X", or "build Y".
+description: Use when implementing a bounded feature or behavior change that can be safely understood and completed as one coherent unit without a separate implementation plan. Trigger with "add a feature", "implement X", or "build Y".
 ---
 
 Deliver features in a controlled, minimal, and modular way.
@@ -22,6 +22,27 @@ If a scoped context is not active:
    - touched files/modules
    - edge cases (only if obvious)
    - tests/config/migrations if required
+4. Apply the Complexity Gate below before planning or editing.
+
+## Complexity Gate
+
+`feature` is the fast path for one coherent implementation unit, not a substitute for `$plan`.
+
+Proceed with `feature` only when scoped inspection shows the change can be implemented and verified as one coherent unit without materially redesigning the repo.
+
+STOP and route to `$plan` when the change requires any of the following:
+
+- multiple independently testable implementation tasks with meaningful dependencies
+- a material architecture or cross-module data-flow change
+- a new or changed public API, persisted schema/data migration, config/CLI contract, or rollout/rollback strategy that needs explicit coordination
+- security-sensitive design whose approach is not already established by the repo
+- materially broader files/modules than the initial bounded scope
+- a new external dependency whose adoption materially affects architecture or maintenance
+- unresolved requirements or implementation choices that would materially change scope or acceptance criteria
+
+Cross-file work alone does not require `$plan`; several tightly coupled edits may still be one coherent feature.
+
+If the user explicitly asks to skip planning and the task fails this gate, do not silently broaden `feature`. Report the reason and route to `$plan`.
 
 ## Method
 
@@ -48,11 +69,13 @@ If the library or built-in choice is non-trivial:
 If the choice is trivial:
 - proceed to Planning Phase
 
-Treat the choice as non-trivial if any of the following are true:
-- multiple viable approaches exist
-- the task involves parsing, validation, serialization, auth, crypto, HTTP, retries, caching, concurrency, background jobs, file handling, or database access
-- the current implementation would require noticeable bespoke logic
+Treat the choice as non-trivial when targeted repo inspection cannot establish a clearly preferred standard-library, framework-native, or existing-project solution and one or more of the following are true:
+- multiple materially different viable approaches remain
+- the current implementation would require noticeable bespoke logic in a correctness- or security-sensitive area
 - adding a library could materially reduce LOC or risk
+- choosing incorrectly would materially affect compatibility, security, performance, or maintenance
+
+The mere presence of parsing, validation, serialization, auth, crypto, HTTP, retries, caching, concurrency, background jobs, file handling, or database access does not by itself require `$research` when the repo already establishes the approach.
 
 If the best path is obvious and already supported by the standard library or existing project utilities:
 - proceed without `$research`
@@ -98,6 +121,10 @@ Do not repeat the plan.
 - Keep functions small and explicit
 - Side effects at boundaries
 
+If implementation reveals that the Complexity Gate no longer holds — for example the change requires materially different scope, architecture, contracts, migration strategy, security design, or multiple independent tasks — STOP before broadening the implementation and route to `$plan`.
+
+A local implementation mistake may be corrected within `feature`; a materially wrong inline plan requires `$plan`.
+
 ## Post-Implementation Verification
 
 After all edits are applied, check each item in the plan's **Done When** list:
@@ -105,6 +132,8 @@ After all edits are applied, check each item in the plan's **Done When** list:
 - if an item is not satisfied: state which criterion is unmet in one line and implement the missing piece before proceeding to output
 
 Do not proceed to output until all acceptance criteria are met or explicitly deferred with a stated reason.
+
+Do not claim implementation success from code inspection alone when the behavior is testable. Success requires fresh verification evidence from the current working tree.
 
 ## Execution Rules
 
@@ -124,9 +153,26 @@ Do not proceed to output until all acceptance criteria are met or explicitly def
 
 ## Testing
 
-- Draft minimal tests for the new behavior alongside the implementation — not as a separate step after.
+- For testable runtime behavior, add or update the smallest behavior/regression test before production code when practical.
+- Prefer RED → implementation → GREEN: confirm the new/updated test fails for the expected reason before the production change, when safe and meaningful.
+- Do not create destructive or out-of-scope state merely to force RED.
+- For non-behavioral changes, use the smallest applicable verification and do not add tests for ceremony.
 - Prefer existing test style, helpers, and fixtures.
 - After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$context`). Use only those commands — do not guess or discover alternatives.
+- Inspect fresh command output before claiming success. If a required check cannot be run, state the verification gap and do not claim the affected acceptance criterion is verified.
+
+## Feature / Review Ownership
+
+Maintain a strict lifecycle boundary:
+
+- `$feature` owns bounded discovery, the inline mini-plan, implementation, regression protection, and fresh local verification
+- `$review` owns independent correctness judgment, findings, severity/confidence, and acceptance/verdict
+- `$fix` owns remediation of findings produced by `$review`
+- `$plan` owns decomposition when the work no longer fits the bounded Feature path
+
+`$feature` must not mark the overall change `ready`, perform an independent production-readiness review, or silently absorb review/fix responsibilities.
+
+After successful implementation and fresh verification, hand off to `$review`.
 
 ## Constraints
 
@@ -157,9 +203,16 @@ Use this shape:
 ### Approach
 standard library / existing project / external library / bespoke
 
+### Verification
+- Regression evidence: ...
+- Fresh checks: ...
+
 ---
 
 {implementation — diff or edit follows}
+
+### Handoff
+`$review` — independently review the completed bounded change.
 ````
 
 ## Save to Sidecar
@@ -189,6 +242,7 @@ After rendering the feature output, persist the entry using the direct sidecar s
    - `touchpoints` — list of files changed or added
    - `summary` — one-sentence prose summary of what was implemented
    - `acceptance_criteria` — list of the Done When criteria from the plan
+   - `verification` — concise fresh test/lint/static-check evidence supporting the implementation
 
 3. **Output the UUID** — the workflow prints the UUID to stdout. Append it to the response:
    ```
