@@ -30,6 +30,9 @@ Extract:
 - `scope` — top-level row field; use as the required work scope and require matching active $context scope before edits
 - `context.findings` — source of truth for what to fix; each finding has `category`, `location`, `description`, `severity` (`critical|high|medium|low`), `confidence`, and `fix_direction`
 - `context.reasoning` — analytical context explaining why each finding matters
+- `context.review_mode` — `change|path|symbol` when persisted by review
+- `context.target_symbol` — reviewed symbol when `review_mode` is `symbol`
+- `context.source_workflow` / `context.source_uuid` — workflow provenance when available
 
 If no entry is found: STOP — report `Error: no review entry found in sidecar.`
 
@@ -96,12 +99,15 @@ If source is sidecar:
 - use the top-level `scope` field from the loaded entry as the required work scope
 - if active $context scope is absent or differs from the loaded `scope`: STOP — report `Run $context {scope} before applying this sidecar fix.`
 
-1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
-2. Obey the active scope and nearest applicable `AGENTS.md`.
+1. Use the repo instructions already loaded by `$context`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required fix touchpoint, and was not already loaded.
+2. Obey the active scope and applicable instructions established by `$context`.
 3. Read only:
    - the specific files named in the review findings, not the full target tree
    - at most one directly called or imported file from the fix site if required for safety
    - existing tests for the touched area
+   - when the source review mode is `symbol`, only the minimum surrounding code needed to implement that symbol's finding
+
+   For Symbol review findings, preserve the reviewed symbol as the primary edit boundary. Edits elsewhere in the containing file or allowed adjacent context are permitted only when required by that finding's `fix_direction`; access to the containing file is not permission for unrelated edits.
 4. For multi-hunk or non-trivial fixes, run `git log -5 --oneline -- {file}` and `git blame -L {start},{end} {file}` on the affected lines before editing. Use this to understand recent change history and avoid re-introducing reverted patterns.
 5. Start from the review findings and reasoning, not from fresh exploration.
 6. For `likely` findings, perform only the finding-local assumption verification required by Preconditions before making edits.
@@ -208,7 +214,7 @@ After the plan (or immediately for Fast Path):
 - Add or update only the test case(s) directly covering the fixed behavior; do not add broad new test infrastructure.
 - Prefer existing test style, helpers, and fixtures.
 - When practical and safe, establish RED evidence for behavioral fixes: confirm the regression test fails for the reviewed reason before applying the production change. Do not create destructive or out-of-scope state merely to force RED.
-- After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$context`). Use only those commands — do not guess or discover alternatives.
+- After applying edits, run the applicable test, lint, and static-check commands established by the instructions loaded during `$context`. Use only established commands — do not guess or discover alternatives.
 - Inspect the fresh command result before reporting success. If a required command cannot be run, report the verification gap and do not mark the affected finding as successfully fixed.
 
 ## Review / Fix Ownership
@@ -245,6 +251,24 @@ Also stop and hand control back to `review` when:
 - No overthinking
 - No scope creep
 
+## Handoff
+
+After at least one requested finding is successfully fixed and freshly verified, hand off to `$review`.
+
+- Re-review should preserve the prior review mode and target when possible:
+  - Change review → re-review the same implementation/change boundary with the fix delta included
+  - Path review → re-review the same path
+  - Symbol review → re-review the same symbol
+- `$fix` does not declare findings closed or the change `ready`; only `$review` may do so.
+- If fixing stopped because the original finding was disproved or materially incompatible with the code, hand back to `$review` as a diagnosis mismatch rather than as a completed fix.
+
+Render on successful fix:
+
+```markdown
+### Handoff
+`$review` — re-review the fixed findings in the original review mode and determine whether they are closed.
+```
+
 ## Save to Sidecar
 
 Before the final response, if a review entry UUID is available from sidecar or from the current session, persist the fix using the fix workflow helper. Do not invoke or activate the $sidecar skill.
@@ -274,7 +298,10 @@ Before the final response, if a review entry UUID is available from sidecar or f
      {
        "findings_fixed": [{"location": "...", "description": "..."}],
        "summary": "one-sentence summary of what was fixed",
-       "verification": "fresh test/lint/static-check evidence used to support the fix"
+       "verification": "fresh test/lint/static-check evidence used to support the fix",
+       "review_mode": "change|path|symbol when available",
+       "target_symbol": "exact symbol when review_mode is symbol; omit otherwise",
+       "source_review_uuid": "review UUID when available"
      }
      ```
 

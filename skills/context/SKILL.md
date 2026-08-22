@@ -37,6 +37,16 @@ Context activation failed: <one sentence with the helper's error and why there's
 
 Then stop and wait for the user's reply before touching any files.
 
+## Context Ownership
+
+The active context is authoritative for both scope and repo instructions until `$context` is explicitly activated again.
+
+- Downstream skills must reuse `scope_path`, `scope_boundaries`, and the instruction state established here rather than independently widening scope.
+- Treat the `AGENTS.md` files loaded by the helper as the applicable instruction set for the active scope.
+- A downstream skill may read an additional `AGENTS.md` only when it is inside `scope_boundaries.allowed`, applies more specifically to a file the task legitimately needs, and was not already loaded by the helper.
+- Do not leave the active scope merely to rediscover repo instructions, tooling, conventions, or dependencies.
+- Workflow handoffs (`$feature`, `$plan`, `$implement`, `$review`, `$fix`) inherit this scope; a handoff does not implicitly reactivate or broaden context.
+
 ## Working Within Scope
 
 Once a scope is active, everything you do should stay inside `scope_boundaries.allowed` — that's the entire point of activating one:
@@ -56,6 +66,8 @@ A narrow scope is also a budget, not just a boundary — spending it on things n
 ## Failure Mode
 
 Whenever the task can't be completed within the active scope — not only at activation, but any time a mid-task need turns out to live outside it — state the limitation in 1-2 sentences and ask for permission to expand scope. Don't expand scope unilaterally, and don't silently route around the limitation instead of surfacing it.
+
+Approval to expand scope must be followed by an explicit `$context` activation on the newly approved path before repo work continues; verbal approval alone does not mutate `scope_boundaries.allowed`.
 
 ## Common Rationalizations & Red Flags
 

@@ -11,8 +11,8 @@ If a scoped context is not active:
 - STOP
 - run $context first
 
-1. Read `AGENTS.md` first.
-2. If missing, inspect only:
+1. Use the repo instructions already loaded by `$context`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required touchpoint, and was not already loaded.
+2. If no applicable project instructions are available, inspect only:
    - `pyproject.toml` or `package.json` (deps and tooling)
    - top-level directory listing (structure)
    - one representative source file (conventions)
@@ -43,6 +43,26 @@ STOP and route to `$plan` when the change requires any of the following:
 Cross-file work alone does not require `$plan`; several tightly coupled edits may still be one coherent feature.
 
 If the user explicitly asks to skip planning and the task fails this gate, do not silently broaden `feature`. Report the reason and route to `$plan`.
+
+## Change Boundary
+
+Before the first edit, capture enough read-only Git state for `$review` to identify the feature's delta:
+
+- `BASE_SHA` — current `HEAD` before feature edits, when the scope is inside a Git repo
+- pre-existing dirty paths within the active scope, if any
+- the feature's intended touchpoints
+
+Do not require a clean working tree and do not modify Git state.
+
+At handoff, provide:
+
+- `BASE_SHA`
+- current `HEAD` (if it changed)
+- actual touched files
+- whether any touched file already contained pre-existing changes
+- the scoped diff for the feature touchpoints, or enough information for `$review` to inspect it directly
+
+If pre-existing edits overlap the same lines and the feature delta cannot be distinguished reliably, state that as a review-evidence limitation rather than claiming a clean change boundary.
 
 ## Method
 
@@ -158,7 +178,7 @@ Do not claim implementation success from code inspection alone when the behavior
 - Do not create destructive or out-of-scope state merely to force RED.
 - For non-behavioral changes, use the smallest applicable verification and do not add tests for ceremony.
 - Prefer existing test style, helpers, and fixtures.
-- After applying edits, run the test, lint, and static-check commands specified in `AGENTS.md` (loaded during `$context`). Use only those commands — do not guess or discover alternatives.
+- After applying edits, run the applicable test, lint, and static-check commands established by the instructions loaded during `$context`. Use only established commands — do not guess or discover alternatives.
 - Inspect fresh command output before claiming success. If a required check cannot be run, state the verification gap and do not claim the affected acceptance criterion is verified.
 
 ## Feature / Review Ownership
@@ -212,7 +232,7 @@ standard library / existing project / external library / bespoke
 {implementation — diff or edit follows}
 
 ### Handoff
-`$review` — independently review the completed bounded change.
+`$review` — independently review the completed bounded change using the Done When criteria, change boundary, scoped diff, touched files, and fresh verification evidence.
 ````
 
 ## Save to Sidecar
@@ -243,6 +263,10 @@ After rendering the feature output, persist the entry using the direct sidecar s
    - `summary` — one-sentence prose summary of what was implemented
    - `acceptance_criteria` — list of the Done When criteria from the plan
    - `verification` — concise fresh test/lint/static-check evidence supporting the implementation
+   - `base_sha` — pre-edit `HEAD` when available
+   - `head_sha` — current `HEAD` at handoff when available
+   - `preexisting_changes` — scoped dirty paths that existed before feature edits
+   - `change_boundary` — concise description of the diff/touchpoints review should treat as this feature's implementation delta
 
 3. **Output the UUID** — the workflow prints the UUID to stdout. Append it to the response:
    ```

@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Use when the user wants a repo change planned before implementation, especially for multi-step, cross-file, risky, or coordinated work. Inspect the scoped codebase, turn requirements into the smallest independently executable and testable tasks, identify exact files/interfaces/tests/verification, and hand off to `$implement` without modifying code. For simple bounded changes, recommend the shorter `$feature → $review → $fix` path instead of over-planning.
+description: Use when the user wants a repo change planned before implementation, especially when the work contains multiple independently testable tasks, coordinated interfaces, material risk, migrations, security-sensitive design, or other changes that benefit from explicit decomposition. Inspect the scoped codebase, turn requirements into the smallest independently executable and testable tasks, identify exact files/interfaces/tests/verification, and hand off to `$implement` without modifying code. For one coherent bounded change, recommend `$feature` instead of over-planning.
 ---
 
 # Plan
@@ -31,7 +31,7 @@ If a scoped context is not active:
 - after `$context` completes, confirm the active scope path, then continue
 - do not infer scope from the requested target alone
 
-Read the nearest applicable `AGENTS.md` first. If absent, proceed using the active scoped path only.
+Use the repo instructions already loaded by `$context`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to required planning evidence, and was not already loaded. If no applicable project instructions are available, proceed using the active scoped path only.
 
 ## Route Before Planning
 
@@ -52,8 +52,8 @@ Return the minimal route and stop.
 
 Choose between:
 
-- **Feature path** — use `$feature → $review → $fix` for a bounded change whose implementation can be safely understood and completed as one coherent unit.
-- **Planned path** — use `$plan → $implement → $review → $fix` when the change is multi-step, cross-file, contract-sensitive, migration-sensitive, security-sensitive, architectural, or otherwise benefits from explicit decomposition.
+- **Feature path** — use `$feature` for a bounded change whose implementation can be safely understood and completed as one coherent unit; successful implementation then hands off to `$review`, with `$fix → $review` only if findings exist.
+- **Planned path** — use `$plan → $implement` when the change contains multiple independently testable tasks, coordinated interfaces, material contract/migration/security/architectural risk, or otherwise benefits from explicit decomposition; successful implementation then hands off to `$review`, with `$fix → $review` only if findings exist.
 
 If the user explicitly asks for a plan, create one even if the task appears bounded.
 
@@ -146,7 +146,7 @@ Use this compact shape when a full plan is unnecessary:
 ## Plan
 
 ### Route
-`$feature → $review → $fix`
+`$feature → $review → [$fix → $review]*`
 or
 `$review`
 or
@@ -212,6 +212,21 @@ Use this shape:
 ```
 
 Omit empty optional fields rather than filling them with generic text.
+
+## Plan Identity
+
+When the runtime/workflow supports persistence, assign or retain a stable plan identifier so `$implement` and later `$review` can refer to the exact plan that governed the implementation.
+
+The handoff should preserve:
+
+- goal and requirements
+- ordered tasks and task IDs
+- scoped files/areas
+- interfaces/dependencies
+- verification and Done When conditions
+- material assumptions and stop conditions
+
+Do not require persistence for same-session execution; the complete current-session plan is sufficient when it can be passed intact.
 
 ## Handoff Contract
 

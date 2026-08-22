@@ -53,7 +53,7 @@ If a scoped context is not active:
 - after `$context` completes, confirm the active scope path, then continue
 - do not infer scope from the plan's paths alone
 
-Read the nearest applicable `AGENTS.md` first. If absent, proceed using the active scoped path and the plan.
+Use the repo instructions already loaded by `$context`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required planned touchpoint, and was not already loaded. If no applicable project instructions are available, proceed using the active scoped path and the plan.
 
 The active context boundary is authoritative. A plan does not grant permission to read or modify paths outside `scope_boundaries.allowed`.
 
@@ -93,6 +93,28 @@ If a blocker materially changes scope, interfaces, acceptance criteria, security
 - return to `$plan`
 
 Do not silently redesign.
+
+## Change Boundary
+
+Before the first implementation edit, capture enough read-only Git state for `$review` to identify the implementation delta:
+
+- `BASE_SHA` — current `HEAD` before implementation edits, when available
+- pre-existing dirty paths within active scope
+- the plan identifier/reference when one exists
+
+Do not require a clean working tree and do not modify Git state.
+
+At completion, preserve for review:
+
+- plan reference / exact governing plan
+- `BASE_SHA`
+- current `HEAD` when available
+- actual touched files
+- pre-existing changes that overlap touched files
+- scoped diff/change boundary
+- task-level and aggregate fresh verification evidence
+
+If pre-existing edits overlap the same lines and the implementation delta cannot be distinguished reliably, report that as a review-evidence limitation.
 
 ## Execution Model
 
@@ -201,7 +223,7 @@ Tests are part of implementation evidence, not final review.
 - Behavioral changes: prefer RED → implementation → GREEN where practical.
 - Non-behavioral changes: use the smallest applicable verification; do not add tests for ceremony.
 - Use existing test style, helpers, and fixtures.
-- Use verification commands from the plan and `AGENTS.md`.
+- Use verification commands from the plan and the project instructions established by `$context`.
 - Do not guess alternative project commands if none are documented.
 - If a required verification command cannot be run, report the gap and do not claim the affected task succeeded.
 - A passing targeted test does not authorize unrelated changes.
@@ -272,6 +294,13 @@ Use this shape:
 
 #### 2. ...
 
+### Change Boundary
+- Plan: ...
+- BASE_SHA: ...
+- HEAD_SHA: ...
+- Touched files: ...
+- Pre-existing overlap: none / ...
+
 ### Deviations
 - None
 ```
@@ -297,7 +326,7 @@ If all planned tasks are implemented and freshly verified:
 
 ```markdown
 ### Handoff
-`$review` — review the completed implementation against the plan and current change.
+`$review` — review the completed implementation against the exact governing plan and the captured change boundary, using touched files and fresh verification evidence.
 ```
 
 Keep completion reporting concise. Do not repeat the full plan.

@@ -1,6 +1,6 @@
 ---
 name: review
-description: Use when the user explicitly asks for a code, file, path, or implemented-change review and wants concrete, evidence-backed findings with file references, severity, and explicit fix guidance. Reviews correctness, requirements/plan compliance when provided, changed-code impact, tests, security, design, performance, maintainability, observability, compatibility/production readiness, documentation, and library/reuse.
+description: Use when the user or an active development workflow requests an evidence-backed review of a code symbol, file/path, or implemented change, with concrete findings, severity/confidence, file references, and explicit fix guidance. Reviews correctness, requirements/plan compliance when available, changed-code impact, tests, security, design, performance, maintainability, observability, compatibility/production readiness, documentation, and library/reuse.
 ---
 
 You are an experienced senior engineer reviewing code for production readiness and correctness.
@@ -20,6 +20,22 @@ If a scoped context is not active:
 - after $context completes, confirm the active scope path, then proceed with the review
 - do not infer scope from the review target path alone
 
+## Workflow Evidence
+
+When review follows `$feature` or `$implement`, consume the workflow handoff as evidence when available:
+
+- governing requirements / Done When criteria or exact implementation plan
+- source workflow (`feature` or `implement`)
+- source entry/plan identifier, if available
+- `BASE_SHA` and current `HEAD`, if available
+- actual touched files and pre-existing overlap
+- scoped change boundary / diff
+- fresh implementation verification evidence
+
+Do not trust the producer's success claims; inspect the artifacts/evidence yourself.
+
+A workflow handoff does not broaden the active context. If required review evidence lies outside `scope_boundaries.allowed`, follow the existing scope Failure Mode before reading it.
+
 ## Review mode
 
 Determine the review mode from evidence supplied by the user or already available in the active workflow:
@@ -29,6 +45,7 @@ Determine the review mode from evidence supplied by the user or already availabl
 - **Change review** — when requirements/plan evidence and/or a Git base/head range are available, review the implementation as a change, not only as resulting files.
 - If the user names a specific function, method, class, or symbol, use Symbol review even when the containing file is known, unless change-level evidence makes Change review the stronger applicable mode.
 - A review may be invoked after `implement`, after `feature`, or directly by the user. Workflow origin changes what evidence may be available; it does not change the review standard or make prior implementation claims trustworthy.
+- Record the selected `review_mode` (`change|path|symbol`) and source workflow (`feature|implement|standalone`) for downstream `$fix` and re-review continuity.
 - Never invent a plan, requirement, base revision, or head revision. If change-level evidence is unavailable, use Symbol review or Path review as applicable and record only materially relevant missing evidence under residual risks.
 
 For change review:
@@ -162,6 +179,8 @@ Use this shape:
   - `ready-with-fixes` — implementation is directionally correct but has concrete non-critical fixes required before completion/merge
   - `not-ready` — critical/high correctness, security, requirements-compliance, migration, compatibility, or equivalent blocking issue remains
 - Do not mark `ready` when requirements compliance or change integrity was explicitly requested but the necessary plan/diff evidence could not be inspected.
+- For Path or Symbol review, `ready` means no blocking findings were found within the explicitly reviewed scope. It does **not** imply whole-repository, whole-feature, or merge readiness.
+- For Change review, `ready` means the reviewed implementation change is acceptable against the available requirements/change evidence within the active scope.
 
 ## No-findings behavior
 
@@ -206,6 +225,12 @@ After composing the review output and before sending the final response, persist
    This helper resolves `{project_root}`, creates `{project_root}/.sidecar`, and persists the review entry. If `{project_root}/.sidecar` is outside the active scope and the runtime enforces scoped writes, request approval for this persistence write before invoking the helper. Single-quote `{scope}`, `{agent}`, and `{model}` when substituting, and escape any embedded `'` as `'\''`, to prevent `$()`/backtick shell expansion from a scope path.
    The JSON payload must contain:
    - `target` — the file or path reviewed
+   - `review_mode` — `change|path|symbol`
+   - `target_symbol` — exact reviewed symbol for Symbol review; omit otherwise
+   - `source_workflow` — `feature|implement|standalone`
+   - `source_uuid` — originating feature/implement/plan entry identifier when available
+   - `base_sha` — reviewed change base when available
+   - `head_sha` — reviewed change head/current HEAD when available
    - `findings` — list of dicts, one per finding: `{"category": "Security|Bugs|Design|Performance|Maintainability|Observability|Testing|Requirements / Plan|Production Readiness|Documentation|Library / Reuse", "location": ..., "description": ..., "severity": "critical|high|medium|low", "confidence": ..., "fix_direction": ...}`
    - `summary` — one-sentence prose summary of the review
    - `reasoning` — analytical context for downstream agents: dominant concern, requirements/plan evidence used (or unavailable), Git range/diff evidence used (or unavailable), relevant test evidence, what was deprioritized and why, any constraints or scope limits observed
