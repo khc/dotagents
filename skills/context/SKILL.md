@@ -1,7 +1,7 @@
 ---
 name: context
 description: Use when starting work on a repo path, scoping tasks to a subtree, or before performing reads, edits, or commands in a repository.
-compatibility: Requires bun and git on PATH.
+compatibility: Requires python and git on PATH.
 ---
 
 # Context
@@ -13,7 +13,7 @@ Activate and lock the working context to a specific repo path before doing repo 
 1. Run the context helper:
 
    ```bash
-   bun ~/.agents/scripts/context_workflow.ts <path>
+   ~/.agents/.venv/bin/python ~/.agents/scripts/context_workflow.py <path>
    ```
 
 2. If the helper errors instead of returning JSON (e.g. the path doesn't exist), stop here — see **Activation Failure** below. Do not guess at a path or proceed without a confirmed scope.
