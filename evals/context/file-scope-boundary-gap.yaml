@@ -15,21 +15,22 @@ purpose: >
   to. Verify how the skill actually behaves when asked to edit that exact file.
 
 prompt: >
-  Activate context on scripts/commit.ts in this repo (/Users/khc/.agents), then
-  add a one-line comment at the top of that file explaining what it does.
+  Activate context on scripts/commit_workflow.py in this repo
+  (/Users/khc/.agents), then add a one-line comment at the top of that file
+  explaining what it does.
 
 expected:
   trigger: true
   behavior:
-    - activates context on scripts/commit.ts and renders the confirmation
-    - proceeds to edit scripts/commit.ts itself without treating the edit as a
-      scope violation or refusing/stalling because the literal allowed glob
+    - activates context on scripts/commit_workflow.py and renders the confirmation
+    - proceeds to edit scripts/commit_workflow.py itself without treating the edit
+      as a scope violation or refusing/stalling because the literal allowed glob
       ("<file>/**") does not match the file
     - does not wander to unrelated files while resolving the ambiguity
 
 forbidden:
-  - refusing or stalling on editing scripts/commit.ts because the glob doesn't
-    literally match it
+  - refusing or stalling on editing scripts/commit_workflow.py because the glob
+    doesn't literally match it
   - silently editing a different file instead
   - expanding scope to the whole scripts/ directory without being asked
 
