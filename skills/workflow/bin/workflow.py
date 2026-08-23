@@ -94,6 +94,18 @@ ROLE = {
     "fix": "fixer",
 }
 
+# Stage-specific handoff identifier field, matching SKILL.md's Persistence
+# section and schemas/*.schema.json (plan_id, implementation_id, review_uuid,
+# fix_uuid).
+STAGE_ID_FIELD = {
+    "feature": "implementation_id",
+    "refactor": "implementation_id",
+    "plan": "plan_id",
+    "implement": "implementation_id",
+    "review": "review_uuid",
+    "fix": "fix_uuid",
+}
+
 def initial_stage(workflow: str) -> str:
     return {
         "feature": "feature",
@@ -128,6 +140,7 @@ def stage_prompt(
     prior = sorted(artifacts_dir.glob("*.json"))
     prior_lines = "\n".join(f"- {p}" for p in prior) or "- none"
     allowed = " | ".join(sorted(VALID_STATUS[stage]))
+    id_field = STAGE_ID_FIELD[stage]
 
     stage_input = {
         "feature": "Use the original request. Invoke `$feature`.",
@@ -177,7 +190,7 @@ After completing the normal skill response, append EXACTLY one machine result:
   "review_mode": "<change|path|symbol|null>",
   "target": "<review target or null>",
   "target_symbol": "<symbol or null>",
-  "source_uuid": "<sidecar/stage UUID or null>",
+  "{id_field}": "<sidecar/stage UUID or null>",
   "blocker": "<blocker or null>"
 }}
 </ORCHESTRATION_RESULT>
@@ -250,10 +263,14 @@ def save_artifact(
     stage: str,
     result: dict[str, Any],
     output: str,
+    workflow_id: str,
+    scope: Path,
 ) -> Path:
     obj = {
         "sequence": seq,
         "stage": stage,
+        "workflow_id": workflow_id,
+        "scope": str(scope),
         "result": result,
         "final_output": output,
     }
@@ -285,13 +302,13 @@ def main() -> int:
         else scope / ".workflow" / workflow_id
     )
     artifacts = state_root / "artifacts"
-    artifacts.mkdir(parents=True, exist_ok=True)
-
     request_file = state_root / "request.md"
-    if args.request_file:
-        request_file.write_text(Path(args.request_file).read_text())
-    else:
-        request_file.write_text(args.request)
+    if not args.dry_run:
+        artifacts.mkdir(parents=True, exist_ok=True)
+        if args.request_file:
+            request_file.write_text(Path(args.request_file).read_text())
+        else:
+            request_file.write_text(args.request)
 
     state = {
         "workflow_id": workflow_id,
@@ -327,7 +344,8 @@ def main() -> int:
         output = run_process(args.runtime, prompt, scope)
         result = parse_result(output, stage)
         artifact_path = save_artifact(
-            artifacts, state["sequence"], stage, result, output
+            artifacts, state["sequence"], stage, result, output,
+            state["workflow_id"], scope,
         )
 
         transition = TRANSITIONS[args.workflow].get((stage, result["status"]))
