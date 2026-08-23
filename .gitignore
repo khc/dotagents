@@ -6,6 +6,7 @@
 .antigravitycli/
 .sidecar/
 .task-cache/
+.workflow/
 
 # macOS
 .DS_Store
