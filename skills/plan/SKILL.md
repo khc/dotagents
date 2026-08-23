@@ -43,7 +43,6 @@ Do not create an implementation plan when the request is already one of these:
 
 - code/file/change review → `$review`
 - applying existing review findings → `$fix`
-- post-change regression/sanity check → `$audit`
 - research-only question → `$research`
 
 Return the minimal route and stop.
@@ -119,7 +118,7 @@ If required planning evidence lies outside the active scope, stop and request th
    - Read-only commands and test discovery are allowed; running tests is allowed only when needed to establish existing behavior or baseline and permitted by project guidance.
 
 8. **Do not perform the later lifecycle stages.**
-   - Do not invoke `$implement`, `$feature`, `$review`, `$fix`, or `$audit` from inside planning.
+   - Do not invoke `$implement`, `$feature`, `$review`, or `$fix` from inside planning.
    - The plan ends with the next-step handoff.
 
 ## Plan Self-Review
@@ -151,8 +150,6 @@ or
 `$review`
 or
 `$fix`
-or
-`$audit`
 or
 `$research`
 

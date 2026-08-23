@@ -27,7 +27,7 @@ Improvements and open items identified during skill review session (2026-04-14).
 
 ### `test`
 - [ ] Writing or running tests as a primary task has no dedicated skill
-- [ ] Currently absorbed into `fix`/`feature`/`audit` as a side effect — awkward when the user's intent is test coverage specifically
+- [ ] Currently absorbed into `fix`/`feature` as a side effect — awkward when the user's intent is test coverage specifically
 - [ ] Should: locate existing test patterns (`Grep`), add targeted tests for a named path, run them and report results
 
 ---
