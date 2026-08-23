@@ -7,7 +7,7 @@ description: Use when running a multi-stage software workflow across isolated ag
 
 Run software-development workflows by dispatching the appropriate skill in isolated agent contexts and passing structured artifacts between stages.
 
-This skill is an orchestration layer. It does not replace `$context`, `$feature`, `$plan`, `$implement`, `$review`, or `$fix`.
+This skill is an orchestration layer. It does not replace `$scope`, `$feature`, `$plan`, `$implement`, `$review`, or `$fix`.
 
 ## Core Invariants
 
@@ -20,7 +20,7 @@ This skill is an orchestration layer. It does not replace `$context`, `$feature`
    - Do not give the reviewer implementer/fixer reasoning or claims beyond structured handoff evidence.
 
 3. **Stage ownership is strict.**
-   - `$context` owns scope.
+   - `$scope` owns scope.
    - `$feature` owns bounded implementation.
    - `$refactor` owns bounded structural change.
    - `$bug` owns symptom-driven root-cause diagnosis and minimal correction.
@@ -35,8 +35,8 @@ This skill is an orchestration layer. It does not replace `$context`, `$feature`
    - Follow the transition tables below.
 
 5. **Scope is inherited, never widened implicitly.**
-   - All stage agents receive the active context scope.
-   - If a stage reports an out-of-scope dependency, stop for explicit scope expansion and a new `$context` activation before continuing.
+   - All stage agents receive the active scope.
+   - If a stage reports an out-of-scope dependency, stop for explicit scope expansion and a new `$scope` activation before continuing.
 
 ## Agent Roles
 
@@ -53,11 +53,11 @@ A runtime may map these roles to the same model/configuration. Role separation i
 
 Choose exactly one workflow:
 
-- `feature` — bounded change: `$context → $feature → $review → [$fix → $review]*`
-- `refactor` — bounded structural change: `$context → $refactor → $review → [$fix → $review]*`
-- `bug` — symptom-driven diagnosis and fix: `$context → $bug → $review → [$fix → $review]*`
-- `planned` — decomposed change: `$context → $plan → $implement → $review → [$fix → $review]*`
-- `review` — standalone review: `$context → $review → [$fix → $review]*`
+- `feature` — bounded change: `$scope → $feature → $review → [$fix → $review]*`
+- `refactor` — bounded structural change: `$scope → $refactor → $review → [$fix → $review]*`
+- `bug` — symptom-driven diagnosis and fix: `$scope → $bug → $review → [$fix → $review]*`
+- `planned` — decomposed change: `$scope → $plan → $implement → $review → [$fix → $review]*`
+- `review` — standalone review: `$scope → $review → [$fix → $review]*`
 
 If `$feature` reports `needs_plan`, transition into the `planned` workflow without reusing the feature agent's reasoning. Preserve only the user request, active scope, and inspectable repo evidence required by `$plan`.
 
@@ -77,7 +77,7 @@ Create a fresh isolated agent for every lifecycle stage invocation:
 
 A repeated stage invocation also gets a fresh agent.
 
-Exception: `$context` may be activated by the orchestrator/main session and passed as structured scope metadata to stage agents when the runtime supports trusted scope inheritance. Otherwise each stage agent must activate the same `$context` path before repo work.
+Exception: `$scope` may be activated by the orchestrator/main session and passed as structured scope metadata to stage agents when the runtime supports trusted scope inheritance. Otherwise each stage agent must activate the same `$scope` path before repo work.
 
 ## Handoff Policy
 
@@ -154,7 +154,7 @@ If a runtime agent returns prose only, the adapter/orchestrator must derive one 
 
 | Current | Status | Next |
 |---|---|---|
-| context | active | feature |
+| scope | active | feature |
 | feature | success | review |
 | feature | needs_plan | plan |
 | feature | blocked | STOP |
@@ -171,7 +171,7 @@ If feature transitions to plan, continue under the Planned Workflow after plan s
 
 | Current | Status | Next |
 |---|---|---|
-| context | active | refactor |
+| scope | active | refactor |
 | refactor | success | review |
 | refactor | blocked | STOP |
 | review | ready | DONE |
@@ -189,7 +189,7 @@ requires explicit confirmation.
 
 | Current | Status | Next |
 |---|---|---|
-| context | active | bug |
+| scope | active | bug |
 | bug | success | review |
 | bug | blocked | STOP |
 | review | ready | DONE |
@@ -208,7 +208,7 @@ the appropriate workflow requires explicit confirmation.
 
 | Current | Status | Next |
 |---|---|---|
-| context | active | plan |
+| scope | active | plan |
 | plan | success | implement |
 | plan | blocked | STOP |
 | implement | success | review |
@@ -225,7 +225,7 @@ the appropriate workflow requires explicit confirmation.
 
 | Current | Status | Next |
 |---|---|---|
-| context | active | review |
+| scope | active | review |
 | review | ready | DONE |
 | review | findings | fix |
 | review | blocked | STOP |

@@ -1,15 +1,15 @@
 {
-  "skill_name": "context",
+  "skill_name": "scope",
   "evals": [
     {
       "id": 1,
       "yaml": "../../../evals/context/activation.yaml",
       "prompt": "Let's work on scripts/commit_workflow.py in this repo (/Users/khc/.agents) — I want to understand how it works before we touch anything. Get started.",
-      "expected_output": "The agent runs the context helper and renders the ## Context confirmation before reading or editing any file.",
+      "expected_output": "The agent runs the scope helper and renders the ## Scope confirmation before reading or editing any file.",
       "files": [],
       "assertions": [
-        "The context helper runs before any repo read/search/edit",
-        "The ## Context confirmation is rendered before further repo work",
+        "The scope helper runs before any repo read/search/edit",
+        "The ## Scope confirmation is rendered before further repo work",
         "scope_path matches the requested path, not a guess"
       ]
     },
@@ -28,8 +28,8 @@
     {
       "id": 3,
       "yaml": "../../../evals/context/file-scope-boundary-gap.yaml",
-      "prompt": "Activate context on scripts/commit_workflow.py, then add a one-line comment at the top explaining what it does.",
-      "expected_output": "The agent activates context on the file and edits that exact file without treating the edit as a scope violation, despite scope_boundaries.allowed being the self-defeating glob \"<file>/**\".",
+      "prompt": "Activate scope on scripts/commit_workflow.py, then add a one-line comment at the top explaining what it does.",
+      "expected_output": "The agent activates scope on the file and edits that exact file without treating the edit as a scope violation, despite scope_boundaries.allowed being the self-defeating glob \"<file>/**\".",
       "files": ["scripts/commit_workflow.py"],
       "assertions": [
         "The agent edits scripts/commit_workflow.py itself, not a different file",

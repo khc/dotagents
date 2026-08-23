@@ -23,15 +23,15 @@ Optimize for:
 
 ## Workflow Gate
 
-If a scoped context is not active:
+If an active scope is not established:
 
 - STOP
-- run `$context` first
-- after `$context` completes, confirm the active scope path, then continue
+- run `$scope` first
+- after `$scope` completes, confirm the active scope path, then continue
 
-Use the repo instructions already loaded by `$context`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required refactor touchpoint, and was not already loaded.
+Use the repo instructions already loaded by `$scope`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required refactor touchpoint, and was not already loaded.
 
-The active context boundary is authoritative. Do not broaden it implicitly.
+The active scope boundary is authoritative. Do not broaden it implicitly.
 
 ## Refactor Scope
 
@@ -171,7 +171,7 @@ After edits:
 1. re-read the changed lines and confirm the transformation is structural
 2. verify all relevant call sites/references remain valid
 3. run the same targeted behavior tests/checks used for the baseline
-4. run applicable lint/static-check commands established by `$context`
+4. run applicable lint/static-check commands established by `$scope`
 5. inspect fresh output before claiming success
 
 The preferred pattern is:

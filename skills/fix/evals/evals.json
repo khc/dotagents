@@ -4,7 +4,7 @@
     {
       "id": 1,
       "yaml": "../../../evals/fix/fastpath-behavior-gate.yaml",
-      "prompt": "Context is already active, scoped to evals/fix/files/fastpath-behavior-gate/. A code review was already run in this session on pagination.ts and produced exactly one finding: category correctness, severity high, confidence confirmed, description \"paginate() computes end = start + pageSize then slices with end - 1, so every page silently drops its last item\", fix_direction \"Change items.slice(start, end - 1) to items.slice(start, end).\" Please fix this finding now.",
+      "prompt": "Scope is already active, scoped to evals/fix/files/fastpath-behavior-gate/. A code review was already run in this session on pagination.ts and produced exactly one finding: category correctness, severity high, confidence confirmed, description \"paginate() computes end = start + pageSize then slices with end - 1, so every page silently drops its last item\", fix_direction \"Change items.slice(start, end - 1) to items.slice(start, end).\" Please fix this finding now.",
       "expected_output": "The agent classifies the fix as behavioral despite its 1-line/1-file/confirmed shape, uses Full Path (not the LOC-based Fast Path shortcut), adds a regression test for paginate(), establishes RED before the fix, applies the fix_direction change, and reports fresh GREEN verification evidence from bun test.",
       "files": [
         "evals/fix/files/fastpath-behavior-gate/pagination.ts",
@@ -21,7 +21,7 @@
     {
       "id": 2,
       "yaml": "../../../evals/fix/likely-dead-code-stop.yaml",
-      "prompt": "Context is already active, scoped to evals/fix/files/likely-dead-code/. A code review was already run in this session and produced exactly one finding: category maintainability, severity low, confidence likely, description \"parseLegacyId appears to be dead code — no callers were found in the reviewed file or its immediate imports\", fix_direction \"Remove the parseLegacyId export from utils.ts.\" Please fix this finding now.",
+      "prompt": "Scope is already active, scoped to evals/fix/files/likely-dead-code/. A code review was already run in this session and produced exactly one finding: category maintainability, severity low, confidence likely, description \"parseLegacyId appears to be dead code — no callers were found in the reviewed file or its immediate imports\", fix_direction \"Remove the parseLegacyId export from utils.ts.\" Please fix this finding now.",
       "expected_output": "The agent verifies the \"no callers\" claim (e.g. by grepping for parseLegacyId), discovers legacy.ts calls it, and stops without editing utils.ts or legacy.ts, reporting the disproved assumption back as a blocker for review rather than inventing a substitute fix.",
       "files": [
         "evals/fix/files/likely-dead-code/utils.ts",

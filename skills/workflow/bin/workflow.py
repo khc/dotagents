@@ -179,7 +179,7 @@ Original request file: {request_file}
 Workflow artifact directory: {artifacts_dir}
 Review/fix cycle: {cycle}
 
-Before repo work, activate `$context` on exactly `{scope}` if this fresh runtime
+Before repo work, activate `$scope` on exactly `{scope}` if this fresh runtime
 does not already have that scope active. Do not broaden scope.
 
 {stage_input}

@@ -2,7 +2,7 @@
 
 ## Flow
 
-`context → refactor → review → [fix → review]*`
+`scope → refactor → review → [fix → review]*`
 
 Bounded structural change only. If `$refactor` reports `blocked` because its
 Complexity Gate fails, STOP and report that the change requires `$plan`; do
@@ -10,7 +10,7 @@ not auto-transition into the Planned Workflow.
 
 ## Handoffs
 
-### context → refactor
+### scope → refactor
 Pass active scope + user request.
 
 ### refactor → review

@@ -13,11 +13,11 @@ Review independently from the implementer's reasoning. Base conclusions only on 
 
 ## Workflow
 
-If a scoped context is not active:
+If an active scope is not established:
 
 - STOP
-- run $context first
-- after $context completes, confirm the active scope path, then proceed with the review
+- run $scope first
+- after $scope completes, confirm the active scope path, then proceed with the review
 - do not infer scope from the review target path alone
 
 ## Workflow Evidence
@@ -34,7 +34,7 @@ When review follows `$feature` or `$implement`, consume the workflow handoff as 
 
 Do not trust the producer's success claims; inspect the artifacts/evidence yourself.
 
-A workflow handoff does not broaden the active context. If required review evidence lies outside `scope_boundaries.allowed`, follow the existing scope Failure Mode before reading it.
+A workflow handoff does not broaden the active scope. If required review evidence lies outside `scope_boundaries.allowed`, follow the existing scope Failure Mode before reading it.
 
 ## Review mode
 
@@ -58,7 +58,7 @@ For change review:
    - **requirements + diff** — perform full change review: requirements compliance plus diff integrity
 4. Check, when supported by the available evidence, for missing planned behavior, unjustified deviations, incomplete acceptance criteria, accidental deletions, unrelated changes within the allowed scope, and behavior present in the diff but unsupported by the requirements.
 5. If the implementation exposes a defect in the plan/requirements themselves, report it explicitly as a plan/requirements issue rather than misclassifying it as an implementation defect.
-6. Requirements and Git history do not expand filesystem scope. All reads remain subject to the active context's `scope_boundaries.allowed` and the traversal limits below.
+6. Requirements and Git history do not expand filesystem scope. All reads remain subject to the active scope's `scope_boundaries.allowed` and the traversal limits below.
 
 ## Scope
 
@@ -78,7 +78,7 @@ For change review:
 - Include hardcoded secrets, tokens, credentials, unsafe defaults, insecure parsing, injection risks, and misuse of cryptography where applicable.
 - Do not expand scope beyond the requested target unless the issue requires adjacent context to verify. Adjacent context means at most one directly imported or called file. Do not traverse further.
 - Exception: for Security findings where exploitability depends on the caller chain, traverse up to two hops. Stop if the chain becomes wide (more than 3 callers at any hop).
-- Neither the adjacent-file allowance nor the security traversal exception overrides the active context's `scope_boundaries.allowed`. If the next hop would leave that boundary, stop and ask permission per context's Failure Mode before reading it — do not read first and explain after. A user instruction to skip confirmation ("don't ask me first," urgency, or similar) does not pre-authorize a scope expansion that hasn't happened yet; treat it the same as any other pressure to bypass scope discipline.
+- Neither the adjacent-file allowance nor the security traversal exception overrides the active scope's `scope_boundaries.allowed`. If the next hop would leave that boundary, stop and ask permission per scope's Failure Mode before reading it — do not read first and explain after. A user instruction to skip confirmation ("don't ask me first," urgency, or similar) does not pre-authorize a scope expansion that hasn't happened yet; treat it the same as any other pressure to bypass scope discipline.
 
 ## Review rules
 
@@ -198,7 +198,7 @@ Still provide the verdict using the rules above.
 
 ## Response format
 
-The review itself starts with the `## Review` heading (plain, not in a code block); render findings directly beneath it. If the Workflow gate above required activating context first, that renders as its own `## Context` block ahead of this one — that's expected, not a violation of this rule. Keep the two sections distinct: never fold review findings under the `## Context` heading, and don't repeat context's confirmation details under `## Review`.
+The review itself starts with the `## Review` heading (plain, not in a code block); render findings directly beneath it. If the Workflow gate above required activating scope first, that renders as its own `## Scope` block ahead of this one — that's expected, not a violation of this rule. Keep the two sections distinct: never fold review findings under the `## Scope` heading, and don't repeat scope's confirmation details under `## Review`.
 
 ## Save to Sidecar
 

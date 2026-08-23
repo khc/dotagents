@@ -2,11 +2,11 @@
 
 Portable orchestration for:
 
-1. `context → feature → review → [fix → review]*`
-2. `context → refactor → review → [fix → review]*`
-3. `context → bug → review → [fix → review]*`
-4. `context → plan → implement → review → [fix → review]*`
-5. `context → review → [fix → review]*`
+1. `scope → feature → review → [fix → review]*`
+2. `scope → refactor → review → [fix → review]*`
+3. `scope → bug → review → [fix → review]*`
+4. `scope → plan → implement → review → [fix → review]*`
+5. `scope → review → [fix → review]*`
 
 ## Runnable runtimes
 

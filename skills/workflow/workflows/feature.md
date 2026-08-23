@@ -2,7 +2,7 @@
 
 ## Flow
 
-`context → feature → review → [fix → review]*`
+`scope → feature → review → [fix → review]*`
 
 If feature returns `needs_plan`, transition to:
 
@@ -10,7 +10,7 @@ If feature returns `needs_plan`, transition to:
 
 ## Handoffs
 
-### context → feature
+### scope → feature
 Pass active scope + user request.
 
 ### feature → review

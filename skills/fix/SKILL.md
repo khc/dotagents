@@ -27,7 +27,7 @@ Load the most recent open `review` entry from the sidecar using the fix workflow
 
 Extract:
 
-- `scope` — top-level row field; use as the required work scope and require matching active $context scope before edits
+- `scope` — top-level row field; use as the required work scope and require matching active $scope scope before edits
 - `context.findings` — source of truth for what to fix; each finding has `category`, `location`, `description`, `severity` (`critical|high|medium|low`), `confidence`, and `fix_direction`
 - `context.reasoning` — analytical context explaining why each finding matters
 - `context.review_mode` — `change|path|symbol` when persisted by review
@@ -89,18 +89,18 @@ Any behavioral correctness, security, compatibility, migration, or regression fi
 
 ## Workflow
 
-If a scoped context is not active and source is session:
+If an active scope is not established and source is session:
 
 - STOP
-- run $context first
+- run $scope first
 
 If source is sidecar:
 
 - use the top-level `scope` field from the loaded entry as the required work scope
-- if active $context scope is absent or differs from the loaded `scope`: STOP — report `Run $context {scope} before applying this sidecar fix.`
+- if active $scope scope is absent or differs from the loaded `scope`: STOP — report `Run $scope {scope} before applying this sidecar fix.`
 
-1. Use the repo instructions already loaded by `$context`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required fix touchpoint, and was not already loaded.
-2. Obey the active scope and applicable instructions established by `$context`.
+1. Use the repo instructions already loaded by `$scope`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required fix touchpoint, and was not already loaded.
+2. Obey the active scope and applicable instructions established by `$scope`.
 3. Read only:
    - the specific files named in the review findings, not the full target tree
    - at most one directly called or imported file from the fix site if required for safety
@@ -214,7 +214,7 @@ After the plan (or immediately for Fast Path):
 - Add or update only the test case(s) directly covering the fixed behavior; do not add broad new test infrastructure.
 - Prefer existing test style, helpers, and fixtures.
 - When practical and safe, establish RED evidence for behavioral fixes: confirm the regression test fails for the reviewed reason before applying the production change. Do not create destructive or out-of-scope state merely to force RED.
-- After applying edits, run the applicable test, lint, and static-check commands established by the instructions loaded during `$context`. Use only established commands — do not guess or discover alternatives.
+- After applying edits, run the applicable test, lint, and static-check commands established by the instructions loaded during `$scope`. Use only established commands — do not guess or discover alternatives.
 - Inspect the fresh command result before reporting success. If a required command cannot be run, report the verification gap and do not mark the affected finding as successfully fixed.
 
 ## Review / Fix Ownership

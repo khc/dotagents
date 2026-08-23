@@ -2,7 +2,7 @@
 
 ## Flow
 
-`context → bug → review → [fix → review]*`
+`scope → bug → review → [fix → review]*`
 
 Bounded symptom-driven diagnosis and fix only. If `$bug` reports `blocked`,
 STOP and report the required next step; do not auto-transition into another
@@ -15,7 +15,7 @@ workflow. Possible reasons and their required next step:
 
 ## Handoffs
 
-### context → bug
+### scope → bug
 Pass active scope + user-reported symptom (error, stack trace, failing test,
 bad output, or reproduction steps).
 

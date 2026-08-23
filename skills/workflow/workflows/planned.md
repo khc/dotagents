@@ -2,11 +2,11 @@
 
 ## Flow
 
-`context → plan → implement → review → [fix → review]*`
+`scope → plan → implement → review → [fix → review]*`
 
 ## Handoffs
 
-### context → plan
+### scope → plan
 Pass active scope + user requirements/specification.
 
 ### plan → implement

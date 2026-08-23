@@ -2,7 +2,7 @@
 
 ## Flow
 
-`context → review → [fix → review]*`
+`scope → review → [fix → review]*`
 
 ## Review modes
 
@@ -14,7 +14,7 @@ The original mode and target must be preserved through every fix/re-review cycle
 
 ## Handoffs
 
-### context → review
+### scope → review
 Pass:
 - active scope
 - explicit target

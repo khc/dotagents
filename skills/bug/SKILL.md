@@ -22,13 +22,13 @@ Turn a concrete symptom into a verified minimal correction with:
 
 ## Workflow Gate
 
-If a scoped context is not active:
+If an active scope is not established:
 
 - STOP
-- run `$context` first
-- after `$context` completes, confirm the active scope path, then continue
+- run `$scope` first
+- after `$scope` completes, confirm the active scope path, then continue
 
-Use the repo instructions already loaded by `$context`.
+Use the repo instructions already loaded by `$scope`.
 
 Read an additional nearest applicable `AGENTS.md` only if it:
 
@@ -36,7 +36,7 @@ Read an additional nearest applicable `AGENTS.md` only if it:
 - applies to a directly implicated bug touchpoint
 - was not already loaded
 
-The active context boundary is authoritative. Do not broaden scope implicitly.
+The active scope boundary is authoritative. Do not broaden scope implicitly.
 
 ## Bug Input
 
@@ -108,7 +108,7 @@ Use targeted tools:
 - `Read` only files directly implicated by the failure path
 - inspect the minimum caller/callee/config/test context required to establish causality
 
-Do not impose an arbitrary file-count limit. Scope should be evidence-driven and bounded by the active context.
+Do not impose an arbitrary file-count limit. Scope should be evidence-driven and bounded by the active scope.
 
 Do not scan unrelated modules or search for extra defects.
 
@@ -204,7 +204,7 @@ After the fix:
 1. re-read the changed lines
 2. confirm the change addresses the diagnosed cause
 3. rerun the exact reproduction/regression test used for RED
-4. run applicable targeted test/lint/static-check commands established by `$context`
+4. run applicable targeted test/lint/static-check commands established by `$scope`
 5. inspect fresh output before claiming success
 
 A bug fix may be reported as successful only with fresh evidence from the current working tree.

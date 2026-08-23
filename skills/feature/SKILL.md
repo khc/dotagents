@@ -7,11 +7,11 @@ Deliver features in a controlled, minimal, and modular way.
 
 ## Workflow
 
-If a scoped context is not active:
+If an active scope is not established:
 - STOP
-- run $context first
+- run $scope first
 
-1. Use the repo instructions already loaded by `$context`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required touchpoint, and was not already loaded.
+1. Use the repo instructions already loaded by `$scope`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required touchpoint, and was not already loaded.
 2. If no applicable project instructions are available, inspect only:
    - `pyproject.toml` or `package.json` (deps and tooling)
    - top-level directory listing (structure)
@@ -161,7 +161,7 @@ Do not claim implementation success from code inspection alone when the behavior
 - Do not pause after planning
 - Do not restate the plan
 - Do not reread unchanged files unless necessary
-- Do not explore outside the scoped context
+- Do not explore outside the active scope
 
 ## Code Output Rules
 
@@ -178,7 +178,7 @@ Do not claim implementation success from code inspection alone when the behavior
 - Do not create destructive or out-of-scope state merely to force RED.
 - For non-behavioral changes, use the smallest applicable verification and do not add tests for ceremony.
 - Prefer existing test style, helpers, and fixtures.
-- After applying edits, run the applicable test, lint, and static-check commands established by the instructions loaded during `$context`. Use only established commands — do not guess or discover alternatives.
+- After applying edits, run the applicable test, lint, and static-check commands established by the instructions loaded during `$scope`. Use only established commands — do not guess or discover alternatives.
 - Inspect fresh command output before claiming success. If a required check cannot be run, state the verification gap and do not claim the affected acceptance criterion is verified.
 
 ## Feature / Review Ownership

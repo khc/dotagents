@@ -31,13 +31,13 @@ Do not optimize for raw LOC at the expense of correctness, security, or dispropo
 
 ## Workflow Gate
 
-If a scoped context is not active:
+If an active scope is not established:
 
 - STOP
-- run `$context` first
-- after `$context` completes, confirm the active scope path, then continue
+- run `$scope` first
+- after `$scope` completes, confirm the active scope path, then continue
 
-Use the repo instructions already loaded by `$context`.
+Use the repo instructions already loaded by `$scope`.
 
 Read an additional nearest applicable `AGENTS.md` only if it:
 

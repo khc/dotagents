@@ -46,16 +46,16 @@ If the user explicitly asks to bypass planning for a bounded change, `$feature` 
 
 ## Workflow Gate
 
-If a scoped context is not active:
+If an active scope is not established:
 
 - STOP
-- run `$context` first
-- after `$context` completes, confirm the active scope path, then continue
+- run `$scope` first
+- after `$scope` completes, confirm the active scope path, then continue
 - do not infer scope from the plan's paths alone
 
-Use the repo instructions already loaded by `$context`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required planned touchpoint, and was not already loaded. If no applicable project instructions are available, proceed using the active scoped path and the plan.
+Use the repo instructions already loaded by `$scope`. Read an additional nearest applicable `AGENTS.md` only if it is inside `scope_boundaries.allowed`, applies to a required planned touchpoint, and was not already loaded. If no applicable project instructions are available, proceed using the active scoped path and the plan.
 
-The active context boundary is authoritative. A plan does not grant permission to read or modify paths outside `scope_boundaries.allowed`.
+The active scope boundary is authoritative. A plan does not grant permission to read or modify paths outside `scope_boundaries.allowed`.
 
 If the plan requires an out-of-scope file:
 
@@ -223,7 +223,7 @@ Tests are part of implementation evidence, not final review.
 - Behavioral changes: prefer RED → implementation → GREEN where practical.
 - Non-behavioral changes: use the smallest applicable verification; do not add tests for ceremony.
 - Use existing test style, helpers, and fixtures.
-- Use verification commands from the plan and the project instructions established by `$context`.
+- Use verification commands from the plan and the project instructions established by `$scope`.
 - Do not guess alternative project commands if none are documented.
 - If a required verification command cannot be run, report the gap and do not claim the affected task succeeded.
 - A passing targeted test does not authorize unrelated changes.
