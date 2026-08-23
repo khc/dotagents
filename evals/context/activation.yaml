@@ -7,7 +7,7 @@ purpose: >
   confirmation output before proceeding.
 
 prompt: >
-  Let's work on scripts/commit_workflow.py in this repo (/Users/khc/.agents) —
+  Let's work on scripts/fix_workflow.py in this repo (/Users/khc/.agents) —
   I want to understand how it works before we touch anything. Get started.
 
 expected:

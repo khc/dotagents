@@ -9,10 +9,6 @@ Improvements and open items identified during skill review session (2026-04-14).
 ### `context`
 - [x] Approval path for out-of-scope dependencies is now spec'd — Failure Mode requires an explicit `$context` re-activation on the approved path; verbal approval alone does not mutate `scope_boundaries.allowed`
 
-### `commit`
-- [ ] No cap on per-file diff size for large source files — lock/binary files are skipped, but a single large source file (e.g. generated code) can still flood context
-- [ ] Consider adding a line threshold: if `git diff <file>` exceeds N lines, fall back to stat summary only
-
 ### `plan`
 - [x] "Mixed" task type removed from `plan` entirely rather than specified — gap is moot
 
