@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Use when running a multi-stage software workflow across isolated agents. Own workflow state, fresh-agent dispatch, artifact handoffs, and review/fix loops for bounded feature, bounded refactor, planned implementation, and standalone review workflows. Do not perform planning, implementation, review, or fixing itself.
+description: Use when running a multi-stage software workflow across isolated agents. Own workflow state, fresh-agent dispatch, artifact handoffs, and review/fix loops for bounded feature, bounded refactor, symptom-driven bug fix, planned implementation, and standalone review workflows. Do not perform planning, implementation, review, or fixing itself.
 ---
 
 # Workflow
@@ -23,6 +23,7 @@ This skill is an orchestration layer. It does not replace `$context`, `$feature`
    - `$context` owns scope.
    - `$feature` owns bounded implementation.
    - `$refactor` owns bounded structural change.
+   - `$bug` owns symptom-driven root-cause diagnosis and minimal correction.
    - `$plan` owns decomposition.
    - `$implement` owns plan-faithful execution.
    - `$review` owns diagnosis and acceptance.
@@ -42,7 +43,7 @@ This skill is an orchestration layer. It does not replace `$context`, `$feature`
 Use the minimum stable runtime roles:
 
 - `planner` → activates `$plan`
-- `builder` → activates `$feature`, `$refactor`, or `$implement`
+- `builder` → activates `$feature`, `$refactor`, `$bug`, or `$implement`
 - `reviewer` → activates `$review`
 - `fixer` → activates `$fix`
 
@@ -54,12 +55,15 @@ Choose exactly one workflow:
 
 - `feature` — bounded change: `$context → $feature → $review → [$fix → $review]*`
 - `refactor` — bounded structural change: `$context → $refactor → $review → [$fix → $review]*`
+- `bug` — symptom-driven diagnosis and fix: `$context → $bug → $review → [$fix → $review]*`
 - `planned` — decomposed change: `$context → $plan → $implement → $review → [$fix → $review]*`
 - `review` — standalone review: `$context → $review → [$fix → $review]*`
 
 If `$feature` reports `needs_plan`, transition into the `planned` workflow without reusing the feature agent's reasoning. Preserve only the user request, active scope, and inspectable repo evidence required by `$plan`.
 
 If `$refactor` reports `blocked` because its Complexity Gate fails, STOP and report that the change requires `$plan`. Unlike `$feature`, a blocked `$refactor` does not auto-transition into the `planned` workflow — the user must confirm restarting under `$plan` with the original request.
+
+If `$bug` reports `blocked` because its Complexity Gate fails, or because the issue turns out to be a structured `$review` finding rather than a fresh symptom (route to `$fix`), or because there is no concrete symptom (route to `$review`), STOP and report the required next step. A blocked `$bug` does not auto-transition into another workflow — the user must confirm restarting under the appropriate workflow.
 
 ## Fresh-Agent Policy
 
@@ -100,6 +104,10 @@ Every stage result must be normalized to one of these statuses:
 - `blocked`
 
 ### Refactor
+- `success`
+- `blocked`
+
+### Bug
 - `success`
 - `blocked`
 
@@ -177,6 +185,25 @@ A blocked refactor reports its Complexity Gate reason and required next step
 (`$plan`) but does not auto-transition; restarting under the Planned Workflow
 requires explicit confirmation.
 
+### Bug Workflow
+
+| Current | Status | Next |
+|---|---|---|
+| context | active | bug |
+| bug | success | review |
+| bug | blocked | STOP |
+| review | ready | DONE |
+| review | findings | fix |
+| review | blocked | STOP |
+| fix | success | review |
+| fix | diagnosis_mismatch | review |
+| fix | blocked | STOP |
+
+A blocked bug reports its blocker reason (Complexity Gate failure, no concrete
+symptom, or an already-structured review finding) and required next step
+(`$plan`, `$review`, or `$fix`) but does not auto-transition; restarting under
+the appropriate workflow requires explicit confirmation.
+
 ### Planned Workflow
 
 | Current | Status | Next |
@@ -234,6 +261,22 @@ Collect an `implementation-handoff` artifact whose `source` is `refactor`. If
 `$refactor` reports `blocked`, treat it like any other blocked stage: STOP and
 report the blocker plus required next step, rather than dispatching `$plan`
 automatically.
+
+### Dispatch Bug
+
+Give the fresh builder:
+
+- active scope
+- user-reported symptom (error, stack trace, failing test, bad output, or
+  reproduction steps)
+- source workflow = `bug`
+
+Require `$bug`.
+
+Collect an `implementation-handoff` artifact whose `source` is `bug`. If
+`$bug` reports `blocked`, treat it like any other blocked stage: STOP and
+report the blocker plus required next step (`$plan`, `$review`, or `$fix`
+depending on the reason), rather than dispatching that stage automatically.
 
 ### Dispatch Plan
 
@@ -375,7 +418,7 @@ Keep orchestrator output concise:
 ```markdown
 ## Workflow
 
-- Workflow: feature | refactor | planned | review
+- Workflow: feature | refactor | bug | planned | review
 - Scope: ...
 - State: ...
 - Last artifact: ...

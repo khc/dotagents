@@ -31,7 +31,7 @@ Persist handoff artifacts under <scope>/.workflow/<workflow-id>/artifacts/.
 Do not pass conversation transcripts between agents.
 ```
 
-For `refactor`, `planned`, or `review`, change the Workflow value.
+For `refactor`, `bug`, `planned`, or `review`, change the Workflow value.
 
 ## Native invocation contract
 

@@ -22,6 +22,7 @@
       "enum": [
         "feature",
         "refactor",
+        "bug",
         "implement"
       ]
     },
@@ -114,6 +115,25 @@
         "properties": {
           "source": {
             "const": "refactor"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "enum": [
+              "success",
+              "blocked"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "source": {
+            "const": "bug"
           }
         }
       },

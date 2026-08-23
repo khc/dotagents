@@ -42,6 +42,7 @@
       "enum": [
         "feature",
         "refactor",
+        "bug",
         "implement",
         "standalone"
       ]

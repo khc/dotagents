@@ -25,6 +25,13 @@ python bin/workflow.py refactor --runtime claude --scope . \
   --request "Extract the retry logic in client.ts into a shared helper"
 ```
 
+Bug:
+
+```bash
+python bin/workflow.py bug --runtime claude --scope . \
+  --request "TypeError: cannot read 'id' of undefined in checkout.ts on submit"
+```
+
 Planned:
 
 ```bash
