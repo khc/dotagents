@@ -30,5 +30,6 @@ reportUnusedCallResult = "none"
 [dependency-groups]
 dev = [
     "basedpyright>=1.39.7",
+    "deptry>=0.25.1",
     "ruff>=0.15.16",
 ]
