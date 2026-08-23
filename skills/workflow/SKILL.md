@@ -56,7 +56,7 @@ Choose exactly one workflow:
 - `feature` — bounded change: `$scope → $feature → $review → [$fix → $review]*`
 - `refactor` — bounded structural change: `$scope → $refactor → $review → [$fix → $review]*`
 - `bug` — symptom-driven diagnosis and fix: `$scope → $bug → $review → [$fix → $review]*`
-- `planned` — decomposed change: `$scope → $plan → $implement → $review → [$fix → $review]*`
+- `planned` — decomposed change: `$scope → $plan → AWAITING_PLAN_APPROVAL → $implement → $review → [$fix → $review]*`
 - `review` — standalone review: `$scope → $review → [$fix → $review]*`
 
 If `$feature` reports `needs_plan`, transition into the `planned` workflow without reusing the feature agent's reasoning. Preserve only the user request, active scope, and inspectable repo evidence required by `$plan`.
@@ -148,6 +148,25 @@ If review prose and the machine envelope disagree, use the stricter interpretati
 
 If a runtime agent returns prose only, the adapter/orchestrator must derive one of these statuses conservatively from the explicit stage output. Do not infer success when verification or verdict is missing.
 
+## Plan Approval Gate
+
+A successful `$plan` result never auto-transitions to `$implement`. It always lands the workflow in the terminal-for-this-invocation state `AWAITING_PLAN_APPROVAL`, alongside `DONE`/`STOP`, and the workflow waits there for an explicit human decision.
+
+While `AWAITING_PLAN_APPROVAL`, persist the plan's identity as `active_plan`:
+
+```json
+{"path": "plan_<timestamp>.md", "plan_id": "plan_<timestamp>", "revision": 1, "status": "draft"}
+```
+
+`status` mirrors `skills/plan/SKILL.md`'s frontmatter (`draft` | `approved` | `superseded`).
+
+Approval-parsing rule (concrete, conservative, no ambiguity):
+
+- `$workflow` (prose/Agy): approval is recognized **only** via the exact phrase list already defined in `skills/plan/SKILL.md`'s Conversational Plan Lifecycle ("approved", "looks good, implement", "go ahead", "execute this plan", or a direct `$implement` invocation referring to this plan) — reference that list, never restate it with different wording. Any other message routes to `$plan` as an amendment. Explicit cancellation phrases ("cancel", "stop", "never mind", "discard this plan") route to `STOP`.
+- `bin/workflow.py resume --message`: **always** re-invokes `$plan`; **never** itself flips `status`.
+- `bin/workflow.py approve`: the **only** action that flips `draft → approved`; it performs a deterministic frontmatter patch and never invokes `$plan`.
+- `(plan, success) → AWAITING_PLAN_APPROVAL` is a single uniform rule that covers first-time creation, conversational amendment, and `implement`-triggered re-plan — no special-casing needed per trigger reason at the transition-table level.
+
 ## Transition Tables
 
 ### Feature Workflow
@@ -165,7 +184,7 @@ If a runtime agent returns prose only, the adapter/orchestrator must derive one 
 | fix | diagnosis_mismatch | review |
 | fix | blocked | STOP |
 
-If feature transitions to plan, continue under the Planned Workflow after plan succeeds.
+If feature transitions to plan, continue under the Planned Workflow: a successful plan enters `AWAITING_PLAN_APPROVAL`, per the Plan Approval Gate, and requires explicit user approval before `$implement` runs.
 
 ### Refactor Workflow
 
@@ -209,7 +228,10 @@ the appropriate workflow requires explicit confirmation.
 | Current | Status | Next |
 |---|---|---|
 | scope | active | plan |
-| plan | success | implement |
+| plan | success | AWAITING_PLAN_APPROVAL |
+| AWAITING_PLAN_APPROVAL | user_approves | implement |
+| AWAITING_PLAN_APPROVAL | user_amends | plan |
+| AWAITING_PLAN_APPROVAL | user_cancels | STOP |
 | plan | blocked | STOP |
 | implement | success | review |
 | implement | replan | plan |
@@ -220,6 +242,8 @@ the appropriate workflow requires explicit confirmation.
 | fix | success | review |
 | fix | diagnosis_mismatch | review |
 | fix | blocked | STOP |
+
+`plan | success | AWAITING_PLAN_APPROVAL` applies uniformly to first-time plan creation, conversational amendment, and `implement`-triggered re-plan — see Plan Approval Gate above.
 
 ### Standalone Review Workflow
 
@@ -280,6 +304,8 @@ depending on the reason), rather than dispatching that stage automatically.
 
 ### Dispatch Plan
 
+When `active_plan` already exists (conversational amendment or an `implement replan` blocker), give the fresh planner the exact `active_plan.path`/`plan_id`/`revision` plus the amendment or blocker text so `$plan` reopens that file per its Plan Revision rules instead of creating a new `plan_id`.
+
 Give the fresh planner:
 
 - active scope
@@ -291,7 +317,11 @@ Require `$plan`.
 
 Collect a `plan-handoff` artifact.
 
+A successful plan-handoff always transitions the workflow to `AWAITING_PLAN_APPROVAL` and persists `active_plan` (see Plan Approval Gate). Never dispatch `$implement` directly from a plan result, whether the plan is newly created or a revision.
+
 ### Dispatch Implement
+
+Only dispatch `$implement` when workflow state is `AWAITING_PLAN_APPROVAL` and `active_plan.status == "approved"` for the current `revision`. Never dispatch `$implement` while `active_plan.status == "draft"`.
 
 Give the fresh builder:
 
@@ -394,6 +424,8 @@ Recommended identifiers:
 
 Every artifact should record its parent identifier so the workflow graph can be reconstructed.
 
+When a plan is open, persist `active_plan` (`path`, `plan_id`, `revision`, `status`) exactly as defined in Plan Approval Gate, so the workflow can resume across process boundaries.
+
 
 ## Runtime Execution
 
@@ -409,6 +441,10 @@ the parent that a stage completed, but they do not replace the artifact contract
 
 Never use session resume/continue as a lifecycle-stage handoff: stage isolation,
 especially reviewer isolation, is part of the workflow semantics.
+
+`bin/workflow.py` treats `AWAITING_PLAN_APPROVAL` as terminal-for-this-invocation and exposes `start`/`resume`/`approve`/`cancel` subcommands to move past it across process boundaries.
+
+Agy needs no code change — the parent simply stops after a successful `$plan` stage and waits, per `runtime/agy/agents/planner.md` and `runtime/agy/README.md`.
 
 
 ## Output
@@ -435,6 +471,17 @@ On completion:
 - State: done
 - Final review: ready
 - Review UUID: ...
+```
+
+On awaiting plan approval:
+
+```markdown
+## Workflow
+
+- Workflow: ...
+- Scope: ...
+- State: awaiting_plan_approval
+- Active plan: plan_1787501234.md (revision 3, draft)
 ```
 
 On stop:

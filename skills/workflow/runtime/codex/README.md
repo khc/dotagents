@@ -12,7 +12,7 @@ This provides fresh context while keeping the same serial workspace.
 ## Run
 
 ```bash
-python bin/workflow.py feature \
+python bin/workflow.py start feature \
   --runtime codex \
   --scope /path/to/repo/subtree \
   --request "Add ..."
@@ -21,27 +21,32 @@ python bin/workflow.py feature \
 Refactor:
 
 ```bash
-python bin/workflow.py refactor --runtime codex --scope . \
+python bin/workflow.py start refactor --runtime codex --scope . \
   --request "Extract the retry logic in client.ts into a shared helper"
 ```
 
 Bug:
 
 ```bash
-python bin/workflow.py bug --runtime codex --scope . \
+python bin/workflow.py start bug --runtime codex --scope . \
   --request "TypeError: cannot read 'id' of undefined in checkout.ts on submit"
 ```
 
 Planned:
 
 ```bash
-python bin/workflow.py planned --runtime codex --scope . --request-file task.md
+python bin/workflow.py start planned --runtime codex --scope . --request-file task.md
+python bin/workflow.py resume <workflow-id> --scope . --message "Don't use JWT; use sessions"
+python bin/workflow.py approve <workflow-id> --scope .
+python bin/workflow.py cancel <workflow-id> --scope .
 ```
+
+`planned` (and any `feature` that escalates via `needs_plan`) pauses at `awaiting_plan_approval` after `$plan` succeeds; resume with `resume`/`approve`/`cancel` using the printed `workflow-id`.
 
 Standalone review:
 
 ```bash
-python bin/workflow.py review --runtime codex --scope src/auth \
+python bin/workflow.py start review --runtime codex --scope src/auth \
   --request "Review token.ts::verifyToken"
 ```
 

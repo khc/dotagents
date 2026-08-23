@@ -4,9 +4,12 @@
 
 `scope → feature → review → [fix → review]*`
 
-If feature returns `needs_plan`, transition to:
+If feature returns needs_plan, transition to:
 
-`plan → implement → review → [fix → review]*`
+plan → AWAITING_PLAN_APPROVAL → implement → review → [fix → review]*
+
+See `workflows/planned.md` for the Plan Approval Gate mechanics; a successful
+plan never auto-transitions to `$implement`.
 
 ## Handoffs
 

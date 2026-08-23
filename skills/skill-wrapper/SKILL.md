@@ -1,5 +1,5 @@
 ---
-name: skill
+name: skill-wrapper
 description: Use when creating, reviewing, or improving an Agent Skill and you want Superpowers writing-skills methodology with persistent evals, Agent Skills specification checks, trigger tests, regression coverage, and cost-aware evaluation.
 compatibility: Requires superpowers:writing-skills. Uses skills-ref when available. Supports deterministic, behavioral, and LLM-judged evals.
 ---

@@ -45,6 +45,8 @@ Reviewer invocations must always be new subagents, including re-review.
 Do not use transcript-reading/inter-agent history as a handoff mechanism even
 though Agy can expose transcripts; the workflow deliberately uses artifacts.
 
+For the `planned` workflow (and any `feature` that escalates via `needs_plan`), after a successful `workflow-planner` stage the parent must stop and wait for the user's next message — approval, amendment, or cancellation — per `SKILL.md`'s Plan Approval Gate; it must not invoke `workflow-builder` for `$implement` until the user explicitly approves.
+
 
 ## Mandatory result normalization
 

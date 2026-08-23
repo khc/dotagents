@@ -8,7 +8,10 @@
     "scope",
     "goal",
     "requirements",
-    "tasks"
+    "tasks",
+    "path",
+    "revision",
+    "status"
   ],
   "properties": {
     "workflow_id": {
@@ -16,6 +19,16 @@
     },
     "plan_id": {
       "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "enum": ["draft", "approved", "superseded"]
     },
     "scope": {
       "type": "string"
