@@ -9,9 +9,7 @@ from typing import Annotated, Any, Literal
 Status = Literal["open", "pending", "done", "fixed", "wontfix", "superseded"]
 Relation = Literal["followup", "fix", "review", "supersedes"]
 SCHEMA_FILE = (
-    Path(__file__).resolve().parent.parent.parent
-    / "skills"
-    / "sidecar"
+    Path(__file__).resolve().parent.parent
     / "schemas"
     / "sidecar.schema.sql"
 )
