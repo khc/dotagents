@@ -43,6 +43,16 @@ TRANSITIONS = {
         ("fix", "diagnosis_mismatch"): "review",
         ("fix", "blocked"): "STOP",
     },
+    "refactor": {
+        ("refactor", "success"): "review",
+        ("refactor", "blocked"): "STOP",
+        ("review", "ready"): "DONE",
+        ("review", "findings"): "fix",
+        ("review", "blocked"): "STOP",
+        ("fix", "success"): "review",
+        ("fix", "diagnosis_mismatch"): "review",
+        ("fix", "blocked"): "STOP",
+    },
     "planned": {
         ("plan", "success"): "implement",
         ("plan", "blocked"): "STOP",
@@ -68,6 +78,7 @@ TRANSITIONS = {
 
 VALID_STATUS = {
     "feature": {"success", "needs_plan", "blocked"},
+    "refactor": {"success", "blocked"},
     "plan": {"success", "blocked"},
     "implement": {"success", "replan", "blocked"},
     "review": {"ready", "findings", "blocked"},
@@ -76,6 +87,7 @@ VALID_STATUS = {
 
 ROLE = {
     "feature": "builder",
+    "refactor": "builder",
     "plan": "planner",
     "implement": "builder",
     "review": "reviewer",
@@ -83,7 +95,12 @@ ROLE = {
 }
 
 def initial_stage(workflow: str) -> str:
-    return {"feature": "feature", "planned": "plan", "review": "review"}[workflow]
+    return {
+        "feature": "feature",
+        "refactor": "refactor",
+        "planned": "plan",
+        "review": "review",
+    }[workflow]
 
 def cli_command(runtime: str, prompt: str, cwd: Path) -> list[str]:
     if runtime == "claude":
@@ -114,6 +131,7 @@ def stage_prompt(
 
     stage_input = {
         "feature": "Use the original request. Invoke `$feature`.",
+        "refactor": "Use the original request. Invoke `$refactor`.",
         "plan": "Use the original request and any explicit prior blocker artifact. Invoke `$plan`.",
         "implement": "Read the latest plan artifact and invoke `$implement` against that exact plan.",
         "review": (
@@ -245,7 +263,7 @@ def save_artifact(
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("workflow", choices=["feature", "planned", "review"])
+    ap.add_argument("workflow", choices=["feature", "refactor", "planned", "review"])
     ap.add_argument("--runtime", required=True, choices=["claude", "codex"])
     ap.add_argument("--scope", required=True)
     req = ap.add_mutually_exclusive_group(required=True)

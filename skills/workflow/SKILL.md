@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Use when running a multi-stage software workflow across isolated agents. Own workflow state, fresh-agent dispatch, artifact handoffs, and review/fix loops for bounded feature, planned implementation, and standalone review workflows. Do not perform planning, implementation, review, or fixing itself.
+description: Use when running a multi-stage software workflow across isolated agents. Own workflow state, fresh-agent dispatch, artifact handoffs, and review/fix loops for bounded feature, bounded refactor, planned implementation, and standalone review workflows. Do not perform planning, implementation, review, or fixing itself.
 ---
 
 # Workflow
@@ -22,6 +22,7 @@ This skill is an orchestration layer. It does not replace `$context`, `$feature`
 3. **Stage ownership is strict.**
    - `$context` owns scope.
    - `$feature` owns bounded implementation.
+   - `$refactor` owns bounded structural change.
    - `$plan` owns decomposition.
    - `$implement` owns plan-faithful execution.
    - `$review` owns diagnosis and acceptance.
@@ -41,7 +42,7 @@ This skill is an orchestration layer. It does not replace `$context`, `$feature`
 Use the minimum stable runtime roles:
 
 - `planner` → activates `$plan`
-- `builder` → activates `$feature` or `$implement`
+- `builder` → activates `$feature`, `$refactor`, or `$implement`
 - `reviewer` → activates `$review`
 - `fixer` → activates `$fix`
 
@@ -52,10 +53,13 @@ A runtime may map these roles to the same model/configuration. Role separation i
 Choose exactly one workflow:
 
 - `feature` — bounded change: `$context → $feature → $review → [$fix → $review]*`
+- `refactor` — bounded structural change: `$context → $refactor → $review → [$fix → $review]*`
 - `planned` — decomposed change: `$context → $plan → $implement → $review → [$fix → $review]*`
 - `review` — standalone review: `$context → $review → [$fix → $review]*`
 
 If `$feature` reports `needs_plan`, transition into the `planned` workflow without reusing the feature agent's reasoning. Preserve only the user request, active scope, and inspectable repo evidence required by `$plan`.
+
+If `$refactor` reports `blocked` because its Complexity Gate fails, STOP and report that the change requires `$plan`. Unlike `$feature`, a blocked `$refactor` does not auto-transition into the `planned` workflow — the user must confirm restarting under `$plan` with the original request.
 
 ## Fresh-Agent Policy
 
@@ -93,6 +97,10 @@ Every stage result must be normalized to one of these statuses:
 ### Feature
 - `success`
 - `needs_plan`
+- `blocked`
+
+### Refactor
+- `success`
 - `blocked`
 
 ### Plan
@@ -151,6 +159,24 @@ If a runtime agent returns prose only, the adapter/orchestrator must derive one 
 
 If feature transitions to plan, continue under the Planned Workflow after plan succeeds.
 
+### Refactor Workflow
+
+| Current | Status | Next |
+|---|---|---|
+| context | active | refactor |
+| refactor | success | review |
+| refactor | blocked | STOP |
+| review | ready | DONE |
+| review | findings | fix |
+| review | blocked | STOP |
+| fix | success | review |
+| fix | diagnosis_mismatch | review |
+| fix | blocked | STOP |
+
+A blocked refactor reports its Complexity Gate reason and required next step
+(`$plan`) but does not auto-transition; restarting under the Planned Workflow
+requires explicit confirmation.
+
 ### Planned Workflow
 
 | Current | Status | Next |
@@ -193,6 +219,21 @@ Give the fresh builder:
 Require `$feature`.
 
 Collect an `implementation-handoff` artifact.
+
+### Dispatch Refactor
+
+Give the fresh builder:
+
+- active scope
+- user refactor request
+- source workflow = `refactor`
+
+Require `$refactor`.
+
+Collect an `implementation-handoff` artifact whose `source` is `refactor`. If
+`$refactor` reports `blocked`, treat it like any other blocked stage: STOP and
+report the blocker plus required next step, rather than dispatching `$plan`
+automatically.
 
 ### Dispatch Plan
 
@@ -334,7 +375,7 @@ Keep orchestrator output concise:
 ```markdown
 ## Workflow
 
-- Workflow: feature | planned | review
+- Workflow: feature | refactor | planned | review
 - Scope: ...
 - State: ...
 - Last artifact: ...

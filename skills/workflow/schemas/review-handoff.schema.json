@@ -41,6 +41,7 @@
     "source_workflow": {
       "enum": [
         "feature",
+        "refactor",
         "implement",
         "standalone"
       ]

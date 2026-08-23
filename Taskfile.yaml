@@ -7,28 +7,38 @@ tasks:
   # 1. Structural Schema Validation
   skillcheck:
     desc: "Validates SKILL.md structure against the agentskills schema"
+    requires:
+      vars: [skill]
     cmds:
       - uv run skillcheck skills/{{.skill}}/SKILL.md --strict
 
   skills:validate:
     desc: "Validates skill metadata and directory conventions with skills-cli"
+    requires:
+      vars: [skill]
     cmds:
       - uv run skills validate skills/{{.skill}}/SKILL.md
 
   # 2. Context & Environment-Specific Linters
   cclint:lint:
     desc: "Checks for Claude Code alignment, formatting, and file-import logic"
+    requires:
+      vars: [skill]
     cmds:
       - npx cclint lint skills/{{.skill}}/SKILL.md
 
   cclint:why:
     desc: "Explains Claude Code-specific lint findings for the target skill"
+    requires:
+      vars: [skill]
     cmds:
       - npx cclint why skills/{{.skill}}/SKILL.md
 
   # 3. Missing References & Document Sanity
   skill-validator:
     desc: "Advisory skill-validator check; warnings do not fail the task"
+    requires:
+      vars: [skill]
     cmds:
       - cmd: |
           set +e
@@ -46,20 +56,28 @@ tasks:
 
   skill-validator:strict:
     desc: "Strict skill-validator check; warnings and errors both fail"
+    requires:
+      vars: [skill]
     cmds:
       - skill-validator check skills/{{.skill}}
 
   mdlint:
     desc: "Checks generic Markdown formatting and structural issues"
+    requires:
+      vars: [skill]
     cmds:
       - npx markdownlint-cli2 --config .markdownlint-cli2.skills.yaml skills/{{.skill}}/SKILL.md
 
   report:json:
     desc: "Generates one combined validator report for the target skill"
+    requires:
+      vars: [skill]
     cmds:
-      - ~/.agents/.venv/bin/python scripts/skill_report_workflow.py --skill {{.skill}} --output json
+      - uv run python scripts/skill_report_workflow.py --skill {{.skill}} --output json
 
   report:md:
     desc: "Generates one combined validator report for the target skill"
+    requires:
+      vars: [skill]
     cmds:
-      - ~/.agents/.venv/bin/python scripts/skill_report_workflow.py --skill {{.skill}} --output markdown
+      - uv run python scripts/skill_report_workflow.py --skill {{.skill}} --output markdown

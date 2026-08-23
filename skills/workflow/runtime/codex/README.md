@@ -18,6 +18,13 @@ python bin/workflow.py feature \
   --request "Add ..."
 ```
 
+Refactor:
+
+```bash
+python bin/workflow.py refactor --runtime codex --scope . \
+  --request "Extract the retry logic in client.ts into a shared helper"
+```
+
 Planned:
 
 ```bash

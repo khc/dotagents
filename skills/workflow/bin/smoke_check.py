@@ -7,6 +7,7 @@ required = [
     "SKILL.md",
     "bin/workflow.py",
     "workflows/feature.md",
+    "workflows/refactor.md",
     "workflows/planned.md",
     "workflows/review.md",
     "schemas/plan-handoff.schema.json",
