@@ -1,104 +1,327 @@
 ---
 name: research
-description: Use when the user wants targeted implementation research before coding, especially to find simpler approaches, reduce LOC, improve correctness, or identify standard/library support that should replace bespoke code.
+description: Use when implementation would benefit from finding an existing standard-library, framework-native, existing-dependency, or well-established package solution instead of writing bespoke code. Optimize primarily for lower net LOC, lower maintenance burden, and proven edge-case handling. Not for general code review, architecture review, or broad technology research.
 ---
 
 # Research
 
-Use this skill to research the smallest solid way to implement a task before writing code.
+Research the smallest dependable implementation path, with a strong preference for replacing bespoke code with existing capabilities.
+
+`research` is a reuse/library-selection skill, not a general reviewer.
 
 ## Goal
 
-Find the leanest dependable approach with emphasis on:
-- lower LOC
-- less bespoke code
-- existing standard/library support
-- better correctness, maintainability, performance, or security
+Find the leanest maintainable solution by checking, in priority order:
 
-## Workflow
+1. standard library
+2. framework-native support
+3. dependencies already present in the project
+4. a well-established external package
+5. minimal bespoke code only when the above are insufficient
+
+Primary optimization targets:
+
+- lower **net LOC**
+- less custom parsing/validation/protocol/error-handling code
+- lower long-term maintenance burden
+- fewer edge cases owned by the project
+- good fit with the existing stack
+
+Do not optimize for raw LOC at the expense of correctness, security, or disproportionate dependency cost.
+
+## Workflow Gate
 
 If a scoped context is not active:
-- STOP
-- run $context first
 
-1. Read `AGENTS.md` first. If absent, skip and proceed from the scoped path only.
-2. If a scoped path is active, obey that scope and nearest applicable `AGENTS.md`.
-3. Read only the minimum relevant context:
-   - target files or path
-   - at most 2–3 directly related files; use `Grep` to locate existing utilities rather than reading entire modules
-   - dependency manifests (`pyproject.toml`, `package.json`, etc.) only when the task involves library or dependency selection
-   - existing utilities/helpers already used in the same area
-4. Define the concrete problem to solve in 1-3 bullets.
-5. Check options in this order:
-   - standard library
-   - framework-native utilities
-   - dependencies already in the project
-   - 1-2 well-established external libraries, only if materially better
-   
-   **For external libraries**: if no external libraries are already known to fit, run a web search to vet candidates. First run `~/.agents/.venv/bin/python ~/.agents/skills/research/scripts/today.py` to get the current date, then include it in search queries to ensure documentation and activity data are recent. Evaluate based on: current maintenance status, documentation quality, adoption/community size, fit with current stack. Do not evaluate libraries without checking recent data.
-6. Compare options using these criteria (weight them by task priority):
-   - LOC reduction (higher weight if code size is a constraint)
-   - fit with current stack (highest weight if integration burden is high)
-   - maintenance burden (higher weight for long-lived projects)
-   - correctness and edge-case coverage (highest weight for security/stability-critical tasks)
-   - performance/security impact (higher weight if task involves those domains)
-   When criteria conflict (e.g., LOC vs. correctness), prioritize the criterion most relevant to the stated problem.
-7. Recommend one path explicitly with a confidence signal:
-   - **clear winner** — one option dominates across most criteria
-   - **reasonable choice** — best option within constraints, but tradeoffs exist
-   - **close call** — multiple options are similar; recommendation based on tiebreaker criterion
-   - built-in / existing dependency / external library / bespoke
-8. Check: is research sufficient?
-   - If you have evaluated 2–3 realistic options and weighed the key tradeoffs: research is sufficient, proceed to output
-   - If you are uncertain or key information is missing: note it explicitly in Implementation Notes or Caveats; do not continue researching
-   - Do not research beyond this point without explicit user request
-9. Do not implement unless the user explicitly asks.
+- STOP
+- run `$context` first
+- after `$context` completes, confirm the active scope path, then continue
+
+Use the repo instructions already loaded by `$context`.
+
+Read an additional nearest applicable `AGENTS.md` only if it:
+
+- is inside `scope_boundaries.allowed`
+- applies to the research target
+- was not already loaded
+
+Do not leave the active scope to discover repo conventions or dependencies.
+
+## Research Scope
+
+Research only the implementation choice requested or required by the current task.
+
+Good research questions:
+
+- Can this custom parser be replaced by stdlib or an existing package?
+- Is there already a framework utility for this validation?
+- Which installed dependency already provides this retry/cache/serialization behavior?
+- Would one mature package remove enough bespoke code to justify a dependency?
+- What is the smallest idiomatic implementation for this capability?
+
+Not this skill:
+
+- general code review
+- architecture review
+- security audit
+- performance audit
+- broad dependency modernization
+- “what else could be improved?”
+- repository-wide package cleanup
+
+If the real request is broad review rather than implementation-choice research, route to `$review`.
+
+## Targeted Repo Inspection
+
+Inspect only enough local context to understand the implementation problem and available reuse.
+
+Read:
+
+1. the target code/path or supplied implementation requirement
+2. relevant dependency manifest(s), only when package selection matters
+3. existing project utilities/helpers in the same area
+4. at most the minimum directly relevant callers/callees needed to understand the required interface
+
+Use targeted `Grep`/search before opening additional files.
+
+Do not crawl the repo or search for unrelated reuse opportunities.
+
+## Reuse Search Order
+
+Evaluate options strictly in this order.
+
+### 1. Standard library
+
+Check for an exact or near-exact built-in/module/class/function first.
+
+Prefer it when it:
+
+- handles the required behavior correctly
+- substantially reduces bespoke logic
+- has acceptable ergonomics
+- does not force awkward workarounds
+
+### 2. Framework-native support
+
+Check the framework already used by the target.
+
+Prefer framework-native support when it:
+
+- integrates with existing lifecycle/config/error semantics
+- avoids adapters or duplicate abstractions
+- materially reduces custom code
+
+### 3. Existing project dependencies
+
+Inspect the manifest and targeted usages.
+
+Prefer an already-installed dependency when it:
+
+- already solves most of the problem
+- is compatible with the project's existing version
+- avoids a second library for the same capability
+- reduces custom implementation meaningfully
+
+Do not recommend adding a new package before checking whether an existing dependency already covers the need.
+
+### 4. External package
+
+Consider a new package only when the first three layers are insufficient and the package removes meaningful bespoke implementation or risk.
+
+External-package adoption must justify its dependency tax.
+
+### 5. Bespoke
+
+Recommend bespoke code only when:
+
+- the required behavior is genuinely small/simple
+- existing solutions add more complexity than they remove
+- integration/adaptation would exceed the implementation being replaced
+- dependency/security/maintenance cost outweighs LOC savings
+
+Keep the bespoke recommendation minimal.
+
+## External Package Verification
+
+For any new external package, verify current evidence before recommending it.
+
+Check authoritative/current sources where available:
+
+- official package/project documentation
+- package registry metadata
+- source repository/release history
+- maintenance/activity status
+- compatibility with the project's current runtime/framework version
+
+Evaluate:
+
+- current maintenance
+- latest stable release / supported runtime versions
+- package maturity and adoption
+- documentation quality
+- transitive-dependency weight when material
+- security/deprecation concerns when material
+- license compatibility when material
+- API fit for the exact required behavior
+
+Do not recommend an external package based only on memory.
+
+If reliable current verification is unavailable, do not present it as the preferred package.
+
+## LOC Analysis
+
+LOC reduction is a primary criterion, but measure **net implementation burden**, not only deleted lines.
+
+For each realistic option estimate:
+
+- bespoke LOC removed
+- new adapter/config/integration LOC
+- test LOC impact
+- dependency/setup overhead
+- ongoing project-owned logic remaining
+
+Use qualitative estimates when exact LOC cannot be known:
+
+- **large reduction** — removes most custom implementation
+- **medium reduction** — removes a meaningful subsystem/helper
+- **small reduction** — saves only a few lines
+- **negative** — package integration adds as much or more code than it removes
+
+Prefer fewer project-owned lines when correctness and dependency burden are otherwise comparable.
+
+Do not add a dependency merely to save trivial LOC.
+
+## Decision Criteria
+
+Rank realistic options using these priorities:
+
+1. **Net LOC / bespoke logic removed**
+2. **Correctness and edge-case ownership**
+3. **Existing-stack fit**
+4. **Maintenance burden**
+5. **Dependency tax**
+6. **Security/performance**, when relevant
+
+Use task-specific constraints to override this order when necessary.
+
+Examples:
+
+- auth/crypto/security-sensitive work → correctness/security outrank LOC
+- hot-path processing → performance may outrank LOC
+- tiny utility → dependency tax may outweigh package LOC savings
+
+## Stop Rule
+
+Research is sufficient when:
+
+- the reuse search order has been checked far enough to establish the best realistic option
+- at most 2–3 serious candidates have been compared
+- the recommendation is actionable by `$feature` or `$plan`
+
+Do not keep researching for marginal alternatives.
+
+If no clearly justified reusable solution exists, recommend minimal bespoke implementation and stop.
 
 ## Guardrails
 
-- Research only what is needed for the stated task.
-- Do not rewrite architecture.
-- Do not propose new libraries without clear benefit.
-- Prefer existing project support over adding dependencies.
-- Prefer standard library over external packages when it is good enough.
-- Avoid vague “could use a library” suggestions.
-- Name the exact module, class, utility, or 1-2 libraries that fit.
+- Do not perform a general review of the target code.
+- Do not report unrelated bugs, design smells, or cleanup opportunities.
+- Do not propose package replacement outside the stated implementation problem.
+- Do not recommend an external dependency without material benefit.
+- Do not recommend multiple libraries when one clear choice exists.
+- Prefer existing support over novelty.
+- Prefer deletion/replacement of bespoke code over wrapping it in another abstraction.
+- Avoid package layering: do not retain obsolete bespoke machinery when the chosen package safely replaces it.
+- Do not implement unless explicitly asked; hand the decision back to `$feature` or `$plan`.
+
+## Recommendation Confidence
+
+Use one confidence label:
+
+- **clear winner** — one option materially dominates
+- **reasonable choice** — best practical option, with meaningful tradeoff
+- **close call** — alternatives are materially comparable
+- **bespoke preferred** — reusable options cost more than they save
 
 ## Output
 
 Use this shape:
 
-````markdown
+```markdown
 ## Research
 
 ### Problem
-- bullet
+- exact implementation capability being researched
 
-### Current Fit
-- existing support or bespoke risk
+### Existing Support
+- standard library: ...
+- framework: ...
+- installed dependencies: ...
 
 ### Options
-| Option | Type | Pros | Cons | LOC Impact |
-|--------|------|------|------|------------|
+
+| Option | Type | Net LOC Impact | Dependency Tax | Fit | Key Tradeoff |
+|---|---|---|---|---|---|
 
 ### Recommendation
-**[confidence: clear winner / reasonable choice / close call]** — chosen path and why
+**[confidence: clear winner / reasonable choice / close call / bespoke preferred]**
 
-### Implementation Notes
-- touched areas, caveats, uncertainty
-````
+Use `<exact module/class/function/package>`.
 
-- List at most 3 options; for each: name, type (standard / existing dependency / external / bespoke), pros (what it gains), cons (what it loses), LOC impact.
-- Confidence signal required: clear winner / reasonable choice / close call.
-- Omit Options table if there is only one viable path; state why directly in Recommendation.
+Why:
+- ...
+- ...
+- ...
+
+### Replacement Scope
+- Bespoke code removable: ...
+- Integration needed: ...
+- Tests affected: ...
+
+### Handoff
+`$feature` or `$plan` — use this reuse decision as implementation input.
+```
+
+Rules:
+
+- Include at most 3 serious options.
+- Omit the Options table when one option clearly dominates without meaningful competition.
+- Name exact modules/classes/functions/packages, not generic categories.
+- State whether the recommendation removes, replaces, or merely wraps existing bespoke code.
+- If a new external package is recommended, include the verified package/version compatibility information relevant to the project.
+- Keep implementation notes concrete enough that the next skill does not need to repeat the package-selection research.
+
+## Handoff Contract
+
+The research result is an implementation-choice artifact.
+
+`$feature` or `$plan` should receive:
+
+- the exact recommended reusable capability
+- why it was preferred
+- compatibility constraints
+- expected bespoke code to remove
+- integration touchpoints
+- material caveats
+
+The downstream skill may inspect local details needed to implement the decision but should not repeat broad package research unless a material assumption proves false.
+
+If implementation discovers that the selected package/API is unavailable or incompatible with the actual scoped project:
+
+- stop the affected implementation choice
+- return to `$research`
+- do not silently substitute another external dependency
 
 ## Style
 
-- Direct and concise
+- Reuse-first
+- LOC-conscious
+- Direct
 - Recommendation-first
-- No coding unless asked
-- No overthinking
-- No scope creep
+- Evidence-backed
+- No general review
+- No architecture detours
+- No package shopping for its own sake
 
 ## Response format
 
