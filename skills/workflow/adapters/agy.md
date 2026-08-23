@@ -2,7 +2,7 @@
 
 Runnable transport: native `invoke_subagent`.
 
-Copy `runtime/agy/agents/*.md` to `.agents/agents/`, invoke `$orchestrate` from
+Copy `runtime/agy/agents/*.md` to `.agents/agents/`, invoke `$workflow` from
 the main agent, and use one fresh custom subagent per stage.
 
 Use workspace `inherit` for the serial workflow unless deliberate worktree

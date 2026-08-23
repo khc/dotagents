@@ -33,7 +33,7 @@ mkdir -p .agents/agents
 cp runtime/agy/agents/*.md .agents/agents/
 ```
 
-Then invoke `$orchestrate` from the parent Agy agent and let it use native
+Then invoke `$workflow` from the parent Agy agent and let it use native
 `invoke_subagent` for every lifecycle stage.
 
 ## Design

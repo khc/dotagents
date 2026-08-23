@@ -1,9 +1,9 @@
 ---
-name: orchestrate
+name: workflow
 description: Use when running a multi-stage software workflow across isolated agents. Own workflow state, fresh-agent dispatch, artifact handoffs, and review/fix loops for bounded feature, planned implementation, and standalone review workflows. Do not perform planning, implementation, review, or fixing itself.
 ---
 
-# Orchestrate
+# Workflow
 
 Run software-development workflows by dispatching the appropriate skill in isolated agent contexts and passing structured artifacts between stages.
 

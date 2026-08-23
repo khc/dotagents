@@ -12,14 +12,14 @@ mkdir -p .agents/agents
 cp runtime/agy/agents/*.md .agents/agents/
 ```
 
-Ensure the six lifecycle skills plus `orchestrate` are discoverable by Agy.
+Ensure the six lifecycle skills plus `workflow` are discoverable by Agy.
 
 ## Run
 
 Ask the main Agy agent:
 
 ```text
-Invoke $orchestrate.
+Invoke $workflow.
 
 Workflow: feature
 Scope: <path>
