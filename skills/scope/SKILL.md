@@ -46,6 +46,7 @@ The active scope is authoritative for both the scoped path and repo instructions
 - A downstream skill may read an additional `AGENTS.md` only when it is inside `scope_boundaries.allowed`, applies more specifically to a file the task legitimately needs, and was not already loaded by the helper.
 - Do not leave the active scope merely to rediscover repo instructions, tooling, conventions, or dependencies.
 - Workflow handoffs (`$feature`, `$plan`, `$implement`, `$review`, `$fix`) inherit this scope; a handoff does not implicitly reactivate or broaden scope.
+- `repo_root` and `scope_path` are distinct: `scope_path` bounds ordinary reads/edits/commands, while `repo_root` is the fixed anchor for repo-wide artifacts that must not move with the scope, such as `$plan`'s `.plans/` directory. Downstream skills must not conflate the two.
 
 ## Working Within Scope
 
@@ -93,6 +94,7 @@ The helper returns JSON:
 ```json
 {
   "scope_path": "/absolute/path",
+  "repo_root": "/absolute/repo/root",
   "instructions_loaded": {
     "global": true,
     "root": true,
@@ -114,6 +116,7 @@ On successful activation, render this shape from the helper JSON, starting every
 
 ### Active Scope
 - Path: `<scope_path>`
+- Repo root: `<repo_root>`
 
 ### Instructions Loaded
 

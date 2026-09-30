@@ -69,6 +69,7 @@ def context_data(path_arg: str) -> dict[str, object]:
 
     return {
         "scope_path": str(scope),
+        "repo_root": str(_repo_root(scope)),
         "instructions_loaded": loaded,
         "scope_boundaries": {
             "allowed": allowed,

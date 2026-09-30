@@ -155,8 +155,10 @@ A successful `$plan` result never auto-transitions to `$implement`. It always la
 While `AWAITING_PLAN_APPROVAL`, persist the plan's identity as `active_plan`:
 
 ```json
-{"path": "plan_<timestamp>.md", "plan_id": "plan_<timestamp>", "revision": 1, "status": "draft"}
+{"path": ".plans/plan_<timestamp>.md", "plan_id": "plan_<timestamp>", "revision": 1, "status": "draft"}
 ```
+
+`path` is always relative to the repo root (per `skills/plan/SKILL.md`'s Plan Artifact section), never to the active scope.
 
 `status` mirrors `skills/plan/SKILL.md`'s frontmatter (`draft` | `approved` | `superseded`).
 
@@ -481,7 +483,7 @@ On awaiting plan approval:
 - Workflow: ...
 - Scope: ...
 - State: awaiting_plan_approval
-- Active plan: plan_1787501234.md (revision 3, draft)
+- Active plan: .plans/plan_1787501234.md (revision 3, draft)
 ```
 
 On stop:

@@ -245,7 +245,7 @@ After completing the normal skill response, append EXACTLY one machine result:
   "target": "<review target or null>",
   "target_symbol": "<symbol or null>",
   "{id_field}": "<sidecar/stage UUID or null>",
-  "plan_path": "<path to plan_<timestamp>.md or null>",
+  "plan_path": "<repo-root-relative path to .plans/plan_<timestamp>.md, or null>",
   "plan_revision": <integer-or-null>,
   "plan_status": "<draft|approved|null>",
   "blocker": "<blocker or null>"
@@ -449,6 +449,22 @@ def run_stage_loop(
     print(json.dumps(state, indent=2))
     return {"DONE": 0, "STOP": 2, "AWAITING_PLAN_APPROVAL": 3}[stage]
 
+def repo_root(scope: Path) -> Path:
+    """Resolve the repo root for a scope dir, matching scripts/context_workflow.py."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=str(scope),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return Path(result.stdout.strip()).resolve()
+    except OSError:
+        pass
+    return scope.resolve()
+
 def resolve_state_root(scope: str | None, state_dir: str | None, workflow_id: str) -> Path:
     if state_dir:
         return Path(state_dir).resolve()
@@ -590,7 +606,9 @@ def cmd_approve(args: argparse.Namespace) -> int:
     scope = Path(state["scope"])
     plan_path = Path(active_plan["path"])
     if not plan_path.is_absolute():
-        plan_path = scope / plan_path
+        # plan paths are relative to the repo root (skills/plan/SKILL.md's
+        # Plan Artifact section), never to the workflow's scope dir.
+        plan_path = repo_root(scope) / plan_path
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     artifacts = state_root / "artifacts"
     request_file = state_root / "request.md"

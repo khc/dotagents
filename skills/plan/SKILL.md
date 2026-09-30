@@ -38,7 +38,9 @@ Example:
 plan_1787486400.md
 ```
 
-Create the file inside the active scope unless the active project instructions define a specific planning/docs directory inside `scope_boundaries.allowed`.
+Always create the file at `<repo_root>/.plans/plan_<unix_timestamp>.md`, where `<repo_root>` is the repo root reported by `$scope` (its `repo_root` field, resolved via `git rev-parse --show-toplevel`) — never the active scope path. Create the `.plans` directory at the repo root first if it does not already exist.
+
+`.plans` at the repo root is the single, stable location for every plan, regardless of what path is currently scoped. Never create a plan file inside the active scope path, inside a task-specific subdirectory, or in any project-defined docs directory. Writing to `<repo_root>/.plans/` is permitted even when the repo root falls outside `scope_boundaries.allowed` — it is the only location outside the active scope this skill may write to.
 
 The filename is stable for the lifetime of that plan:
 
@@ -370,10 +372,12 @@ Never hand a `status: draft` plan to `$implement`.
 The handoff must identify the exact file and current revision, for example:
 
 ```text
-$implement plans/plan_1787486400.md
+$implement .plans/plan_1787486400.md
 plan_id: plan_1787486400
 revision: 4
 ```
+
+The path is relative to the repo root, not the active scope.
 
 `$implement` must read that exact file before execution. It may inspect the files named by a task and the minimal adjacent context needed to execute it, but should not redesign the plan silently.
 
@@ -415,7 +419,7 @@ For a persisted Planned path, always include:
 
 ```markdown
 ### Plan Artifact
-- File: `path/to/plan_<unix_timestamp>.md`
+- File: `.plans/plan_<unix_timestamp>.md` (relative to repo root)
 - Revision: N
 - Status: draft | approved
 ```
