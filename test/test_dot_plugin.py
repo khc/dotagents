@@ -199,7 +199,7 @@ class DotPluginTests(unittest.TestCase):
     def test_marketplace_sources(self):
         for file in (ROOT / ".agents/plugins/marketplace.json", ROOT / ".claude-plugin/marketplace.json"):
             marketplace = json.loads(file.read_text())
-            self.assertEqual(marketplace["name"], "dot-local")
+            self.assertEqual(marketplace["name"], "dotagents")
             self.assertEqual(len(marketplace["plugins"]), 1)
             entry = marketplace["plugins"][0]
             self.assertEqual(entry["name"], "dot")

@@ -62,7 +62,7 @@ Bundled helpers require Git and `uv` on PATH. `uv` manages Python 3.14 and inlin
 codex plugin marketplace add /absolute/path/to/this/repository
 ```
 
-Open the native plugin selector (`/plugins` in CLI, or Plugins in the desktop app), select the `dot-local` source, and install `dot`. Start a fresh session and select `$dot:scope` or `$dot:plan`. Registration/installation change host settings; creating the package does not install it.
+Open the native plugin selector (`/plugins` in CLI, or Plugins in the desktop app), select the `dotagents` source, and install `dot`. Start a fresh session and select `$dot:scope` or `$dot:plan`. Registration/installation change host settings; creating the package does not install it.
 
 ### Codex VS Code extension
 
@@ -82,7 +82,7 @@ Or install from the marketplace:
 
 ```bash
 claude plugin marketplace add /absolute/path/to/this/repository
-claude plugin install dot@dot-local
+claude plugin install dot@dotagents
 ```
 
 Start a fresh session and invoke `/dot:scope` or `/dot:plan`.

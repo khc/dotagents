@@ -42,7 +42,7 @@ Claude Code local development:
 claude --plugin-dir /absolute/path/to/dot
 ```
 
-The development repository provides `dot-local` marketplaces. Register that repository and install `dot@dot-local` in Claude Code, or choose `dot` in the Codex native plugin directory. Start a fresh session to confirm `dot:*` discovery. Validation does not prove installation or activation.
+The development repository provides `dotagents` marketplaces. Register that repository and install `dot@dotagents` in Claude Code, or choose `dot` in the Codex native plugin directory. Start a fresh session to confirm `dot:*` discovery. Validation does not prove installation or activation.
 
 The workflow runner passes this package's root with `--plugin-dir` to every fresh Claude stage, so local development also works without marketplace installation. Configured `CLAUDE_CMD` and `CLAUDE_ARGS` remain supported; other plugin paths in those arguments are retained.
 

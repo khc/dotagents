@@ -27,14 +27,14 @@ claude --plugin-dir ~/.agents/plugins/dot
 
 ```sh
 claude plugin marketplace add ~/.agents
-claude plugin install dot@dot-local
+claude plugin install dot@dotagents
 claude plugin list
 ```
 
 Inside a session, `/plugin marketplace add ~/.agents` does the same.
 
 - A local marketplace with a relative-path `source` is read directly from disk, not copied. Edits take effect on the next session start or `/reload-plugins`.
-- Remove with `claude plugin marketplace remove dot-local`, which also uninstalls its plugins.
+- Remove with `claude plugin marketplace remove dotagents`, which also uninstalls its plugins.
 
 ### Validate
 
@@ -56,11 +56,11 @@ codex plugin marketplace add ~/.agents
 codex plugin marketplace list
 ```
 
-Open `/plugins` (CLI) or Plugins (desktop app), select `dot-local`, and install `dot`. Invoke skills as `$dot:scope`, `$dot:plan`.
+Open `/plugins` (CLI) or Plugins (desktop app), select `dotagents`, and install `dot`. Invoke skills as `$dot:scope`, `$dot:plan`.
 
 - There is no `--plugin-dir` equivalent.
-- Codex copies the plugin to `~/.codex/plugins/cache/dot-local/dot/local/`. After editing the source, run `codex plugin marketplace upgrade` and restart Codex.
-- Remove with `codex plugin marketplace remove dot-local`.
+- Codex copies the plugin to `~/.codex/plugins/cache/dotagents/dot/local/`. After editing the source, run `codex plugin marketplace upgrade` and restart Codex.
+- Remove with `codex plugin marketplace remove dotagents`.
 
 Sources: [Codex: package your plugin](https://developers.openai.com/plugins/build/plugins), [Codex CLI plugin marketplace guide](https://codex.danielvaughan.com/2026/04/24/codex-cli-plugin-marketplace-building-distributing-extending/)
 
