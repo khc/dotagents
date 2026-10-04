@@ -1,0 +1,18 @@
+{
+  "target": "src",
+  "review_mode": "path",
+  "source_workflow": "standalone",
+  "findings": [
+    {
+      "category": "Security",
+      "location": "src/users.ts:40",
+      "description": "SQL injection: user id is concatenated into the query string",
+      "severity": "critical",
+      "confidence": "confirmed",
+      "fix_direction": "Use a parameterized query."
+    }
+  ],
+  "summary": "Critical injection risk.",
+  "reasoning": "Critical injection risk.",
+  "verdict": "not-ready"
+}

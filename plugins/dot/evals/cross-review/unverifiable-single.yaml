@@ -1,0 +1,53 @@
+id: unverifiable-single
+skill: dot:cross-review
+tier: behavioral
+
+purpose: >
+  Verify protocol step 5: an unverifiable single-source finding is kept as likely with severity capped at medium.
+
+fixture: ../../evals/cross-review/files/unverifiable-single/
+
+prompt: >
+  Scope is already active on plugins/dot/evals/cross-review/files/unverifiable-single/. The review-fanout step is already complete: plugins/dot/evals/cross-review/files/unverifiable-single/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/dot/evals/cross-review/files/unverifiable-single/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers saved reviews of src/client.ts; only codex reported a finding.
+
+expected:
+  trigger: true
+  behavior:
+    - "The agent inspects src/client.ts before deciding"
+    - "The kept finding has confidence likely"
+    - "The kept finding has severity medium or lower"
+    - "The finding is not dropped and is not reported as confirmed"
+
+forbidden:
+  - "dropping codex's finding silently"
+  - "keeping the finding at severity high or as confirmed"
+
+red:
+  status: not_applicable
+  evidence: []
+  rationalizations: []
+  note: >
+    A baseline cannot be run: the case prompt invokes the cross-review protocol, which does not
+    exist without the skill. Only the with-skill run is recorded.
+
+green:
+  status: pass
+  evidence:
+    - "Reasoning: \"I could not verify that impact either way, so I kept the finding at `likely` and capped severity at `medium`. Codex had reported `high`, and no reviewer reported anything lower.\" Final finding Design, src/client.ts:2, medium, likely; dropped_findings empty."
+  note: >
+    One run from /Users/khc/.agents (repo root) via `claude -p --plugin-dir /Users/khc/.agents/plugins/dot
+    --allowedTools "Read Glob Grep Skill" --max-turns 40 --output-format json "<prompt>"`, graded against
+    `expected.behavior` and `forbidden` by the same session that wrote the skill (not an independent
+    grader). Single run; no repeat variance measured. No SKILL.md change needed.
+    The agent tried Bash once and was denied (Bash is not in the allowed tools); it fell back to Read/Glob.
+
+metrics:
+  red:
+    total_tokens:
+    duration_ms:
+  green:
+    total_tokens: 238322  # 10 turns, $0.19
+    duration_ms: 24470
+
+regression:
+  keep: true

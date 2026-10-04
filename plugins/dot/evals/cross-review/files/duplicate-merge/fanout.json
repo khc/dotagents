@@ -1,0 +1,22 @@
+{
+  "state_dir": "evals/cross-review/files/duplicate-merge",
+  "ok": true,
+  "reviewers": [
+    {
+      "runtime": "claude",
+      "status": "findings",
+      "verdict": "not-ready",
+      "findings_count": 1,
+      "review_uuid": "duplicate-merge-claude",
+      "blocker": null
+    },
+    {
+      "runtime": "codex",
+      "status": "findings",
+      "verdict": "not-ready",
+      "findings_count": 1,
+      "review_uuid": "duplicate-merge-codex",
+      "blocker": null
+    }
+  ]
+}

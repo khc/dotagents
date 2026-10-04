@@ -1,0 +1,18 @@
+{
+  "target": "src",
+  "review_mode": "path",
+  "source_workflow": "standalone",
+  "findings": [
+    {
+      "category": "Bugs",
+      "location": "src/paginate.ts:4",
+      "description": "Off-by-one: the end index is decremented so each page loses its final element",
+      "severity": "high",
+      "confidence": "confirmed",
+      "fix_direction": "Use items.slice(start, end)."
+    }
+  ],
+  "summary": "Pagination drops items.",
+  "reasoning": "Pagination drops items.",
+  "verdict": "not-ready"
+}

@@ -1,0 +1,22 @@
+{
+  "state_dir": "evals/cross-review/files/severity-conflict",
+  "ok": true,
+  "reviewers": [
+    {
+      "runtime": "claude",
+      "status": "findings",
+      "verdict": "not-ready",
+      "findings_count": 1,
+      "review_uuid": "severity-conflict-claude",
+      "blocker": null
+    },
+    {
+      "runtime": "codex",
+      "status": "findings",
+      "verdict": "ready-with-fixes",
+      "findings_count": 1,
+      "review_uuid": "severity-conflict-codex",
+      "blocker": null
+    }
+  ]
+}

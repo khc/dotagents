@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Portable serial workflow runner for Claude Code and Codex CLI.
+Portable serial workflow runner for Claude Code, Codex CLI, and Agy (`agy -p`).
 
 Each lifecycle stage is a fresh CLI process. The stage must append a machine
 result between ORCHESTRATION_RESULT markers. The runner stores only stage
 artifacts/final output, never conversation history.
 
-Agy uses its native invoke_subagent runtime; see runtime/agy/.
+Agy also has a native invoke_subagent runtime; see runtime/agy/.
 """
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ import shlex
 import subprocess
 import sys
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -100,6 +101,10 @@ TRANSITIONS = {
     },
 }
 
+RUNTIMES = ["claude", "codex", "agy"]
+WORKFLOWS = ["feature", "refactor", "bug", "planned", "review"]
+DEFAULT_REVIEW_TIMEOUT = 900
+
 DEFAULT_MAX_REVIEW_FIX_CYCLES = 5
 
 VALID_STATUS = {
@@ -157,6 +162,10 @@ def cli_command(runtime: str, prompt: str, cwd: Path) -> list[str]:
         if "--cd" not in extra and "-C" not in extra:
             extra += ["--cd", str(cwd)]
         return base + extra + [prompt]
+    if runtime == "agy":
+        base = shlex.split(os.environ.get("AGY_CMD", "agy"))
+        extra = shlex.split(os.environ.get("AGY_ARGS", "-p"))
+        return base + extra + [prompt]
     raise ValueError(f"unsupported runtime: {runtime}")
 
 def stage_prompt(
@@ -169,6 +178,9 @@ def stage_prompt(
     active_plan: dict | None = None,
     plan_reason: str | None = None,
     amendment: str | None = None,
+    review_phase: str | None = None,
+    review_runtimes: list[str] | None = None,
+    review_timeout: int | None = None,
 ) -> str:
     prior = sorted(artifacts_dir.glob("*.json"))
     prior_lines = "\n".join(f"- {p}" for p in prior) or "- none"
@@ -195,16 +207,36 @@ def stage_prompt(
             )
         return reopen
 
+    def review_stage_input() -> str:
+        base = (
+            "Perform an independent review in a fresh context. Read only the "
+            "relevant plan/implementation/prior-review/fix artifacts. Invoke `$dot:review`."
+        )
+        if review_phase == "independent":
+            return (
+                f"{base}\n\nOther reviewers are working in parallel. Do not read "
+                "`.sidecar/` and do not run `sidecar_workflow.py read`; read only "
+                "the stage artifacts listed below."
+            )
+        if review_phase == "cross":
+            return (
+                "Invoke `$dot:cross-review`. Run the independent reviewers with:\n\n"
+                f"uv run --no-project {shlex.quote(str(Path(__file__).resolve()))} review-fanout "
+                f"--state-dir {shlex.quote(str(artifacts_dir.parent))} "
+                f"--workflow {shlex.quote(workflow)} --scope {shlex.quote(str(scope))} "
+                f"--runtimes {shlex.quote(','.join(review_runtimes or []))} "
+                f"--cycle {cycle} --review-timeout {review_timeout}\n\n"
+                "Then follow the skill to synthesize and save the final review."
+            )
+        return base
+
     stage_input = {
         "feature": "Use the original request. Invoke `$dot:feature`.",
         "refactor": "Use the original request. Invoke `$dot:refactor`.",
         "bug": "Use the original request. Invoke `$dot:bug`.",
         "plan": plan_stage_input() if stage == "plan" else "",
         "implement": "Read the latest plan artifact and invoke `$dot:implement` against that exact plan.",
-        "review": (
-            "Perform an independent review in a fresh context. Read only the "
-            "relevant plan/implementation/prior-review/fix artifacts. Invoke `$dot:review`."
-        ),
+        "review": review_stage_input(),
         "fix": "Read the latest review artifact and invoke `$dot:fix` for its findings.",
     }[stage]
 
@@ -256,15 +288,23 @@ Use valid JSON: double quotes, no comments, no trailing commas.
 Do not claim success/ready unless the invoked skill's evidence requirements are met.
 """
 
-def run_process(runtime: str, prompt: str, cwd: Path) -> str:
+def run_process(
+    runtime: str, prompt: str, cwd: Path, timeout: float | None = None
+) -> str:
     cmd = cli_command(runtime, prompt, cwd)
-    proc = subprocess.run(
-        cmd,
-        cwd=str(cwd),
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=str(cwd),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(
+            f"{runtime} stage process timed out after {timeout}s"
+        ) from None
     output = proc.stdout or ""
     if proc.returncode != 0:
         raise RuntimeError(
@@ -329,6 +369,31 @@ def parse_result(output: str, stage: str) -> dict[str, Any]:
 
     return result
 
+REVIEWER_ATTEMPTS = 2
+
+def run_reviewer(
+    runtime: str, prompt: str, scope: Path, timeout: float | None
+) -> tuple[dict[str, Any], str]:
+    """Run one independent reviewer; retry once only on envelope problems.
+
+    Process failures and timeouts propagate immediately. A non-blocked result
+    must carry `review_uuid`, otherwise the review was never saved to the sidecar.
+    """
+    for attempt in range(REVIEWER_ATTEMPTS):
+        output = run_process(runtime, prompt, scope, timeout)
+        try:
+            result = parse_result(output, "review")
+            if result["status"] != "blocked" and not result.get("review_uuid"):
+                raise RuntimeError(
+                    f"{runtime} review result missing review_uuid (not saved to sidecar)"
+                )
+        except (RuntimeError, ValueError):
+            if attempt == REVIEWER_ATTEMPTS - 1:
+                raise
+            continue
+        return result, output
+    raise AssertionError("unreachable")
+
 def save_artifact(
     artifacts: Path,
     seq: int,
@@ -388,6 +453,13 @@ def run_stage_loop(
                 amendment=amendment if effective_plan_reason == "amendment" else None,
             )
         else:
+            review_kwargs = {}
+            if stage == "review" and state.get("review_runtimes"):
+                review_kwargs = {
+                    "review_phase": "cross",
+                    "review_runtimes": state["review_runtimes"],
+                    "review_timeout": state.get("review_timeout", DEFAULT_REVIEW_TIMEOUT),
+                }
             prompt = stage_prompt(
                 workflow,
                 stage,
@@ -395,6 +467,7 @@ def run_stage_loop(
                 request_file,
                 artifacts,
                 state["review_fix_cycle"],
+                **review_kwargs,
             )
 
         if dry_run:
@@ -481,19 +554,34 @@ def load_state(state_root: Path, workflow_id: str) -> dict:
 def write_state(state_root: Path, state: dict) -> None:
     (state_root / "state.json").write_text(json.dumps(state, indent=2))
 
+def runtime_list(value: str) -> list[str]:
+    runtimes = list(dict.fromkeys(v.strip() for v in value.split(",") if v.strip()))
+    unknown = [r for r in runtimes if r not in RUNTIMES]
+    if unknown or len(runtimes) < 2:
+        raise argparse.ArgumentTypeError(
+            f"expected at least 2 runtimes from {RUNTIMES}, got {value!r}"
+        )
+    return runtimes
+
 def build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     subparsers = ap.add_subparsers(dest="command", required=True)
 
     start = subparsers.add_parser("start", help="start a fresh workflow run")
-    start.add_argument("workflow", choices=["feature", "refactor", "bug", "planned", "review"])
-    start.add_argument("--runtime", required=True, choices=["claude", "codex"])
+    start.add_argument("workflow", choices=WORKFLOWS)
+    start.add_argument("--runtime", required=True, choices=RUNTIMES)
     start.add_argument("--scope", required=True)
     req = start.add_mutually_exclusive_group(required=True)
     req.add_argument("--request")
     req.add_argument("--request-file")
     start.add_argument("--state-dir")
     start.add_argument("--max-review-fix-cycles", type=int, default=DEFAULT_MAX_REVIEW_FIX_CYCLES)
+    start.add_argument(
+        "--review-runtimes",
+        type=runtime_list,
+        help="comma-separated runtimes for cross-review (at least 2)",
+    )
+    start.add_argument("--review-timeout", type=int, default=DEFAULT_REVIEW_TIMEOUT)
     start.add_argument("--dry-run", action="store_true")
 
     resume = subparsers.add_parser("resume", help="reopen an AWAITING_PLAN_APPROVAL plan with an amendment")
@@ -501,7 +589,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     resume.add_argument("--message", required=True)
     resume.add_argument("--scope")
     resume.add_argument("--state-dir")
-    resume.add_argument("--runtime", choices=["claude", "codex"])
+    resume.add_argument("--runtime", choices=RUNTIMES)
     resume.add_argument("--dry-run", action="store_true")
 
     approve = subparsers.add_parser("approve", help="approve an AWAITING_PLAN_APPROVAL plan and dispatch $dot:implement")
@@ -515,6 +603,20 @@ def build_arg_parser() -> argparse.ArgumentParser:
     cancel.add_argument("--scope")
     cancel.add_argument("--state-dir")
     cancel.add_argument("--reason")
+
+    fanout = subparsers.add_parser(
+        "review-fanout",
+        help="run independent reviewers on several runtimes and report their sidecar UUIDs",
+    )
+    fanout.add_argument("--scope", required=True)
+    fanout.add_argument("--runtimes", required=True, type=runtime_list)
+    fanout.add_argument("--workflow", choices=WORKFLOWS, default="review")
+    fanout.add_argument("--cycle", type=int, default=0)
+    fanout.add_argument("--review-timeout", type=int, default=DEFAULT_REVIEW_TIMEOUT)
+    fanout.add_argument("--state-dir", help="existing workflow state root to reuse")
+    fanout.add_argument("--request")
+    fanout.add_argument("--request-file")
+    fanout.add_argument("--dry-run", action="store_true")
 
     return ap
 
@@ -549,6 +651,9 @@ def cmd_start(args: argparse.Namespace) -> int:
         "sequence": 0,
         "max_review_fix_cycles": args.max_review_fix_cycles,
     }
+    if args.review_runtimes:
+        state["review_runtimes"] = args.review_runtimes
+        state["review_timeout"] = args.review_timeout
 
     return run_stage_loop(
         args.workflow,
@@ -666,6 +771,84 @@ def cmd_cancel(args: argparse.Namespace) -> int:
     print(json.dumps(state, indent=2))
     return 2
 
+def reviewer_entry(runtime: str, future: Any) -> dict[str, Any]:
+    try:
+        result, _ = future.result()
+    except Exception as exc:  # any reviewer failure blocks the ensemble
+        return {
+            "runtime": runtime,
+            "status": "blocked",
+            "verdict": None,
+            "findings_count": 0,
+            "review_uuid": None,
+            "blocker": str(exc)[:500],
+        }
+    return {
+        "runtime": runtime,
+        "status": result["status"],
+        "verdict": result.get("verdict"),
+        "findings_count": int(result.get("findings_count") or 0),
+        "review_uuid": result.get("review_uuid"),
+        "blocker": result.get("blocker"),
+    }
+
+def cmd_review_fanout(args: argparse.Namespace) -> int:
+    scope = Path(args.scope).resolve()
+    if not scope.exists():
+        raise SystemExit(f"scope does not exist: {scope}")
+
+    state_root = (
+        Path(args.state_dir).resolve()
+        if args.state_dir
+        else scope / ".workflow" / str(uuid.uuid4())
+    )
+    artifacts = state_root / "artifacts"
+    request_file = state_root / "request.md"
+    if not args.dry_run:
+        if not request_file.exists():
+            if args.request_file:
+                request = Path(args.request_file).read_text()
+            elif args.request:
+                request = args.request
+            else:
+                raise SystemExit("--request or --request-file is required without an existing --state-dir")
+            artifacts.mkdir(parents=True, exist_ok=True)
+            request_file.write_text(request)
+        artifacts.mkdir(parents=True, exist_ok=True)
+
+    prompt = stage_prompt(
+        args.workflow, "review", scope, request_file, artifacts, args.cycle,
+        review_phase="independent",
+    )
+    if args.dry_run:
+        for runtime in args.runtimes:
+            print(f"=== REVIEW ({runtime}) ===\n{prompt}")
+        return 0
+
+    # Re-review cycles reuse the state dir, so every run gets its own result file.
+    run_id = str(uuid.uuid4())
+    result_file = state_root / f"fanout-{run_id}.json"
+    print(f"FANOUT_RESULT={result_file}", flush=True)
+    with ThreadPoolExecutor(max_workers=len(args.runtimes)) as pool:
+        futures = {
+            runtime: pool.submit(run_reviewer, runtime, prompt, scope, args.review_timeout)
+            for runtime in args.runtimes
+        }
+    reviewers = [reviewer_entry(runtime, future) for runtime, future in futures.items()]
+    ok = all(r["status"] != "blocked" and r["review_uuid"] for r in reviewers)
+    report = {
+        "run_id": run_id,
+        "state_dir": str(state_root),
+        "ok": ok,
+        "reviewers": reviewers,
+    }
+
+    tmp = result_file.with_name(result_file.name + ".tmp")
+    tmp.write_text(json.dumps(report, indent=2))
+    os.replace(tmp, result_file)
+    print(json.dumps(report, indent=2))
+    return 0 if ok else 2
+
 def main() -> int:
     ap = build_arg_parser()
     args = ap.parse_args()
@@ -674,6 +857,7 @@ def main() -> int:
         "resume": cmd_resume,
         "approve": cmd_approve,
         "cancel": cmd_cancel,
+        "review-fanout": cmd_review_fanout,
     }[args.command](args)
 
 if __name__ == "__main__":

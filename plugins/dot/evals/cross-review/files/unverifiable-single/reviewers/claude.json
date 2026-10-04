@@ -1,0 +1,9 @@
+{
+  "target": "src",
+  "review_mode": "path",
+  "source_workflow": "standalone",
+  "findings": [],
+  "summary": "Retry loop is bounded; no findings.",
+  "reasoning": "Retry loop is bounded; no findings.",
+  "verdict": "ready"
+}

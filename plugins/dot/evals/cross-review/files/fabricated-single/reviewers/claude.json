@@ -1,0 +1,9 @@
+{
+  "target": "src",
+  "review_mode": "path",
+  "source_workflow": "standalone",
+  "findings": [],
+  "summary": "No issues in findUser.",
+  "reasoning": "No issues in findUser.",
+  "verdict": "ready"
+}

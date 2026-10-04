@@ -1,0 +1,9 @@
+{
+  "target": "src",
+  "review_mode": "path",
+  "source_workflow": "standalone",
+  "findings": [],
+  "summary": "No issues found.",
+  "reasoning": "No issues found.",
+  "verdict": "ready"
+}

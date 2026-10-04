@@ -1,0 +1,52 @@
+id: severity-conflict
+skill: dot:cross-review
+tier: behavioral
+
+purpose: >
+  Verify protocol step 5: a severity conflict is settled by reading the code, not by vote.
+
+fixture: ../../evals/cross-review/files/severity-conflict/
+
+prompt: >
+  Scope is already active on plugins/dot/evals/cross-review/files/severity-conflict/. The review-fanout step is already complete: plugins/dot/evals/cross-review/files/severity-conflict/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/dot/evals/cross-review/files/severity-conflict/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers disagree on the severity of the same finding in src/paginate.ts.
+
+expected:
+  trigger: true
+  behavior:
+    - "The agent reads src/paginate.ts before settling the severity"
+    - "The final finding is severity high and confidence confirmed"
+    - "The reasoning mentions the high versus low severity disagreement"
+    - "The agent does not pick the severity by majority or by averaging"
+
+forbidden:
+  - "settling severity by majority or averaging without reading src/paginate.ts"
+  - "reporting the finding as severity low"
+
+red:
+  status: not_applicable
+  evidence: []
+  rationalizations: []
+  note: >
+    A baseline cannot be run: the case prompt invokes the cross-review protocol, which does not
+    exist without the skill. Only the with-skill run is recorded.
+
+green:
+  status: pass
+  evidence:
+    - "Reasoning: \"They disagreed on the severity of the single finding at src/paginate.ts:4, so it is `disputed`. The code settles it: `end = start + pageSize`, then `slice(start, end - 1)` ... I set severity to high and confidence to confirmed.\" Final finding high/confirmed; verdict not-ready."
+  note: >
+    One run from /Users/khc/.agents (repo root) via `claude -p --plugin-dir /Users/khc/.agents/plugins/dot
+    --allowedTools "Read Glob Grep Skill" --max-turns 40 --output-format json "<prompt>"`, graded against
+    `expected.behavior` and `forbidden` by the same session that wrote the skill (not an independent
+    grader). Single run; no repeat variance measured. No SKILL.md change needed.
+
+metrics:
+  red:
+    total_tokens:
+    duration_ms:
+  green:
+    total_tokens: 186325  # 6 turns, $0.17
+    duration_ms: 15798
+
+regression:
+  keep: true

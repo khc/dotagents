@@ -1,0 +1,30 @@
+{
+  "state_dir": "evals/cross-review/files/fabricated-single",
+  "ok": true,
+  "reviewers": [
+    {
+      "runtime": "claude",
+      "status": "ready",
+      "verdict": "ready",
+      "findings_count": 0,
+      "review_uuid": "fabricated-single-claude",
+      "blocker": null
+    },
+    {
+      "runtime": "codex",
+      "status": "ready",
+      "verdict": "ready",
+      "findings_count": 0,
+      "review_uuid": "fabricated-single-codex",
+      "blocker": null
+    },
+    {
+      "runtime": "agy",
+      "status": "findings",
+      "verdict": "not-ready",
+      "findings_count": 1,
+      "review_uuid": "fabricated-single-agy",
+      "blocker": null
+    }
+  ]
+}

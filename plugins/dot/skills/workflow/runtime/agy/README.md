@@ -33,6 +33,23 @@ Do not pass conversation transcripts between agents.
 
 For `refactor`, `bug`, `planned`, or `review`, change the Workflow value.
 
+## Headless subprocess runtime
+
+`bin/workflow.py --runtime agy` runs every stage as a fresh `agy -p` process,
+the same way it runs `claude -p` and `codex exec`. Override the command with:
+
+```bash
+export AGY_CMD=agy
+export AGY_ARGS='-p'
+```
+
+The `dot` skills must be discoverable by `agy` in the target workspace, and the
+configured permissions must allow read-only review and sidecar writes. Do not
+use `--continue` or `--conversation`: every lifecycle stage must start fresh.
+
+Cross-review (`--review-runtimes`) requires `bin/workflow.py`; native
+`invoke_subagent` stages run a single reviewer.
+
 ## Native invocation contract
 
 The parent invokes a fresh custom subagent with `invoke_subagent`, using

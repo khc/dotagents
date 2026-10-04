@@ -1,0 +1,18 @@
+{
+  "target": "src",
+  "review_mode": "path",
+  "source_workflow": "standalone",
+  "findings": [
+    {
+      "category": "Design",
+      "location": "src/client.ts:2",
+      "description": "Retries without backoff may overload the upstream under sustained failure",
+      "severity": "high",
+      "confidence": "likely",
+      "fix_direction": "Add exponential backoff between attempts."
+    }
+  ],
+  "summary": "Missing backoff.",
+  "reasoning": "Missing backoff.",
+  "verdict": "ready-with-fixes"
+}

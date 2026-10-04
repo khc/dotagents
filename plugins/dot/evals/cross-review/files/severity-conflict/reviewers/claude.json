@@ -1,0 +1,18 @@
+{
+  "target": "src",
+  "review_mode": "path",
+  "source_workflow": "standalone",
+  "findings": [
+    {
+      "category": "Bugs",
+      "location": "src/paginate.ts:4",
+      "description": "slice(start, end - 1) silently drops the last item of every page",
+      "severity": "high",
+      "confidence": "confirmed",
+      "fix_direction": "Change to items.slice(start, end)."
+    }
+  ],
+  "summary": "Data loss in paginate.",
+  "reasoning": "Data loss in paginate.",
+  "verdict": "not-ready"
+}

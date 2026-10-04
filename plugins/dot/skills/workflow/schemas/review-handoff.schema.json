@@ -133,6 +133,70 @@
         "string",
         "null"
       ]
+    },
+    "cross_review": {
+      "type": "object",
+      "required": [
+        "reviewers",
+        "source_review_uuids"
+      ],
+      "properties": {
+        "reviewers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "runtime",
+              "review_uuid"
+            ],
+            "properties": {
+              "runtime": {
+                "type": "string"
+              },
+              "review_uuid": {
+                "type": "string"
+              },
+              "verdict": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "findings_count": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "source_review_uuids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dropped_findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "reviewer",
+              "location",
+              "reason"
+            ],
+            "properties": {
+              "reviewer": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

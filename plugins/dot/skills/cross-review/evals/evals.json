@@ -1,0 +1,77 @@
+{
+  "skill_name": "cross-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Scope is already active on plugins/dot/evals/cross-review/files/duplicate-merge/. The review-fanout step is already complete: plugins/dot/evals/cross-review/files/duplicate-merge/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/dot/evals/cross-review/files/duplicate-merge/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers saved reviews of src/paginate.ts.",
+      "expected_output": "Both reviewers' off-by-one findings on src/paginate.ts:4 are merged into one finding, and the reasoning records that both claude and codex raised it.",
+      "files": [
+        "plugins/dot/evals/cross-review/files/duplicate-merge/fanout.json",
+        "plugins/dot/evals/cross-review/files/duplicate-merge/reviewers/claude.json",
+        "plugins/dot/evals/cross-review/files/duplicate-merge/reviewers/codex.json",
+        "plugins/dot/evals/cross-review/files/duplicate-merge/src/paginate.ts"
+      ],
+      "assertions": [
+        "The final review contains exactly one finding for src/paginate.ts:4",
+        "The reasoning attributes the finding to both claude and codex (unanimous)",
+        "The verdict is not ready (the merged finding remains)"
+      ],
+      "yaml": "../../../evals/cross-review/duplicate-merge.yaml"
+    },
+    {
+      "id": 2,
+      "prompt": "Scope is already active on plugins/dot/evals/cross-review/files/severity-conflict/. The review-fanout step is already complete: plugins/dot/evals/cross-review/files/severity-conflict/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/dot/evals/cross-review/files/severity-conflict/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers disagree on the severity of the same finding in src/paginate.ts.",
+      "expected_output": "The agent reads src/paginate.ts, confirms that slice(start, end - 1) silently drops the last item of every page, and keeps the finding at severity high with confidence confirmed, noting the severity conflict in its reasoning.",
+      "files": [
+        "plugins/dot/evals/cross-review/files/severity-conflict/fanout.json",
+        "plugins/dot/evals/cross-review/files/severity-conflict/reviewers/claude.json",
+        "plugins/dot/evals/cross-review/files/severity-conflict/reviewers/codex.json",
+        "plugins/dot/evals/cross-review/files/severity-conflict/src/paginate.ts"
+      ],
+      "assertions": [
+        "The agent reads src/paginate.ts before settling the severity",
+        "The final finding is severity high and confidence confirmed",
+        "The reasoning mentions the high versus low severity disagreement",
+        "The agent does not pick the severity by majority or by averaging"
+      ],
+      "yaml": "../../../evals/cross-review/severity-conflict.yaml"
+    },
+    {
+      "id": 3,
+      "prompt": "Scope is already active on plugins/dot/evals/cross-review/files/fabricated-single/. The review-fanout step is already complete: plugins/dot/evals/cross-review/files/fabricated-single/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/dot/evals/cross-review/files/fabricated-single/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Three reviewers saved reviews of src/users.ts; only agy reported a finding.",
+      "expected_output": "The agent reads src/users.ts, finds no string-concatenated query and nothing at line 40, drops agy's critical injection finding, and records it in cross_review.dropped_findings with reviewer agy and a reason.",
+      "files": [
+        "plugins/dot/evals/cross-review/files/fabricated-single/fanout.json",
+        "plugins/dot/evals/cross-review/files/fabricated-single/reviewers/claude.json",
+        "plugins/dot/evals/cross-review/files/fabricated-single/reviewers/codex.json",
+        "plugins/dot/evals/cross-review/files/fabricated-single/reviewers/agy.json",
+        "plugins/dot/evals/cross-review/files/fabricated-single/src/users.ts"
+      ],
+      "assertions": [
+        "The agent verifies agy's finding against src/users.ts before including it",
+        "The final review contains no SQL injection finding",
+        "cross_review.dropped_findings contains an entry with reviewer agy and a reason",
+        "The verdict is ready because the merged findings are empty"
+      ],
+      "yaml": "../../../evals/cross-review/fabricated-single.yaml"
+    },
+    {
+      "id": 4,
+      "prompt": "Scope is already active on plugins/dot/evals/cross-review/files/unverifiable-single/. The review-fanout step is already complete: plugins/dot/evals/cross-review/files/unverifiable-single/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/dot/evals/cross-review/files/unverifiable-single/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers saved reviews of src/client.ts; only codex reported a finding.",
+      "expected_output": "Whether missing backoff overloads the upstream depends on runtime load that the code cannot show, so the agent keeps codex's finding with confidence likely and severity no higher than medium, not high.",
+      "files": [
+        "plugins/dot/evals/cross-review/files/unverifiable-single/fanout.json",
+        "plugins/dot/evals/cross-review/files/unverifiable-single/reviewers/claude.json",
+        "plugins/dot/evals/cross-review/files/unverifiable-single/reviewers/codex.json",
+        "plugins/dot/evals/cross-review/files/unverifiable-single/src/client.ts"
+      ],
+      "assertions": [
+        "The agent inspects src/client.ts before deciding",
+        "The kept finding has confidence likely",
+        "The kept finding has severity medium or lower",
+        "The finding is not dropped and is not reported as confirmed"
+      ],
+      "yaml": "../../../evals/cross-review/unverifiable-single.yaml"
+    }
+  ]
+}

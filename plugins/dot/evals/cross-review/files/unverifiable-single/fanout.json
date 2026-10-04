@@ -1,0 +1,22 @@
+{
+  "state_dir": "evals/cross-review/files/unverifiable-single",
+  "ok": true,
+  "reviewers": [
+    {
+      "runtime": "claude",
+      "status": "ready",
+      "verdict": "ready",
+      "findings_count": 0,
+      "review_uuid": "unverifiable-single-claude",
+      "blocker": null
+    },
+    {
+      "runtime": "codex",
+      "status": "findings",
+      "verdict": "ready-with-fixes",
+      "findings_count": 1,
+      "review_uuid": "unverifiable-single-codex",
+      "blocker": null
+    }
+  ]
+}

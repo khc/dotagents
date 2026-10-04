@@ -1,0 +1,18 @@
+{
+  "target": "src",
+  "review_mode": "path",
+  "source_workflow": "standalone",
+  "findings": [
+    {
+      "category": "Bugs",
+      "location": "src/paginate.ts:4",
+      "description": "Minor off-by-one in slice bounds",
+      "severity": "low",
+      "confidence": "likely",
+      "fix_direction": "Review the slice end index."
+    }
+  ],
+  "summary": "Cosmetic slice issue.",
+  "reasoning": "Cosmetic slice issue.",
+  "verdict": "ready-with-fixes"
+}
