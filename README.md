@@ -1,6 +1,6 @@
 # Dot skills
 
-The `dot` plugin packages 13 local skills for Codex CLI/desktop and Claude Code. Invoke `$dot:plan` in Codex or `/dot:plan` in Claude Code. The plugin supplies the namespace; frontmatter names remain unqualified. Codex's VS Code extension uses the local skill symlinks with plain names such as `$plan`.
+The `dot` plugin packages 12 skills for Codex CLI/desktop and Claude Code. Invoke `$dot:plan` in Codex or `/dot:plan` in Claude Code. The plugin supplies the namespace; frontmatter names remain unqualified.
 
 ## Included skills
 
@@ -17,10 +17,9 @@ The `dot` plugin packages 13 local skills for Codex CLI/desktop and Claude Code.
 | `dot:research` | Find existing implementation solutions |
 | `dot:workflow` | Orchestrate isolated lifecycle stages |
 | `dot:find-skills` | Discover additional skills |
-| `dot:nlm-skill` | Use NotebookLM CLI or MCP tools |
 | `dot:skill-wrapper` | Improve skills with reusable evals |
 
-`dot:skill-wrapper` requires the external `superpowers:writing-skills` skill. NotebookLM requires its existing CLI or MCP connection. The package does not supply those services.
+`dot:skill-wrapper` requires the external `superpowers:writing-skills` skill.
 
 ## Workflows
 
@@ -43,7 +42,6 @@ plugins/dot/
 ├── src/agents/
 ├── src/schemas/sidecar.schema.sql
 └── evals/
-skills/<name>/                # symlinks to plugins/dot/skills/<name>/ for IDE discovery
 skills/synced/                 # independent synced collection
 scripts/                      # development tools
 src/skill_report.py
@@ -66,9 +64,7 @@ Open the native plugin selector (`/plugins` in CLI, or Plugins in the desktop ap
 
 ### Codex VS Code extension
 
-The IDE extension [does not support plugins](https://learn.chatgpt.com/docs/plugins). When this checkout lives at `~/.agents`, the tracked `skills/<name>` symlinks expose all 13 skills through Codex's [local skill discovery](https://learn.chatgpt.com/docs/build-skills). No plugin installation is needed for these local skills. Restart Codex if the selector has not refreshed, then invoke `$scope`, `$plan`, or another unqualified skill name.
-
-Local skill instructions translate `dot:<name>` references to the unqualified name when the namespace is absent from the catalog. The symlinks reuse the plugin's instructions, assets, and helpers; they contain no copied skill implementations. In a CLI/desktop session with `dot` installed, both local and plugin identities may appear; prefer `$dot:<name>` there. Keep these compatibility symlinks when removing unrelated duplicate installations.
+The IDE extension [does not support plugins](https://learn.chatgpt.com/docs/plugins). This checkout supplies the native plugin package without local skill aliases. Use Codex CLI/desktop or Claude Code to load it.
 
 ### Claude Code
 
@@ -115,6 +111,6 @@ Taskfile validators retain their names and unqualified `skill=<name>` argument, 
 
 ## Migration and rollback
 
-The 13 tracked skill trees and their shared runtime moved into `plugins/dot/`; their former local paths are compatibility symlinks for IDE discovery. After confirming native discovery, remove any separate old copies of these same skills from other host skill roots to avoid duplicates. Keep the compatibility symlinks, synced skills, and unrelated skills. External copies are not automatically removed.
+The 12 retained skill trees and their shared runtime live in `plugins/dot/`. The NotebookLM skill is intentionally excluded, and the former local skill aliases have been removed. After confirming native discovery, remove any separate old copies of these same skills from other host skill roots to avoid duplicates. Keep synced and unrelated skills. External copies are not automatically removed.
 
 Rollback restores moved paths and removes new package/catalog files using the reviewed migration diff. Target-project `.plans`, `.sidecar`, and `.workflow` locations and persisted identifiers are unchanged and need no data migration.

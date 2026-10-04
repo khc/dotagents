@@ -4,7 +4,7 @@ This directory is the complete installable package. It does not require the surr
 
 ## Skills
 
-Includes `bug`, `feature`, `find-skills`, `fix`, `implement`, `nlm-skill`, `plan`, `refactor`, `research`, `review`, `scope`, `skill-wrapper`, and `workflow`.
+Includes 12 skills: `bug`, `feature`, `find-skills`, `fix`, `implement`, `plan`, `refactor`, `research`, `review`, `scope`, `skill-wrapper`, and `workflow`.
 
 Codex examples:
 
@@ -24,15 +24,12 @@ Claude Code examples:
 
 The plugin name supplies `dot:`. Each skill's frontmatter name remains unqualified.
 
-For Codex's VS Code extension, which does not support plugins, the development checkout at `~/.agents` supplies `skills/<name>` symlinks to these same skill directories. Use plain names such as `$scope` and `$plan` in the IDE; loaded instructions translate internal `dot:<name>` references to the available local names. Keep these compatibility symlinks. Native plugin hosts retain `dot:<name>` invocations.
-
 ## Prerequisites
 
 - Git and `uv` on PATH; `uv` manages Python 3.14.
 - `tyro>=1.0.13` for review/fix/sidecar helpers, declared as inline script dependencies.
 - Claude Code or Codex CLI for workflow subprocess stages, or the existing Agy adapter for native stages.
 - External `superpowers:writing-skills` for `dot:skill-wrapper`.
-- The existing NotebookLM CLI or MCP connection for `dot:nlm-skill`.
 
 ## Load or install
 
@@ -76,5 +73,7 @@ The development repository also provides relocation tests, per-skill validation,
 ## Migration and rollback
 
 Confirm native discovery before removing external old copies of these same skills. Synced skills and unrelated plugins stay separate; this migration deletes no external copies.
+
+The package retains 12 skills and intentionally excludes NotebookLM. The development checkout uses the native plugin layout without local skill aliases.
 
 Rollback restores the former repository paths from the reviewed migration diff and removes the new package/catalog files. Target-project plans, sidecar entries, and workflow artifacts keep their locations and identifiers throughout.

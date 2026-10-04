@@ -16,7 +16,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "dot"
 SKILLS = {
-    "bug", "feature", "find-skills", "fix", "implement", "nlm-skill",
+    "bug", "feature", "find-skills", "fix", "implement",
     "plan", "refactor", "research", "review", "scope", "skill-wrapper", "workflow",
 }
 
@@ -28,13 +28,14 @@ class DotPluginTests(unittest.TestCase):
         for key in ("name", "version", "author"):
             self.assertEqual(portable[key], claude[key])
         self.assertEqual(portable["name"], "dot")
+        self.assertFalse((PLUGIN / "skills" / "nlm-skill").exists())
         self.assertEqual({p.name for p in (PLUGIN / "skills").iterdir()}, SKILLS)
         for name in SKILLS:
             frontmatter = (PLUGIN / "skills" / name / "SKILL.md").read_text().split("---", 2)[1]
             self.assertEqual(yaml.safe_load(frontmatter)["name"], name)
             alias = ROOT / "skills" / name
-            self.assertTrue(alias.is_symlink(), name)
-            self.assertEqual(alias.resolve(), PLUGIN / "skills" / name)
+            self.assertFalse(alias.exists(), name)
+            self.assertFalse(alias.is_symlink(), name)
         for name in ("context", "review", "fix", "sidecar"):
             script = (PLUGIN / "scripts" / f"{name}_workflow.py").read_text()
             self.assertIn('# requires-python = ">=3.14"', script)
@@ -141,18 +142,6 @@ class DotPluginTests(unittest.TestCase):
             if "fixture" in scenario:
                 name = scenario["skill"].split(":")[-1]
                 self.assertTrue((PLUGIN / "skills" / name / scenario["fixture"]).is_dir(), file)
-
-    def test_ide_local_discovery(self):
-        for name in SKILLS:
-            file = ROOT / "skills" / name / "SKILL.md"
-            self.assertTrue(file.is_file(), name)
-            text = file.read_text()
-            self.assertEqual(yaml.safe_load(text.split("---", 2)[1])["name"], name)
-            self.assertIn("## Local skill compatibility", text)
-            self.assertIn("unqualified skill name", text)
-            self.assertEqual(file.resolve().parents[2], PLUGIN)
-        policy = (ROOT / "AGENTS.md").read_text()
-        self.assertIn("$scope when plugin skills are unavailable", policy)
 
     def test_claude_stage_loads_plugin(self):
         plugin, project, child = self.relocated()
