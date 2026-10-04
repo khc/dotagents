@@ -32,15 +32,14 @@ The active scope boundary is authoritative for every read in this skill.
 
 ## Inputs
 
-- the review target and any requirements, plan, or change range, from the user or from the workflow request file
-- the active scope
+- the arguments: exactly the text the user typed after the skill name (or the workflow request file). Pass them to the fan-out unchanged; never summarize, correct, expand, or add requirements to them
+- the active scope (a file or a directory)
 - optional runtimes: use the ones the user or workflow prompt names, otherwise `claude,codex,agy`
 
 ## Protocol
 
-1. **Fan out.** Write the target and requirements to a temporary file, then run the reviewers with `uv run --no-project "$dot_plugin_root/skills/workflow/bin/workflow.py" review-fanout --scope '<scope>' --runtimes <csv> --request-file '<temp file>'`. Never put request text directly on the command line. When a workflow prompt supplies a complete `review-fanout --state-dir ...` command, run that command instead.
-   - The first output line is `FANOUT_RESULT=<path>`. The final report is printed as JSON and written atomically to that unique path (`<state dir>/fanout-<run_id>.json`). Each run has its own path; never read any other `fanout-*.json` file, because earlier review rounds leave theirs in the same directory.
-   - Worst case runtime is two attempts of `--review-timeout` (default 900 s) per reviewer. If the runtime's tool-call limit is shorter than that, run the command in the background, read the `FANOUT_RESULT` path from its first output line, and poll for exactly that file.
+1. **Fan out.** Follow `references/fanout.md` exactly: write the user's arguments, unchanged, to a request file with your file-writing tool, then run `uv run --no-project "$dot_plugin_root/skills/workflow/bin/workflow.py" review-fanout --scope '<active scope>' --runtimes <csv> --request-file '<request file>'`. When a workflow prompt supplies a complete `review-fanout --state-dir ...` command, run that command instead.
+   - The reference has the setup, background polling for `FANOUT_RESULT=<path>`, the output contract, and what to do for each blocker. The fan-out report is runner output, not a repository file, so reading it is allowed for any scope.
    - If the command exits non-zero or `ok` is `false`: STOP. Report `blocked` with each failed reviewer's `runtime` and `blocker`. Do not synthesize a partial ensemble.
 2. **Load the reviews.** For each `review_uuid` in the fan-out report, run `uv run --no-project "$dot_plugin_root/scripts/sidecar_workflow.py" read --uuid '<uuid>' --start-path '<scope>'`. Read `context.findings`, `context.verdict`, and `context.reasoning`.
 3. **Normalize and merge.** Map every finding to the six sidecar keys (`category`, `location`, `description`, `severity`, `confidence`, `fix_direction`). Merge findings that share a root cause into one. In `reasoning`, record for each merged finding which reviewers raised it: `unanimous`, `majority`, `single`, or `disputed`.

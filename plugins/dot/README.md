@@ -59,7 +59,7 @@ uv run --no-project "$dot_plugin_root/scripts/sidecar_workflow.py" --help
 
 Inline script metadata supplies Python/dependency requirements. Modules and the SQL schema live under the bundled `src/`. First execution may require network access to obtain missing dependencies; there is no reliance on `~/.agents/.venv`.
 
-Plans stay at `<target repo>/.plans/`, sidecar data at `<target repo>/.sidecar/`, and workflow handoffs at `<active scope>/.workflow/<workflow-id>/`. Persisted skill identifiers remain `review` and `fix`; workflow stage names and approval gates also remain unchanged.
+Plans stay at `<target repo>/.plans/`, sidecar data at `<target repo>/.sidecar/`, and workflow handoffs at `<active scope>/.workflow/<workflow-id>/` (for a single-file scope, `<file's directory>/.workflow/<id>/`). Persisted skill identifiers remain `review` and `fix`; workflow stage names and approval gates also remain unchanged.
 
 ## Validation
 

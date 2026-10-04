@@ -104,6 +104,8 @@ TRANSITIONS = {
 RUNTIMES = ["claude", "codex", "agy"]
 WORKFLOWS = ["feature", "refactor", "bug", "planned", "review"]
 DEFAULT_REVIEW_TIMEOUT = 900
+# Prompts travel as one command-line argument; Linux caps a single argument near 128 KB.
+MAX_PROMPT_BYTES = 100_000
 
 DEFAULT_MAX_REVIEW_FIX_CYCLES = 5
 
@@ -168,6 +170,33 @@ def cli_command(runtime: str, prompt: str, cwd: Path) -> list[str]:
         return base + extra + [prompt]
     raise ValueError(f"unsupported runtime: {runtime}")
 
+def scope_dir(scope: Path) -> Path:
+    """Directory to run in for a scope that may be a single file."""
+    return scope if scope.is_dir() else scope.parent
+
+def read_text_exact(path: Path) -> str:
+    """Read text without newline translation, so typed requests stay verbatim."""
+    return path.read_bytes().decode("utf-8")
+
+def write_text_exact(path: Path, text: str) -> None:
+    path.write_bytes(text.encode("utf-8"))
+
+def ensure_prompt_fits(prompt: str) -> None:
+    size = len(prompt.encode("utf-8"))
+    if size > MAX_PROMPT_BYTES:
+        raise SystemExit(
+            "request text is too large to pass verbatim as a command-line argument "
+            f"({size} bytes of prompt; limit {MAX_PROMPT_BYTES}). Shorten it, or put the "
+            "details in a file inside the scope and refer to the path."
+        )
+
+def arguments_block(text: str, label: str) -> str:
+    """Embed user text unchanged; a random token keeps it from closing the block."""
+    if not text:
+        return "No arguments were supplied."
+    token = uuid.uuid4().hex[:8]
+    return f"{label}\n<ARGUMENTS token={token}>\n{text}\n</ARGUMENTS token={token}>"
+
 def stage_prompt(
     workflow: str,
     stage: str,
@@ -181,9 +210,18 @@ def stage_prompt(
     review_phase: str | None = None,
     review_runtimes: list[str] | None = None,
     review_timeout: int | None = None,
+    request_text: str | None = None,
 ) -> str:
     prior = sorted(artifacts_dir.glob("*.json"))
     prior_lines = "\n".join(f"- {p}" for p in prior) or "- none"
+    runner_files = (
+        f"Original request file: {request_file}\n"
+        f"Workflow artifact directory: {artifacts_dir}"
+    )
+    if request_text is not None and scope.is_file():
+        # Runner files live outside a single-file scope; never point reviewers at them.
+        runner_files = "Workflow artifacts: none (file scope: runner files are outside the active scope)"
+        prior_lines = "- none"
     allowed = " | ".join(sorted(VALID_STATUS[stage]))
     id_field = STAGE_ID_FIELD[stage]
 
@@ -213,6 +251,20 @@ def stage_prompt(
             "relevant plan/implementation/prior-review/fix artifacts. Invoke `$dot:review`."
         )
         if review_phase == "independent":
+            if request_text is not None:
+                base = (
+                    "Perform an independent review in a fresh context. Read only the "
+                    "relevant plan/implementation/prior-review/fix artifacts. "
+                    + (
+                        "Invoke `$dot:review` with exactly the text inside the ARGUMENTS "
+                        "block below, as if the user had typed it after `/dot:review`. "
+                        "Do not rephrase, summarize, or add to it.\n\n"
+                        + arguments_block(request_text, "Arguments (verbatim):")
+                        if request_text
+                        else "Invoke `$dot:review` on the active scope path. "
+                        "No arguments were supplied."
+                    )
+                )
             return (
                 f"{base}\n\nOther reviewers are working in parallel. Do not read "
                 "`.sidecar/` and do not run `sidecar_workflow.py read`; read only "
@@ -227,6 +279,15 @@ def stage_prompt(
                 f"--runtimes {shlex.quote(','.join(review_runtimes or []))} "
                 f"--cycle {cycle} --review-timeout {review_timeout}\n\n"
                 "Then follow the skill to synthesize and save the final review."
+                + (
+                    "\n\n"
+                    + arguments_block(
+                        request_text,
+                        "Arguments the user gave to `$dot:cross-review` (verbatim):",
+                    )
+                    if request_text is not None
+                    else ""
+                )
             )
         return base
 
@@ -246,8 +307,7 @@ This is a fresh isolated lifecycle-stage invocation. Do not execute any later
 workflow stage yourself. Return control to the orchestrator when this stage is done.
 
 Active repo scope: {scope}
-Original request file: {request_file}
-Workflow artifact directory: {artifacts_dir}
+{runner_files}
 Review/fix cycle: {cycle}
 
 Before repo work, activate `$dot:scope` on exactly `{scope}` if this fresh runtime
@@ -291,6 +351,7 @@ Do not claim success/ready unless the invoked skill's evidence requirements are 
 def run_process(
     runtime: str, prompt: str, cwd: Path, timeout: float | None = None
 ) -> str:
+    cwd = scope_dir(cwd)
     cmd = cli_command(runtime, prompt, cwd)
     try:
         proc = subprocess.run(
@@ -426,6 +487,7 @@ def run_stage_loop(
     dry_run: bool,
     plan_reason: str = "initial",
     amendment: str | None = None,
+    request_text: str | None = None,
 ) -> int:
     state_root = artifacts.parent
     stage = state["stage"]
@@ -459,6 +521,11 @@ def run_stage_loop(
                     "review_phase": "cross",
                     "review_runtimes": state["review_runtimes"],
                     "review_timeout": state.get("review_timeout", DEFAULT_REVIEW_TIMEOUT),
+                    "request_text": (
+                        request_text
+                        if request_text is not None
+                        else read_text_exact(request_file) if request_file.exists() else None
+                    ),
                 }
             prompt = stage_prompt(
                 workflow,
@@ -470,6 +537,7 @@ def run_stage_loop(
                 **review_kwargs,
             )
 
+        ensure_prompt_fits(prompt)
         if dry_run:
             print(f"\n=== {stage.upper()} ===\n{prompt}")
             return 0
@@ -624,6 +692,11 @@ def cmd_start(args: argparse.Namespace) -> int:
     scope = Path(args.scope).resolve()
     if not scope.exists():
         raise SystemExit(f"scope does not exist: {scope}")
+    if scope.is_file():
+        raise SystemExit(
+            "start requires a directory scope: workflow artifacts must live inside the "
+            "scope. Use a directory scope, or review-fanout for a single-file review."
+        )
 
     workflow_id = str(uuid.uuid4())
     state_root = (
@@ -633,12 +706,12 @@ def cmd_start(args: argparse.Namespace) -> int:
     )
     artifacts = state_root / "artifacts"
     request_file = state_root / "request.md"
+    request_text = (
+        read_text_exact(Path(args.request_file)) if args.request_file else args.request
+    )
     if not args.dry_run:
         artifacts.mkdir(parents=True, exist_ok=True)
-        if args.request_file:
-            request_file.write_text(Path(args.request_file).read_text())
-        else:
-            request_file.write_text(args.request)
+        write_text_exact(request_file, request_text)
 
     state = {
         "workflow_id": workflow_id,
@@ -665,6 +738,7 @@ def cmd_start(args: argparse.Namespace) -> int:
         args.max_review_fix_cycles,
         args.dry_run,
         plan_reason="initial",
+        request_text=request_text,
     )
 
 def cmd_resume(args: argparse.Namespace) -> int:
@@ -800,26 +874,30 @@ def cmd_review_fanout(args: argparse.Namespace) -> int:
     state_root = (
         Path(args.state_dir).resolve()
         if args.state_dir
-        else scope / ".workflow" / str(uuid.uuid4())
+        else scope_dir(scope) / ".workflow" / str(uuid.uuid4())
     )
     artifacts = state_root / "artifacts"
     request_file = state_root / "request.md"
+    if request_file.exists():
+        request = read_text_exact(request_file)
+    elif args.request_file:
+        request = read_text_exact(Path(args.request_file))
+    elif args.request is not None:
+        request = args.request
+    elif args.dry_run:
+        request = "<request text>"
+    else:
+        raise SystemExit("--request or --request-file is required without an existing --state-dir")
     if not args.dry_run:
-        if not request_file.exists():
-            if args.request_file:
-                request = Path(args.request_file).read_text()
-            elif args.request:
-                request = args.request
-            else:
-                raise SystemExit("--request or --request-file is required without an existing --state-dir")
-            artifacts.mkdir(parents=True, exist_ok=True)
-            request_file.write_text(request)
         artifacts.mkdir(parents=True, exist_ok=True)
+        if not request_file.exists():
+            write_text_exact(request_file, request)
 
     prompt = stage_prompt(
         args.workflow, "review", scope, request_file, artifacts, args.cycle,
-        review_phase="independent",
+        review_phase="independent", request_text=request,
     )
+    ensure_prompt_fits(prompt)
     if args.dry_run:
         for runtime in args.runtimes:
             print(f"=== REVIEW ({runtime}) ===\n{prompt}")

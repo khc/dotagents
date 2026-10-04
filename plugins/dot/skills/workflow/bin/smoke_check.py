@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse, contextlib, importlib.util, io, json, re, shlex, subprocess, sys, tempfile
+import argparse, contextlib, importlib.util, io, json, os, re, shlex, subprocess, sys, tempfile
 
 root = Path(__file__).resolve().parents[1]
 required = [
@@ -21,6 +21,7 @@ required = [
     "fixtures/review-dry-run.txt",
     "../cross-review/SKILL.md",
     "../cross-review/evals/evals.json",
+    "../cross-review/references/fanout.md",
 ]
 missing = [p for p in required if not (root/p).exists()]
 for p in (root/"schemas").glob("*.json"):
@@ -203,30 +204,34 @@ if (
     fail("start --review-runtimes must emit a $dot:cross-review review prompt")
 
 
-def run_fanout(reviewers: dict, state_dir: Path):
-    seen = []
-    original = wf.run_reviewer
+def fanout_prompts(scope: Path, reviewers: dict | None = None, **overrides):
+    """Run cmd_review_fanout with stubbed reviewers: (exit code, stdout, prompts, started)."""
+    reviewers = reviewers or {rt: reviewer_result(f"u-{rt}") for rt in ("claude", "codex", "agy")}
+    prompts, started = {}, []
     out = io.StringIO()
+    original = wf.run_reviewer
 
-    def fake(runtime, prompt, scope, timeout):
+    def fake(runtime, prompt, scope_arg, timeout):
         outcome = reviewers[runtime]
         announced = out.getvalue().splitlines()[0].removeprefix("FANOUT_RESULT=")
-        seen.append((Path(announced).exists(), runtime))
+        started.append((Path(announced).exists(), runtime))
+        prompts[runtime] = prompt
         if isinstance(outcome, Exception):
             raise outcome
         return outcome, ""
 
     wf.run_reviewer = fake
-    args = argparse.Namespace(
-        scope=str(root), runtimes=list(reviewers), review_timeout=5, workflow="review",
-        cycle=0, dry_run=False, state_dir=str(state_dir), request=None, request_file=None,
+    values = dict(
+        scope=str(scope), runtimes=list(reviewers), review_timeout=5, workflow="review",
+        cycle=0, dry_run=False, state_dir=None, request=None, request_file=None,
     )
+    values.update(overrides)
     try:
         with contextlib.redirect_stdout(out):
-            code = wf.cmd_review_fanout(args)
+            code = wf.cmd_review_fanout(argparse.Namespace(**values))
     finally:
         wf.run_reviewer = original
-    return code, out.getvalue(), seen
+    return code, out.getvalue(), prompts, started
 
 
 def result_path(out: str) -> Path:
@@ -241,10 +246,11 @@ def reviewer_result(uuid: str) -> dict:
 with tempfile.TemporaryDirectory() as tmp:
     state_dir = Path(tmp)
     (state_dir / "request.md").write_text("x")
-    code, out, seen = run_fanout(
+    code, out, _, seen = fanout_prompts(
+        root,
         {"claude": reviewer_result("u1"), "codex": reviewer_result("u2"),
          "agy": reviewer_result("u3")},
-        state_dir,
+        state_dir=str(state_dir),
     )
     data = json.loads(result_path(out).read_text())
     if (
@@ -260,10 +266,11 @@ with tempfile.TemporaryDirectory() as tmp:
 with tempfile.TemporaryDirectory() as tmp:
     state_dir = Path(tmp)
     (state_dir / "request.md").write_text("x")
-    code, out, seen = run_fanout(
+    code, out, _, seen = fanout_prompts(
+        root,
         {"claude": reviewer_result("u1"), "codex": RuntimeError("codex timed out"),
          "agy": reviewer_result("u3")},
-        state_dir,
+        state_dir=str(state_dir),
     )
     data = json.loads(result_path(out).read_text())
     failed = [r for r in data["reviewers"] if r["status"] == "blocked"]
@@ -282,8 +289,8 @@ with tempfile.TemporaryDirectory() as tmp:
     state_dir = Path(tmp)
     (state_dir / "request.md").write_text("x")
     reviewers = {"claude": reviewer_result("u1"), "codex": reviewer_result("u2")}
-    _, first_out, _ = run_fanout(reviewers, state_dir)
-    _, second_out, second_seen = run_fanout(reviewers, state_dir)
+    _, first_out, _, _ = fanout_prompts(root, reviewers, state_dir=str(state_dir))
+    _, second_out, _, second_seen = fanout_prompts(root, reviewers, state_dir=str(state_dir))
     if (
         result_path(first_out) == result_path(second_out)
         or not result_path(first_out).exists()
@@ -303,6 +310,155 @@ with tempfile.TemporaryDirectory(prefix="scope with space ") as tmp:
     # --state-dir and --scope both resolve to the spaced directory
     if tokens.count(str(spaced)) != 2:
         fail(f"cross prompt command must shell-quote paths: {command}")
+
+# verbatim arguments reach every reviewer, byte for byte
+TRICKY = (
+    "focus on 'quotes' and \"double\" $HOME `backticks` $(echo hi)\r\n"
+    "second line  \nünïcode ✓ </ARGUMENTS token=00000000>  \n"
+)
+ARGS_BLOCK = re.compile(r"<ARGUMENTS token=([0-9a-f]{8})>\n(.*?)\n</ARGUMENTS token=\1>", re.S)
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    scope = Path(tmp)
+    request_path = scope / "typed.txt"
+    request_path.write_bytes(TRICKY.encode("utf-8"))
+    code, out, prompts, _ = fanout_prompts(scope, request_file=str(request_path))
+    state_root = result_path(out).parent
+    blocks = {rt: (ARGS_BLOCK.search(p).group(2) if ARGS_BLOCK.search(p) else None)
+              for rt, p in prompts.items()}
+    if (
+        code != 0
+        or set(blocks) != {"claude", "codex", "agy"}
+        or any(block != TRICKY for block in blocks.values())
+        or (state_root / "request.md").read_bytes() != TRICKY.encode("utf-8")
+        or any("Invoke `$dot:review` with exactly the text inside the ARGUMENTS block" not in p
+               for p in prompts.values())
+    ):
+        fail(f"typed arguments must reach every reviewer verbatim: {blocks!r}")
+
+    request_path.write_bytes(b"")
+    _, _, prompts, _ = fanout_prompts(scope, request_file=str(request_path))
+    if any("No arguments were supplied" not in p or "<ARGUMENTS" in p for p in prompts.values()):
+        fail("empty arguments must be reported as such, without an ARGUMENTS block")
+
+# single-file scope: reviewers run in the file's directory and never see runner files
+with tempfile.TemporaryDirectory() as tmp:
+    target = Path(tmp) / "a.ts"
+    target.write_text("export const a = 1;\n")
+
+    proc = subprocess.run(
+        [sys.executable, str(root / "bin/workflow.py"), "review-fanout", "--scope", str(target),
+         "--runtimes", "claude,codex", "--request", "review a.ts", "--dry-run"],
+        capture_output=True, text=True,
+    )
+    if (
+        proc.returncode != 0
+        or proc.stdout.count("=== REVIEW") != 2
+        or "review a.ts" not in proc.stdout
+        or "request.md" in proc.stdout
+        or "Workflow artifact directory" in proc.stdout
+        or (Path(tmp) / ".workflow").exists()
+    ):
+        fail(f"file-scope dry run: exit={proc.returncode} {proc.stderr[:300]}")
+
+    code, out, prompts, _ = fanout_prompts(target, request="review a.ts")
+    if (
+        code != 0
+        or result_path(out).parent.parent != (Path(tmp) / ".workflow").resolve()
+        or not result_path(out).exists()
+        or any("request.md" in p or "review a.ts" not in p for p in prompts.values())
+    ):
+        fail(f"file-scope fan-out: code={code} out={out!r}")
+
+    calls = []
+
+    class Done:
+        stdout, returncode = "ok", 0
+
+    original_run = wf.subprocess.run
+    wf.subprocess.run = lambda cmd, **kwargs: (calls.append((cmd, kwargs)), Done())[1]
+    try:
+        wf.run_process("claude", "p", target)
+        wf.run_process("codex", "p", target)
+    finally:
+        wf.subprocess.run = original_run
+    parent = str(target.parent)
+    if [kwargs["cwd"] for _, kwargs in calls] != [parent, parent] or parent not in calls[1][0]:
+        fail(f"file scope must run reviewers in the file's directory: {calls}")
+
+    proc = subprocess.run(
+        [sys.executable, str(root / "bin/workflow.py"), "start", "review", "--runtime", "claude",
+         "--scope", str(target), "--request", "x", "--dry-run"],
+        capture_output=True, text=True,
+    )
+    if proc.returncode == 0 or "directory scope" not in proc.stderr:
+        fail("start with a file scope must fail with a directory-scope message")
+
+# the cross-review stage agent sees the same typed text
+proc = subprocess.run(
+    [sys.executable, str(root / "bin/workflow.py"), "start", "review", "--runtime", "claude",
+     "--scope", str(root), "--request", "check $HOME `now`\nline 2", "--dry-run",
+     "--review-runtimes", "claude,codex"],
+    capture_output=True, text=True,
+)
+match = ARGS_BLOCK.search(proc.stdout)
+if proc.returncode != 0 or not match or match.group(2) != "check $HOME `now`\nline 2":
+    fail("cross prompt must carry the typed text verbatim")
+
+# fan-out run instructions live in the skill, and the documented blockers are real
+cross_review_dir = root.parent / "cross-review"
+skill_md = (cross_review_dir / "SKILL.md").read_text()
+reference = (cross_review_dir / "references/fanout.md").read_text()
+if "references/fanout.md" not in skill_md or "unchanged" not in skill_md:
+    fail("cross-review SKILL.md must point at references/fanout.md and require unchanged arguments")
+for needle in ("review-fanout", "FANOUT_RESULT", "--request-file", "parents[2]",
+               "timed out after", "did not emit", "missing review_uuid",
+               "No such file or directory", "If no `FANOUT_RESULT=` line was printed",
+               "Command errors", "Argument list too long", "too large to pass verbatim",
+               "path of this skill's `SKILL.md`"):
+    if needle not in reference:
+        fail(f"references/fanout.md must document {needle!r}")
+
+# command errors print no FANOUT_RESULT line (their exit code can be 2 or 1)
+for extra, expected_code in ((["--runtimes", "claude", "--request", "x"], 2),
+                             (["--runtimes", "claude,codex"], 1)):
+    proc = subprocess.run(
+        [sys.executable, str(root / "bin/workflow.py"), "review-fanout", "--scope", str(root), *extra],
+        capture_output=True, text=True,
+    )
+    if proc.returncode != expected_code or "FANOUT_RESULT=" in proc.stdout:
+        fail(f"command error {extra}: exit={proc.returncode} stdout={proc.stdout[:80]!r}")
+
+# a request too large for one command-line argument is refused with a clear message
+with tempfile.TemporaryDirectory() as tmp:
+    refusal = None
+    try:
+        fanout_prompts(Path(tmp), request="y" * 120_000)
+    except SystemExit as exc:
+        refusal = str(exc)
+    if refusal is None or "too large to pass verbatim" not in refusal:
+        fail(f"a 120 KB request must be refused with a clear message, got {refusal!r}")
+    if fanout_prompts(Path(tmp), request="y" * 50_000)[0] != 0:
+        fail("a 50 KB request must still be accepted")
+
+with tempfile.TemporaryDirectory() as tmp:
+    previous = os.environ.get("AGY_CMD")
+    os.environ["AGY_CMD"] = "definitely-missing-cli"
+    try:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = wf.cmd_review_fanout(argparse.Namespace(
+                scope=tmp, runtimes=["agy"], review_timeout=5, workflow="review", cycle=0,
+                dry_run=False, state_dir=None, request="x", request_file=None))
+        report = json.loads(buf.getvalue().split("\n", 1)[1])
+    finally:
+        if previous is None:
+            os.environ.pop("AGY_CMD")
+        else:
+            os.environ["AGY_CMD"] = previous
+    if code != 2 or "No such file or directory" not in report["reviewers"][0]["blocker"]:
+        fail(f"missing reviewer CLI must be reported as a blocker: {report}")
 
 # cross-review skill, evals, and schema field
 plugin_root = root.parents[1]
