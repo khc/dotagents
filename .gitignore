@@ -9,6 +9,7 @@
 .workflow/
 .ruff_cache/
 .vscode/
+.plans/
 
 # macOS
 .DS_Store
@@ -31,5 +32,8 @@ node_modules/
 
 # External skills
 skills/tma1
-skills/tma1-peer
-skills/nlm-skill
+skills/tma1-peer/
+skills/synced/
+
+# Plugin development environments
+plugins/dot/**/.venv/

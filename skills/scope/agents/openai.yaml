@@ -1,8 +1,0 @@
-interface:
-  display_name: "Scope"
-  short_description: "Scope work to a repo path and its AGENTS.md"
-  default_prompt: "Before any repository work, you MUST run $scope to activate the correct path and apply AGENTS.md rules."
-
-policy:
-  allow_implicit_invocation: true
-  priority: high

@@ -9,9 +9,9 @@ security-sensitive design, or comparable implementation risk.
 
 ## Flow
 
-`$context → $plan → $implement → $review → [$fix → $review]*`
+`$dot:scope → $dot:plan → $dot:implement → $dot:review → [$dot:fix → $dot:review]*`
 
-The workflow ends only when `$review` returns `ready`, or when execution
+The workflow ends only when `$dot:review` returns `ready`, or when execution
 stops for scope expansion, requirement clarification, or re-planning.
 
 ## Stage Ownership
@@ -19,41 +19,41 @@ stops for scope expansion, requirement clarification, or re-planning.
   -----------------------------------------------------------------------
   Stage                   Owns                    Must not own
   ----------------------- ----------------------- -----------------------
-  `$context`              active scope and        planning or
+  `$dot:scope`            active scope and        planning or
                           applicable repo         implementation
                           instructions            
 
-  `$plan`                 decomposition,          source edits
+  `$dot:plan`             decomposition,          source edits
                           approach, task scope,   
                           interfaces, acceptance  
                           criteria                
 
-  `$implement`            faithful plan           silent redesign,
+  `$dot:implement`        faithful plan           silent redesign,
                           execution, regression   independent acceptance
                           protection, fresh       
                           verification            
 
-  `$review`               independent correctness implementation or
+  `$dot:review`           independent correctness implementation or
                           judgment and            fixing
                           acceptance/verdict      
 
-  `$fix`                  remediation of review   diagnosis, severity,
+  `$dot:fix`              remediation of review   diagnosis, severity,
                           findings                acceptance
   -----------------------------------------------------------------------
 
-## 1. Context
+## 1. Scope
 
-Activate `$context` on the intended planning/implementation scope.
+Activate `$dot:scope` on the intended planning/implementation scope.
 
 `scope_boundaries.allowed` remains authoritative throughout the
 workflow. A plan does not authorize files outside the active context.
 
 If required planning or implementation evidence lies outside scope, stop
-and explicitly reactivate `$context` after expansion is approved.
+and explicitly reactivate `$dot:scope` after expansion is approved.
 
 ## 2. Plan
 
-Invoke `$plan` with the requirements, task, specification, issue, or
+Invoke `$dot:plan` with the requirements, task, specification, issue, or
 acceptance criteria.
 
 The planner inspects scoped repo evidence and produces the smallest
@@ -72,15 +72,15 @@ The plan self-checks requirement coverage, scope, executability,
 testability, interface consistency, placeholders, and ordering.
 
 When supported, retain a stable plan identifier. The complete plan is
-the contract passed to `$implement`.
+the contract passed to `$dot:implement`.
 
-`$plan` does not edit the repo.
+`$dot:plan` does not edit the repo.
 
 ## 3. Implement
 
-Invoke `$implement` with the exact governing plan.
+Invoke `$dot:implement` with the exact governing plan.
 
-Before editing, `$implement` checks only for execution blockers; it does
+Before editing, `$dot:implement` checks only for execution blockers; it does
 not redesign merely because another approach is possible.
 
 Before the first edit, capture when available:
@@ -101,7 +101,7 @@ Execute tasks in dependency order. For each task:
 
 ### Re-plan boundary
 
-Stop and return to `$plan` when execution requires a material change to:
+Stop and return to `$dot:plan` when execution requires a material change to:
 
 -   task decomposition
 -   requirements or acceptance criteria
@@ -113,7 +113,7 @@ Stop and return to `$plan` when execution requires a material change to:
 -   external dependencies
 -   core plan assumptions
 
-A local implementation mistake may be corrected inside `$implement`; a
+A local implementation mistake may be corrected inside `$dot:implement`; a
 materially wrong plan may not.
 
 ### Implement handoff to Review
@@ -127,11 +127,11 @@ Pass or preserve:
 -   scoped implementation diff/change boundary
 -   task-level and aggregate fresh verification evidence
 
-`$implement` does not declare the implementation ready.
+`$dot:implement` does not declare the implementation ready.
 
 ## 4. Review
 
-Invoke `$review` as a Change review.
+Invoke `$dot:review` as a Change review.
 
 When both are available, review against:
 
@@ -146,29 +146,29 @@ reuse.
 Possible outcomes:
 
 -   `ready` → workflow complete
--   findings → `$fix`
+-   findings → `$dot:fix`
 -   evidence/scope blocker → resolve before continuing
 
 ## 5. Fix and Re-review
 
-`$fix` remediates only the selected review findings, with fresh local
+`$dot:fix` remediates only the selected review findings, with fresh local
 verification.
 
-After successful fixes, return to `$review`. Preserve the original
+After successful fixes, return to `$dot:review`. Preserve the original
 Change review and governing plan while including the fix delta.
 
 Repeat:
 
-`$review → $fix → $review`
+`$dot:review → $dot:fix → $dot:review`
 
-until `$review` returns `ready`.
+until `$dot:review` returns `ready`.
 
-If `$fix` disproves a `likely` finding or discovers that the prescribed
+If `$dot:fix` disproves a `likely` finding or discovers that the prescribed
 remediation materially conflicts with the code, return the diagnosis
-mismatch to `$review`; do not redesign the plan inside `$fix`.
+mismatch to `$dot:review`; do not redesign the plan inside `$dot:fix`.
 
 ## Completion
 
-The workflow is complete only when `$review` returns `ready` for the
+The workflow is complete only when `$dot:review` returns `ready` for the
 implementation against the governing plan and inspected change evidence
 within the active scope.

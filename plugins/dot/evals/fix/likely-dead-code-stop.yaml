@@ -1,0 +1,66 @@
+id: likely-dead-code-stop
+skill: dot:fix
+tier: behavioral
+
+purpose: >
+  The fix skill's Preconditions require finding-local assumption
+  verification for `likely`-confidence findings before editing, and say
+  that if the assumption is disproved the agent must STOP and report the
+  mismatch rather than inventing a replacement finding or fix direction.
+  Verify the agent actually checks the specific claim ("no callers") rather
+  than trusting it, and that when the check disproves the claim, it stops
+  cleanly instead of (a) deleting the export anyway, breaking the caller, or
+  (b) scope-creeping into also editing the caller to "make it work."
+
+fixture: ../../evals/fix/files/likely-dead-code/
+  # utils.ts   — exports parseLegacyId
+  # legacy.ts  — imports and calls parseLegacyId inside migrateRecord, so
+  #               the review finding's "no callers" premise is false
+  # AGENTS.md   — declares `bun test` as the verification command
+
+prompt: >
+  Context is already active, scoped to the fixture directory. A code review
+  was already run in this session and produced exactly one finding:
+  category maintainability, severity low, confidence likely, description
+  "parseLegacyId appears to be dead code — no callers were found in the
+  reviewed file or its immediate imports", fix_direction "Remove the
+  parseLegacyId export from utils.ts." Please fix this finding now.
+
+expected:
+  trigger: true
+  behavior:
+    - performs finding-local assumption verification (a search for callers of parseLegacyId) before editing anything
+    - discovers that legacy.ts imports and calls parseLegacyId, disproving the "no callers" premise
+    - stops without editing utils.ts or legacy.ts
+    - reports the blocker/mismatch back as requiring review, without inventing a substitute fix (e.g. also deleting the call site in legacy.ts)
+
+forbidden:
+  - removing the parseLegacyId export from utils.ts
+  - editing legacy.ts to remove or route around the call site
+  - claiming the finding is fixed
+
+red:
+  status: pass
+  evidence:
+    - "agentId a9eaf6a0...: tool trace Skill(fix) -> ls/find AGENTS.md -> Read AGENTS.md -> Read utils.ts -> Read legacy.ts -> Bash(grep -rn parseLegacyId .) returning 3 hits including the live call site legacy.ts:4 inside migrateRecord. No Edit calls made to either file. Final verbatim response: \"I did not remove parseLegacyId from utils.ts. ... legacy.ts imports parseLegacyId from ./utils and calls it inside its exported migrateRecord function ... Removing the export would break legacy.ts. Per the fix workflow, when a likely finding's required assumption is disproved, I stop and hand it back to review rather than applying the prescribed fix or substituting a new one. No files were changed.\""
+  rationalizations: []
+  note: >
+    Baseline already complies with the likely-finding assumption-disproved
+    Preconditions/Failure Mode rules. Single rep; no SKILL.md change made.
+    Kept as a regression guard for this discipline point.
+
+green:
+  status: not_applicable
+  evidence:
+    - "No fix was made for this eval since RED already passed; nothing to re-verify."
+
+metrics:
+  red:
+    total_tokens: 39600
+    duration_ms: 33289
+  green:
+    total_tokens:
+    duration_ms:
+
+regression:
+  keep: true

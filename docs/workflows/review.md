@@ -3,14 +3,14 @@
 ## Purpose
 
 Use this workflow to inspect existing code independently of a preceding
-`$feature` or `$implement` run. The target may be a directory, file, or
+`$dot:feature` or `$dot:implement` run. The target may be a directory, file, or
 specific symbol such as a function, method, or class.
 
 ## Flow
 
-`$context → $review → [$fix → $review]*`
+`$dot:scope → $dot:review → [$dot:fix → $dot:review]*`
 
-The workflow ends when `$review` returns `ready` for the explicitly
+The workflow ends when `$dot:review` returns `ready` for the explicitly
 reviewed scope, or when a scope/evidence blocker requires user action.
 
 ## Stage Ownership
@@ -18,31 +18,31 @@ reviewed scope, or when a scope/evidence blocker requires user action.
   -----------------------------------------------------------------------
   Stage                               Owns
   ----------------------------------- -----------------------------------
-  `$context`                          active review scope and applicable
+  `$dot:scope`                        active review scope and applicable
                                       repo instructions
 
-  `$review`                           scoped diagnosis, findings,
+  `$dot:review`                       scoped diagnosis, findings,
                                       severity/confidence, fix direction,
                                       verdict
 
-  `$fix`                              narrow remediation of selected
+  `$dot:fix`                          narrow remediation of selected
                                       findings and fresh local
                                       verification
   -----------------------------------------------------------------------
 
-Only `$review` determines whether findings are closed.
+Only `$dot:review` determines whether findings are closed.
 
-## 1. Context
+## 1. Scope
 
-Activate `$context` on the intended review target or an appropriate
+Activate `$dot:scope` on the intended review target or an appropriate
 containing scope.
 
-The active context boundary remains authoritative. Review traversal
+The active scope boundary remains authoritative. Review traversal
 exceptions never override `scope_boundaries.allowed`.
 
 ## 2. Review
 
-Invoke `$review` with the explicit target.
+Invoke `$dot:review` with the explicit target.
 
 The review mode is selected from the target/evidence:
 
@@ -91,9 +91,9 @@ merge readiness. It applies only to the reviewed scope.
 
 ## 4. Fix
 
-If findings should be remediated, invoke `$fix`.
+If findings should be remediated, invoke `$dot:fix`.
 
-`$fix` consumes the persisted/current review findings rather than
+`$dot:fix` consumes the persisted/current review findings rather than
 re-reviewing the target.
 
 For Symbol review, preserve the reviewed symbol as the primary edit
@@ -101,12 +101,12 @@ boundary. Changes elsewhere in the containing file or allowed adjacent
 context are permitted only when required by that finding's
 `fix_direction`.
 
-`$fix` performs targeted regression protection and fresh verification
+`$dot:fix` performs targeted regression protection and fresh verification
 but does not declare the finding closed.
 
 ## 5. Re-review
 
-After successful fixes, invoke `$review` again in the original review
+After successful fixes, invoke `$dot:review` again in the original review
 mode:
 
 -   Change → same change/requirements boundary, updated with fix delta
@@ -115,14 +115,14 @@ mode:
 
 Repeat:
 
-`$review → $fix → $review`
+`$dot:review → $dot:fix → $dot:review`
 
-until `$review` returns `ready`.
+until `$dot:review` returns `ready`.
 
-If a `likely` finding is disproved during `$fix`, return that mismatch
-to `$review` rather than inventing a replacement issue.
+If a `likely` finding is disproved during `$dot:fix`, return that mismatch
+to `$dot:review` rather than inventing a replacement issue.
 
 ## Completion
 
-Completion means `$review` returns `ready` for the original standalone
+Completion means `$dot:review` returns `ready` for the original standalone
 review scope. It makes no claim about code outside that scope.

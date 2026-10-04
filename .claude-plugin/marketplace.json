@@ -1,0 +1,13 @@
+{
+  "name": "dot-local",
+  "description": "Local Dot skills and development workflows",
+  "owner": {
+    "name": "Karol Heczko"
+  },
+  "plugins": [
+    {
+      "name": "dot",
+      "source": "./plugins/dot"
+    }
+  ]
+}

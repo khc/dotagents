@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "dot",
+  "version": "0.1.0",
+  "description": "Personal skills for scoped planning, implementation, review, and reusable workflows.",
+  "author": {
+    "name": "Karol Heczko"
+  }
+}

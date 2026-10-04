@@ -10,14 +10,14 @@ tasks:
     requires:
       vars: [skill]
     cmds:
-      - uv run skillcheck skills/{{.skill}}/SKILL.md --strict
+      - uv run skillcheck plugins/dot/skills/{{.skill}}/SKILL.md --strict
 
   skills:validate:
     desc: "Validates skill metadata and directory conventions with skills-cli"
     requires:
       vars: [skill]
     cmds:
-      - uv run skills validate skills/{{.skill}}/SKILL.md
+      - uv run skills validate plugins/dot/skills/{{.skill}}/SKILL.md
 
   # 2. Context & Environment-Specific Linters
   cclint:lint:
@@ -25,14 +25,14 @@ tasks:
     requires:
       vars: [skill]
     cmds:
-      - npx cclint lint skills/{{.skill}}/SKILL.md
+      - npx cclint lint plugins/dot/skills/{{.skill}}/SKILL.md
 
   cclint:why:
     desc: "Explains Claude Code-specific lint findings for the target skill"
     requires:
       vars: [skill]
     cmds:
-      - npx cclint why skills/{{.skill}}/SKILL.md
+      - npx cclint why plugins/dot/skills/{{.skill}}/SKILL.md
 
   # 3. Missing References & Document Sanity
   skill-validator:
@@ -42,7 +42,7 @@ tasks:
     cmds:
       - cmd: |
           set +e
-          output="$(skill-validator check skills/{{.skill}} -o json 2>&1)"
+          output="$(skill-validator check plugins/dot/skills/{{.skill}} -o json 2>&1)"
           status=$?
           printf '%s\n' "$output"
           if [ "$status" -eq 0 ]; then
@@ -59,14 +59,14 @@ tasks:
     requires:
       vars: [skill]
     cmds:
-      - skill-validator check skills/{{.skill}}
+      - skill-validator check plugins/dot/skills/{{.skill}}
 
   mdlint:
     desc: "Checks generic Markdown formatting and structural issues"
     requires:
       vars: [skill]
     cmds:
-      - npx markdownlint-cli2 --config .markdownlint-cli2.skills.yaml skills/{{.skill}}/SKILL.md
+      - npx markdownlint-cli2 --config .markdownlint-cli2.skills.yaml plugins/dot/skills/{{.skill}}/SKILL.md
 
   report:json:
     desc: "Generates one combined validator report for the target skill"

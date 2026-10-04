@@ -3,7 +3,9 @@ from pathlib import Path
 
 import tyro
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(root / "plugins" / "dot" / "src"))
+sys.path.insert(0, str(root / "src"))
 
 from skill_report import ReportArgs, generate_report
 

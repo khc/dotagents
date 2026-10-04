@@ -15,7 +15,7 @@ Severity = Literal["error", "warning", "info"]
 
 @dataclass
 class ReportArgs:
-    skill: Annotated[str, "Skill directory name under skills/"]
+    skill: Annotated[str, "Skill directory name under plugins/dot/skills/"]
     output: Annotated[OutputFormat, "Combined report output format"] = "json"
     start_path: Annotated[str, "Path used to resolve the project root"] = "."
 
@@ -52,7 +52,7 @@ class CombinedReport:
 
 def generate_report(args: ReportArgs) -> str:
     root_dir = project_root(args.start_path)
-    skill_dir = root_dir / "skills" / args.skill
+    skill_dir = root_dir / "plugins" / "dot" / "skills" / args.skill
     skill_file = skill_dir / "SKILL.md"
     if not skill_file.exists():
         raise ValueError(f"skill file not found: {skill_file}")
