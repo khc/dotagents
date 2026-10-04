@@ -2,7 +2,7 @@
   "name": "dotagents",
   "description": "Local Dot skills and development workflows",
   "owner": {
-    "name": "Karol Heczko"
+    "name": "khc"
   },
   "plugins": [
     {

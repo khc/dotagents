@@ -2,7 +2,7 @@
 name = "agents"
 version = "0.1.0"
 description = "Agentic skill library for code review, fixes, feature implementation, research, and workspace management"
-authors = [{name = "Karol Heczko", email = "karol.heczko@fifo.pl"}]
+authors = [{name = "khc", email = "khc@fifo.pl"}]
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
