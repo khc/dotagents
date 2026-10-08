@@ -28,13 +28,13 @@
       "text": "Do not end the description or subject line with a period."
     },
     {
-      "text": "Keep the entire subject line under 72 characters."
+      "text": "Keep the subject line, including type and scope, at most 71 characters."
     },
     {
       "text": "Focus on the intent and overall purpose of the change, not low-level implementation details."
     },
     {
-      "text": "For breaking changes, add ! immediately before the colon and add a BREAKING CHANGE: <description> footer when additional explanation is useful."
+      "text": "For breaking changes, add ! immediately before the colon and add a BREAKING CHANGE: <description> footer when additional explanation is useful. Separate the footer from the preceding subject or body with exactly one blank line."
     },
     {
       "text": "Add a body only when it provides important context that cannot be expressed clearly in the subject."

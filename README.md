@@ -83,6 +83,20 @@ claude plugin install dot@dotagents
 
 Start a fresh session and invoke `/dot:scope` or `/dot:plan`.
 
+## Copilot commit message instructions (VS Code)
+
+[config/github_copilot_chat_commitMessageGeneration_instructions.md](config/github_copilot_chat_commitMessageGeneration_instructions.md) holds Conventional Commits rules for GitHub Copilot's commit message generation.
+
+Add it to VS Code `settings.json` (Command Palette → `Preferences: Open User Settings (JSON)`):
+
+```json
+"github.copilot.chat.commitMessageGeneration.instructions": [
+  { "file": "/absolute/path/to/this/repository/config/github_copilot_chat_commitMessageGeneration_instructions.md" }
+]
+```
+
+Use a path relative to the workspace root (e.g. `config/...md`) in workspace settings. Then click the sparkle icon in the Source Control commit box to generate a message.
+
 ## Runtime paths
 
 Resolve resources from the loaded skill file. Run helpers from the target project working directory, preserving:

@@ -1,0 +1,19 @@
+Generate a Git commit message from the provided diff.
+
+- Follow Conventional Commits 1.0.0 exactly: `<type>[optional scope][optional !]: <description>`.
+- Use only these commit types: feat, fix, refactor, perf, docs, test, build, ci, chore, style.
+- Choose the type that best represents the overall purpose of the change.
+- If the diff spans multiple unrelated changes, choose the type and scope of the primary or highest-impact change; do not invent a combined or generic type to cover everything.
+- Add a scope only when it can be inferred confidently from the changed code. The scope must be a concise noun describing the affected part of the codebase.
+- Use lowercase for the type and scope.
+- Write the description in present tense and imperative mood.
+- Do not end the description or subject line with a period.
+- Keep the subject line, including type and scope, at most 71 characters.
+- Focus on the intent and overall purpose of the change, not low-level implementation details.
+- For breaking changes, add `!` immediately before the colon and add a `BREAKING CHANGE: <description>` footer when additional explanation is useful. Separate the footer from the preceding subject or body with exactly one blank line.
+- Add a body only when it provides important context that cannot be expressed clearly in the subject.
+- If a body is included, leave exactly one blank line after the subject and use concise bullet points, each wrapped at roughly 72 characters.
+- In the body, describe why the change was made or important behavioral consequences, not a file-by-file summary.
+- Do not invent information that cannot be inferred from the diff.
+- Output exactly one commit message.
+- Output only the commit message. Do not include Markdown, code fences, labels, alternatives, explanations, or commentary.

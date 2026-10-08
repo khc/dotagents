@@ -1,7 +1,7 @@
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PLUGIN := $(ROOT)/plugins/dot
 
-.PHONY: install install-claude install-codex install-agy update update-claude update-codex update-agy remove remove-claude remove-codex remove-agy
+.PHONY: install install-claude install-codex install-agy install-vscode update update-claude update-codex update-agy remove remove-claude remove-codex remove-agy
 
 install: install-claude install-codex install-agy
 
@@ -14,6 +14,9 @@ install-codex:
 
 install-agy:
 	agy plugin install $(PLUGIN)
+
+install-vscode:
+	uv run $(ROOT)/scripts/install_copilot_commit_instructions.py
 
 update: update-claude update-codex update-agy
 
