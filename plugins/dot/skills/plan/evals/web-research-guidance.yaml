@@ -1,0 +1,41 @@
+id: web-research-guidance
+skill: plan
+tier: deterministic
+
+purpose: >
+  Verify that the plan skill passes Agent Skills frontmatter validation and
+  explicitly instructs targeted web search during planning research with source
+  priority: official documentation, established best practices, and
+  high-ranking GitHub repositories, while preserving local scope and
+  repo-grounding rules.
+
+command: >
+  python3 -c '
+  import pathlib
+  text = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/plan/SKILL.md").read_text()
+  assert text.startswith("---\nname: plan\ndescription: "), "Invalid frontmatter"
+  lower = text.lower()
+  assert "web search" in lower, "Missing web search guidance"
+  assert "official documentation" in lower, "Missing official docs preference"
+  assert "established best practices" in lower, "Missing best practices preference"
+  assert "high-ranking github repositories" in lower, "Missing high-ranking GitHub repos preference"
+  assert "scope_boundaries.allowed" in text, "Missing scope boundary preservation"
+  '
+
+assert:
+  exit_code: 0
+
+red:
+  status: fail
+  evidence:
+    - "AssertionError: Missing web search guidance (exit code 1)"
+  rationalizations: []
+
+green:
+  status: pass
+  evidence:
+    - "Tier 0 GREEN pass (exit code 0): frontmatter valid, web search guidance present with priority order (official documentation, established best practices, high-ranking GitHub repositories), and scope_boundaries.allowed preserved."
+
+regression:
+  keep: true
+

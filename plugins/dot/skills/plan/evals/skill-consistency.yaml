@@ -1,0 +1,53 @@
+id: skill-consistency
+skill: plan
+tier: deterministic
+
+purpose: >
+  Verify internal consistency across plan/SKILL.md, agents/openai.yaml, and
+  evals/ artifacts:
+  1. agents/openai.yaml aligns with SKILL.md (creates/refines persistent plans
+     rather than claiming "Recommend the minimal workflow only").
+  2. SKILL.md approved handoff template includes plan_id and revision as
+     required by the Handoff Contract.
+  3. SKILL.md Route Before Planning includes $dot:bug and $dot:refactor for
+     bounded debugging/refactoring routes.
+  4. SKILL.md Response format allows ## Scope ahead of ## Plan when the
+     Workflow Gate activates $dot:scope first.
+  5. Trigger evaluation datasets (trigger-train.json, trigger-validation.json)
+     exist and are valid JSON.
+
+command: >
+  python3 -c '
+  import json, pathlib
+  root = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/plan")
+  skill = (root / "SKILL.md").read_text()
+  openai_cfg = (root / "agents" / "openai.yaml").read_text()
+  assert "Recommend the minimal workflow only" not in openai_cfg, "openai.yaml contradicts SKILL.md plan creation"
+  assert "plan_id:" in skill.split("replace the Handoff section with:")[1].split("## Plan Identity")[0], "Approved Handoff template missing plan_id/revision"
+  assert "$dot:bug" in skill and "$dot:refactor" in skill, "Missing $dot:bug or $dot:refactor routes in Route Before Planning"
+  assert "## Scope" in skill.split("## Response format")[1], "Response format does not account for ## Scope block when Workflow Gate runs"
+  for name in ("evals.json", "trigger-train.json", "trigger-validation.json"):
+      data = json.loads((root / "evals" / name).read_text())
+      assert data, f"Empty {name}"
+  '
+
+assert:
+  exit_code: 0
+
+red:
+  status: fail
+  evidence:
+    - "FAIL: openai.yaml contradicts SKILL.md plan creation (contains legacy router-only constraint)"
+    - "FAIL: Approved Handoff template omits plan_id and revision required by Handoff Contract"
+    - "FAIL: Route Before Planning omits $dot:bug and $dot:refactor for bounded bugfix/refactor routing"
+    - "FAIL: Response format does not allow ## Scope ahead of ## Plan when Workflow Gate runs $dot:scope"
+    - "FAIL: evals/web-research-guidance.yaml was 0 bytes and trigger-train.json / trigger-validation.json were missing"
+  rationalizations: []
+
+green:
+  status: pass
+  evidence:
+    - "Tier 0 GREEN pass (exit code 0): openai.yaml aligned with SKILL.md, approved Handoff template includes plan_id and revision, Route Before Planning includes $dot:bug and $dot:refactor, Response format accounts for ## Scope ahead of ## Plan, and all eval JSON/YAML files are populated and valid."
+
+regression:
+  keep: true

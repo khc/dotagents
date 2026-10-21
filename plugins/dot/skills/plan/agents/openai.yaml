@@ -1,7 +1,7 @@
 interface:
   display_name: "Plan"
-  short_description: "Choose the minimal skill workflow for a task"
-  default_prompt: "Use $dot:plan to choose the smallest effective workflow for a scoped task by selecting the right skill sequence and next step without doing implementation."
+  short_description: "Create and refine executable implementation plans"
+  default_prompt: "Use $dot:plan to decompose a multi-task or high-risk scoped change into a persistent implementation plan (.plans/plan_<timestamp>.md) and route bounded work to the appropriate skill without modifying product code."
 
 policy:
   allow_implicit_invocation: true
@@ -12,6 +12,6 @@ enforcement:
     - scope
 
 constraints:
-  - "Do not implement code"
-  - "Do not perform review, fix, or feature work during planning"
-  - "Recommend the minimal workflow only"
+  - "Do not implement product or test code"
+  - "Do not perform review, fix, or feature implementation during planning"
+  - "Never hand off a draft plan to $dot:implement without explicit user approval"

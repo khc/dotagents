@@ -148,6 +148,8 @@ Do not create an implementation plan when the request is already one of these:
 - code/file/change review → `$dot:review`
 - applying existing review findings → `$dot:fix`
 - research-only question → `$dot:research`
+- bounded symptom-driven bug diagnosis/fix → `$dot:bug`
+- bounded structural refactor preserving behavior → `$dot:refactor`
 
 Return the minimal route and stop.
 
@@ -155,7 +157,7 @@ Return the minimal route and stop.
 
 Choose between:
 
-- **Feature path** — use `$dot:feature` for a bounded change whose implementation can be safely understood and completed as one coherent unit; successful implementation then hands off to `$dot:review`, with `$dot:fix → $dot:review` only if findings exist.
+- **Feature / Bounded path** — use `$dot:feature` (or `$dot:bug` / `$dot:refactor` when applicable) for a bounded change whose implementation can be safely understood and completed as one coherent unit; successful implementation then hands off to `$dot:review`, with `$dot:fix → $dot:review` only if findings exist.
 - **Planned path** — use `$dot:plan → $dot:implement` when the change contains multiple independently testable tasks, coordinated interfaces, material contract/migration/security/architectural risk, or otherwise benefits from explicit decomposition; successful implementation then hands off to `$dot:review`, with `$dot:fix → $dot:review` only if findings exist.
 
 If the user explicitly asks for a plan, create one even if the task appears bounded.
@@ -248,7 +250,7 @@ Fix plan defects inline before returning it. Do not dispatch a separate reviewer
 
 ## Output
 
-### Direct / Feature Route
+### Direct / Bounded Route
 
 Use this compact shape when a full plan is unnecessary:
 
@@ -257,6 +259,10 @@ Use this compact shape when a full plan is unnecessary:
 
 ### Route
 `$dot:feature → $dot:review → [$dot:fix → $dot:review]*`
+or
+`$dot:bug → $dot:review → [$dot:fix → $dot:review]*`
+or
+`$dot:refactor → $dot:review → [$dot:fix → $dot:review]*`
 or
 `$dot:review`
 or
@@ -344,7 +350,9 @@ and replace the Handoff section with:
 
 ```markdown
 ## Handoff
-`$dot:implement <path/to/plan_<unix_timestamp>.md>` — execute this exact approved plan in order, preserving scope and acceptance criteria.
+`$dot:implement .plans/plan_<unix_timestamp>.md` — execute this exact approved plan in order, preserving scope and acceptance criteria.
+- `plan_id: plan_<unix_timestamp>`
+- `revision: <current revision>`
 ```
 
 Omit empty optional fields rather than filling them with generic text.
@@ -422,7 +430,7 @@ After `$dot:implement`, acceptance belongs to `$dot:review`, not to `$dot:implem
 
 ## Response format
 
-Start every response with the `## Plan` heading (plain, not in a code block).
+Start the planning section with the `## Plan` heading (plain, not in a code block). If the Workflow Gate required activating `$dot:scope` first in the same turn, render `## Scope` ahead of `## Plan` as a separate section.
 
 For a persisted Planned path, always include:
 

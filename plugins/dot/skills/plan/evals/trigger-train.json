@@ -1,0 +1,43 @@
+[
+  {
+    "query": "Break down the multi-step database migration and API authentication changes into an implementation plan before we write any code.",
+    "should_trigger": true
+  },
+  {
+    "query": "We need to redesign the plugin loader interface across 5 modules with backwards compatibility. Create a plan first.",
+    "should_trigger": true
+  },
+  {
+    "query": "Plan how to add role-based access control across the API gateway, session store, and CLI.",
+    "should_trigger": true
+  },
+  {
+    "query": "This security-sensitive token rotation change touches storage, background workers, and HTTP middleware. Draft an implementation plan.",
+    "should_trigger": true
+  },
+  {
+    "query": "Revise the current draft plan in .plans/ to use server-side sessions instead of JWT.",
+    "should_trigger": true
+  },
+  {
+    "query": "Review scripts/context_workflow.py for bugs and security issues.",
+    "should_trigger": false
+  },
+  {
+    "query": "Fix the high-severity finding from the latest code review.",
+    "should_trigger": false
+  },
+  {
+    "query": "Add a one-line helper function to format dates in utils.ts.",
+    "should_trigger": false
+  },
+  {
+    "query": "Execute the approved plan at .plans/plan_1787486400.md.",
+    "should_trigger": false
+  },
+  {
+    "query": "Is there a Python standard library module that can replace our custom retry backoff logic?",
+    "should_trigger": false
+  }
+]
+

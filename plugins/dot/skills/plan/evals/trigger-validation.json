@@ -1,0 +1,27 @@
+[
+  {
+    "query": "Decompose the sidecar schema upgrade and multi-agent handoff changes into testable tasks before implementing.",
+    "should_trigger": true
+  },
+  {
+    "query": "Create an implementation plan for migrating the CLI from argparse to tyro across all workflow scripts.",
+    "should_trigger": true
+  },
+  {
+    "query": "Update the draft plan to include rollback verification for the SQLite migration.",
+    "should_trigger": true
+  },
+  {
+    "query": "Rename the local variable `tmp` to `resolved_path` inside _resolve_scope.",
+    "should_trigger": false
+  },
+  {
+    "query": "Why is test_resolve_scope throwing a FileNotFoundError on line 18? Fix the bug.",
+    "should_trigger": false
+  },
+  {
+    "query": "Cross-review the last commit using Claude, Codex, and Agy.",
+    "should_trigger": false
+  }
+]
+

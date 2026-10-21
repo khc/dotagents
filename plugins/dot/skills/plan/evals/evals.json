@@ -23,6 +23,17 @@
         "Skips unnecessary web search when in-scope repository evidence is complete",
         "Does not add generic best-practice tasks unrelated to the requested outcome"
       ]
+    },
+    {
+      "id": 3,
+      "prompt": "Route a single-symptom failing test fix versus a multi-task architectural migration, and show the approved handoff block for a persisted plan.",
+      "expected_output": "Routes the single-symptom bug directly to $dot:bug without creating a plan file, and for the approved multi-task plan outputs a handoff to $dot:implement with the repo-root-relative .plans/plan_<timestamp>.md path, plan_id, and revision.",
+      "files": [],
+      "assertions": [
+        "Routes bounded symptom-driven debugging to $dot:bug and bounded refactors to $dot:refactor",
+        "Includes plan_id and revision in the approved $dot:implement handoff block",
+        "Allows ## Scope ahead of ## Plan when the Workflow Gate activates $dot:scope first"
+      ]
     }
   ]
 }
