@@ -174,19 +174,24 @@ Read, in this order:
 4. existing tests for the affected behavior
 5. directly relevant callers, callees, interfaces, schemas, or configuration
 6. recent Git history for affected files only when it materially informs compatibility, intent, or avoided regressions
+7. targeted web search when the plan depends on external APIs, libraries, frameworks, protocols, or domain patterns not already established in the scoped repo — prioritize sources in this order:
+   - **official documentation** and canonical specifications
+   - **established best practices** from authoritative engineering/vendor guides relevant to the task
+   - **high-ranking GitHub repositories** (widely adopted, actively maintained reference implementations) for idiomatic usage
 
-Stay within the active scope's `scope_boundaries.allowed`.
+Stay within the active scope's `scope_boundaries.allowed` for all repository reads.
 
-Do not explore unrelated modules "for completeness."
+Do not explore unrelated modules "for completeness," and do not run broad web searches when in-scope repository evidence already answers the design question.
 
 If required planning evidence lies outside the active scope, stop and request the exact scope expansion before reading it.
 
 ## Planning Rules
 
-1. **Ground the plan in inspected code.**
+1. **Ground the plan in inspected code and verified references.**
    - Do not invent file paths, symbols, APIs, test commands, or dependencies.
    - Mark a file as `Create` only when the plan actually requires a new file.
    - Cite existing symbols exactly as they appear.
+   - When external library, framework, or domain research is required, verify API contracts and patterns via web search (preferring official documentation, established best practices, and high-ranking GitHub repositories) while keeping `AGENTS.md` and local repo conventions authoritative.
 
 2. **Separate requirements from implementation choices.**
    - Requirements/acceptance criteria describe what must be true.

@@ -1,0 +1,29 @@
+{
+  "skill_name": "plan",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Plan a multi-task migration in this scoped module to adopt a current external SDK/framework feature and idiomatic error-handling pattern not yet present in the repo.",
+      "expected_output": "The agent explores in-scope repo files first, performs targeted web search when external API/framework/domain knowledge is needed, prioritizes official documentation, established best practices, and high-ranking GitHub repositories, and grounds planned tasks and file paths in the scoped repo.",
+      "files": [],
+      "assertions": [
+        "Explores in-scope repository context within scope_boundaries.allowed",
+        "Uses web search for external API, framework, or domain research when repo context is insufficient",
+        "Prioritizes official documentation first, then established best practices and high-ranking GitHub repositories",
+        "Does not let external best practices override repo-specific conventions or add unrelated scope creep"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Plan a multi-task refactor of internal module interfaces where all types, callers, and tests already exist inside the active scope.",
+      "expected_output": "The agent grounds the plan in inspected repo code without unnecessary external web research or generic best-practice ceremony tasks.",
+      "files": [],
+      "assertions": [
+        "Grounds tasks, symbols, and verification commands in inspected repository code",
+        "Skips unnecessary web search when in-scope repository evidence is complete",
+        "Does not add generic best-practice tasks unrelated to the requested outcome"
+      ]
+    }
+  ]
+}
+

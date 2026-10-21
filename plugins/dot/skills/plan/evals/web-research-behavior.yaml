@@ -1,0 +1,56 @@
+id: web-research-behavior
+skill: plan
+tier: behavioral
+
+purpose: >
+  Verify that an agent following plan/SKILL.md performs targeted web research
+  when planning requires external API, library, or domain patterns not present
+  in the scoped repository, prioritizing official documentation, established
+  best practices, and high-ranking GitHub repositories without adding unrelated
+  scope creep.
+
+prompt: >
+  Read /Users/khc/.agents/plugins/dot/skills/plan/SKILL.md and follow its
+  Planning Exploration and Planning Rules strictly. Suppose active scope is
+   already confirmed on a module and you must plan a multi-task integration with
+  an external library/protocol whose current idiomatic usage is not present in
+  the repo. Does the skill instruct you to use web search for plan research,
+  and in what source priority order? Quote the exact rules from SKILL.md.
+
+expected:
+  trigger: true
+  behavior:
+    - states that web search is used for external API/library/domain research when repo context is insufficient
+    - prioritizes official documentation, established best practices, and high-ranking GitHub repositories
+    - preserves local repo grounding and scope_boundaries.allowed without adding generic unrelated best-practice tasks
+
+forbidden:
+  - claiming web search is prohibited when external domain/API knowledge is required
+  - relying on unvetted sources or guessing external APIs without source ranking
+  - letting external best practices override repo-grounded conventions or expand scope
+
+red:
+  status: fail
+  evidence:
+    - "Pre-edit SKILL.md Planning Exploration (L165-L183) listed only 6 local repository inspection steps and omitted web search entirely."
+    - "Pre-edit Planning Rules #1 (L186) and #6 (L215) restricted grounding to inspected repo code with no external source ranking (official docs, best practices, high-ranking GitHub repos)."
+  rationalizations: []
+
+green:
+  status: pass
+  evidence:
+    - "Clean subagent evaluation (conversation 57fd1025-0ce3-4365-9e28-6b7faa5bda3c) verified targeted web search in step 7 of Planning Exploration and Rule 1 of Planning Rules."
+    - "Confirmed exact 3-tier source priority: (1) official documentation and canonical specifications, (2) established best practices from authoritative engineering/vendor guides, (3) high-ranking GitHub repositories."
+    - "Confirmed web search is skipped when in-scope repository evidence already answers the design question, and AGENTS.md + scope_boundaries.allowed remain authoritative."
+
+metrics:
+  red:
+    total_tokens: 0
+    duration_ms: 4000
+  green:
+    total_tokens:
+    duration_ms: 24000
+
+regression:
+  keep: true
+
