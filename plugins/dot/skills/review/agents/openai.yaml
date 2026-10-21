@@ -1,0 +1,18 @@
+interface:
+  display_name: "Review"
+  short_description: "Perform an evidence-backed read-only code review"
+  default_prompt: "Use $dot:review to perform an independent, evidence-backed review of a scoped symbol, path, or change and report concrete findings, severity, confidence, fix directions, and a readiness verdict."
+
+policy:
+  allow_implicit_invocation: true
+  priority: high
+
+enforcement:
+  depends_on:
+    - scope
+
+constraints:
+  - "Never modify product, test, or configuration files during review"
+  - "Do not expand beyond scope_boundaries.allowed without explicit user permission"
+  - "Base findings only on inspected evidence and verified documentation"
+

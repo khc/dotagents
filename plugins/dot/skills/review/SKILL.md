@@ -11,7 +11,7 @@ Resolve internal skill invocations against the current skill catalog. Prefer `do
 
 Review only the user-specified target file, code path, or scoped implementation change and report concrete, evidence-backed issues.
 
-The review is read-only. Never modify the working tree, index, HEAD, branch state, files, tests, configuration, or generated artifacts as part of the review. Use read-only inspection commands such as `git diff`, `git show`, `git log`, and equivalent runtime tools. Do not invoke a fix/implementation skill or silently correct findings during review.
+The review is read-only with respect to repository/product code. Never modify the working tree, index, HEAD, branch state, files, tests, configuration, or generated artifacts as part of the review; the only permitted write is persisting the review entry to `.sidecar` via the bundled helper. Use read-only inspection commands such as `git diff`, `git show`, `git log`, and equivalent runtime tools. Do not invoke a fix/implementation skill or silently correct findings during review.
 
 Review independently from the implementer's reasoning. Base conclusions only on inspectable artifacts and evidence: target code, allowed adjacent context, requirements/plan, diff/history, tests, and current verification output. Prior implementation claims such as "done", "fixed", or "tests pass" are context, not evidence. Do not dispatch review subagents or second-opinion reviewers; perform the scoped review directly.
 
@@ -32,10 +32,10 @@ If an active scope is not established:
 
 ## Workflow Evidence
 
-When review follows `$dot:feature` or `$dot:implement`, consume the workflow handoff as evidence when available:
+When review follows `$dot:feature`, `$dot:implement`, `$dot:bug`, `$dot:refactor`, or `$dot:fix`, consume the workflow handoff as evidence when available:
 
-- governing requirements / Done When criteria or exact implementation plan
-- source workflow (`feature` or `implement`)
+- governing requirements / Done When criteria, bug symptom/root-cause, refactor invariants, or exact implementation plan
+- source workflow (`feature`, `implement`, `bug`, `refactor`, or `fix`)
 - source entry/plan identifier, if available
 - `BASE_SHA` and current `HEAD`, if available
 - actual touched files and pre-existing overlap
@@ -54,8 +54,8 @@ Determine the review mode from evidence supplied by the user or already availabl
 - **Path review** — review the current state of a specific file or directory when no implementation requirements or Git change range are available and no narrower symbol target was requested.
 - **Change review** — when requirements/plan evidence and/or a Git base/head range are available, review the implementation as a change, not only as resulting files.
 - If the user names a specific function, method, class, or symbol, use Symbol review even when the containing file is known, unless change-level evidence makes Change review the stronger applicable mode.
-- A review may be invoked after `implement`, after `feature`, or directly by the user. Workflow origin changes what evidence may be available; it does not change the review standard or make prior implementation claims trustworthy.
-- Record the selected `review_mode` (`change|path|symbol`) and source workflow (`feature|implement|standalone`) for downstream `$dot:fix` and re-review continuity.
+- A review may be invoked after `implement`, `feature`, `bug`, `refactor`, `fix`, or directly by the user. Workflow origin changes what evidence may be available; it does not change the review standard or make prior implementation claims trustworthy.
+- Record the selected `review_mode` (`change|path|symbol`) and source workflow (`feature|implement|bug|refactor|fix|standalone`) for downstream `$dot:fix` and re-review continuity.
 - Never invent a plan, requirement, base revision, or head revision. If change-level evidence is unavailable, use Symbol review or Path review as applicable and record only materially relevant missing evidence under residual risks.
 
 For change review:
@@ -89,10 +89,15 @@ For change review:
 - Do not expand scope beyond the requested target unless the issue requires adjacent context to verify. Adjacent context means at most one directly imported or called file. Do not traverse further.
 - Exception: for Security findings where exploitability depends on the caller chain, traverse up to two hops. Stop if the chain becomes wide (more than 3 callers at any hop).
 - Neither the adjacent-file allowance nor the security traversal exception overrides the active scope's `scope_boundaries.allowed`. If the next hop would leave that boundary, stop and ask permission per scope's Failure Mode before reading it — do not read first and explain after. A user instruction to skip confirmation ("don't ask me first," urgency, or similar) does not pre-authorize a scope expansion that hasn't happened yet; treat it the same as any other pressure to bypass scope discipline.
+- Use targeted web search when reviewing code that depends on external APIs, libraries, frameworks, protocols, security patterns, or `Library / Reuse` replacements not already established in the scoped repo — prioritize sources in this order:
+  - **official documentation** and canonical specifications
+  - **established best practices** from authoritative engineering/vendor/security guides relevant to the reviewed code
+  - **high-ranking GitHub repositories** (widely adopted, actively maintained reference implementations) for idiomatic usage
+- Do not run broad web searches when in-scope repository evidence already settles the question, and keep `scope_boundaries.allowed` strictly enforced for all repository reads.
 
 ## Review rules
 
-1. Report only findings that are supported by the code, diff, requirements, tests, or other evidence you actually inspected. When a finding cites a heading, section name, function, or identifier as evidence, quote it exactly as it appears in the file — never reconstruct it from memory or paraphrase it, since a misquoted name is unverifiable and undermines the finding.
+1. Report only findings that are supported by the code, diff, requirements, tests, or other evidence you actually inspected. When a finding cites a heading, section name, function, or identifier as evidence, quote it exactly as it appears in the file — never reconstruct it from memory or paraphrase it, since a misquoted name is unverifiable and undermines the finding. When a finding or `fix_direction` depends on external library, framework, protocol, or security research, verify contracts and patterns via web search (preferring official documentation, established best practices, and high-ranking GitHub repositories) while keeping `AGENTS.md` and local repo conventions authoritative.
 2. Prefer high-signal findings over broad commentary.
 3. Avoid duplicate findings; merge related symptoms into one root-cause finding.
 4. Distinguish:
@@ -237,7 +242,7 @@ After composing the review output and before sending the final response, persist
    - `target` — the file or path reviewed
    - `review_mode` — `change|path|symbol`
    - `target_symbol` — exact reviewed symbol for Symbol review; omit otherwise
-   - `source_workflow` — `feature|implement|standalone`
+   - `source_workflow` — `feature|implement|bug|refactor|fix|standalone`
    - `source_uuid` — originating feature/implement/plan entry identifier when available
    - `base_sha` — reviewed change base when available
    - `head_sha` — reviewed change head/current HEAD when available

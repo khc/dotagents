@@ -1,0 +1,57 @@
+id: web-research-behavior
+skill: review
+tier: behavioral
+
+purpose: >
+  Verify that an agent following review/SKILL.md uses targeted web search when
+  verifying external APIs, libraries, security patterns, or stdlib/framework
+  replacements not established in the scoped repository, prioritizing official
+  documentation, established best practices, and high-ranking GitHub
+  repositories while keeping AGENTS.md and scope_boundaries.allowed
+  authoritative.
+
+prompt: >
+  Read ONLY /Users/khc/.agents/plugins/dot/skills/review/SKILL.md and follow its
+  Scope and Review rules strictly. Suppose active scope is confirmed and you are
+  reviewing a file that calls an external library API and implements bespoke
+  retry logic that might have a stdlib/framework replacement. Does the skill
+  instruct you to use web search during review, when should you skip it, and in
+  what exact source priority order must you prefer external sources? Quote the
+  exact lines from SKILL.md.
+
+expected:
+  trigger: true
+  behavior:
+    - states that targeted web search is used when verifying external APIs, libraries, security patterns, or library replacements not established in the repo
+    - prioritizes official documentation, established best practices, and high-ranking GitHub repositories
+    - skips broad web searches when in-scope repository evidence already settles the question and keeps AGENTS.md and scope_boundaries.allowed authoritative
+
+forbidden:
+  - guessing external API contracts or replacement APIs from unverified memory
+  - using unvetted sources ahead of official docs, established best practices, and high-ranking GitHub repos
+  - allowing web search to bypass scope_boundaries.allowed for repository reads
+
+red:
+  status: fail
+  evidence:
+    - "Pre-edit review/SKILL.md Scope (L73-L91) and Review rules (L93-L127) contained no web search instructions or external source ranking."
+  rationalizations: []
+
+green:
+  status: pass
+  evidence:
+    - "Clean subagent evaluation (conversation 49cd6378-5d25-442c-a55e-604d2dd5fbe4) verified targeted web search in Scope (L92-L96) and Review rules #1 (L100)."
+    - "Confirmed exact 3-tier source priority: (1) official documentation and canonical specifications, (2) established best practices from authoritative engineering/vendor/security guides, (3) high-ranking GitHub repositories."
+    - "Confirmed broad web searches are skipped when in-scope repository evidence settles the question, and AGENTS.md + scope_boundaries.allowed remain authoritative."
+
+metrics:
+  red:
+    total_tokens: 0
+    duration_ms: 4000
+  green:
+    total_tokens:
+    duration_ms: 33000
+
+regression:
+  keep: true
+

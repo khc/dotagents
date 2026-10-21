@@ -1,0 +1,42 @@
+id: web-research-guidance
+skill: review
+tier: deterministic
+
+purpose: >
+  Verify that the review skill passes Agent Skills frontmatter validation,
+  explicitly instructs targeted web search during review when external API,
+  library, framework, protocol, or security verification is needed, prioritizes
+  official documentation, established best practices, and high-ranking GitHub
+  repositories, and preserves existing scope_boundaries.allowed and target
+  not-found rules.
+
+command: >
+  python3 -c '
+  import pathlib
+  text = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/review/SKILL.md").read_text()
+  assert text.startswith("---\nname: review\ndescription: "), "Invalid frontmatter"
+  lower = text.lower()
+  assert "web search" in lower, "Missing web search guidance"
+  assert "official documentation" in lower, "Missing official docs preference"
+  assert "established best practices" in lower, "Missing best practices preference"
+  assert "high-ranking github repositories" in lower, "Missing high-ranking GitHub repos preference"
+  assert "scope_boundaries.allowed" in text, "Missing scope boundary preservation"
+  assert "Error: target \"<path>\" not found." in text, "Missing target-not-found rule"
+  '
+
+assert:
+  exit_code: 0
+
+red:
+  status: fail
+  evidence:
+    - "AssertionError: Missing web search guidance (exit code 1)"
+  rationalizations: []
+
+green:
+  status: pass
+  evidence:
+    - "Tier 0 GREEN pass (exit code 0): frontmatter valid, web search guidance present with priority order (official documentation, established best practices, high-ranking GitHub repositories), and scope_boundaries.allowed and target-not-found rules preserved."
+
+regression:
+  keep: true

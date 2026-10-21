@@ -1,0 +1,54 @@
+id: skill-consistency
+skill: review
+tier: deterministic
+
+purpose: >
+  Verify internal consistency and Agent Skills specification compliance across
+  review/SKILL.md, review/agents/openai.yaml, and review/evals/:
+  1. SKILL.md read-only rule explicitly accounts for .sidecar persistence write
+     instead of contradicting Save to Sidecar.
+  2. SKILL.md Workflow Evidence and source_workflow include bug, refactor, and
+     fix in addition to feature, implement, and standalone.
+  3. evals/evals.json does not contain out-of-skill relative references (../)
+     or non-standard yaml fields per Agent Skills spec.
+  4. agents/openai.yaml exists and enforces read-only review constraints and
+     scope dependency.
+  5. No stray .DS_Store files exist in the skill directory.
+
+command: >
+  python3 -c '
+  import json, pathlib
+  root = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/review")
+  skill = (root / "SKILL.md").read_text()
+  assert ".sidecar" in skill.split("## Bundled Helpers")[0], "Read-only header does not account for .sidecar persistence write"
+  for wf in ("feature", "implement", "bug", "refactor", "fix", "standalone"):
+      assert wf in skill.split("## Scope")[0], f"Missing source_workflow {wf} in Workflow Evidence / Review mode"
+  evals_raw = (root / "evals" / "evals.json").read_text()
+  evals_obj = json.loads(evals_raw)
+  assert "../" not in evals_raw, "evals.json contains relative references outside the skill directory"
+  assert all("yaml" not in item for item in evals_obj["evals"]), "evals.json contains custom yaml field"
+  assert (root / "agents" / "openai.yaml").exists(), "Missing agents/openai.yaml"
+  assert not (root / ".DS_Store").exists(), "Stray .DS_Store present in skill directory"
+  '
+
+assert:
+  exit_code: 0
+
+red:
+  status: fail
+  evidence:
+    - "FAIL: Read-only header (L14) does not account for .sidecar persistence write (L218-L240)"
+    - "FAIL: Missing source_workflow 'bug' in Workflow Evidence / Review mode"
+    - "FAIL: Missing source_workflow 'refactor' in Workflow Evidence / Review mode"
+    - "FAIL: evals/evals.json contains custom yaml field with out-of-skill relative path (../../../evals/review/...)"
+    - "FAIL: Missing agents/openai.yaml"
+    - "FAIL: Stray .DS_Store present in skill directory"
+  rationalizations: []
+
+green:
+  status: pass
+  evidence:
+    - "Tier 0 GREEN pass (exit code 0): SKILL.md read-only rule clarifies .sidecar persistence write, Workflow Evidence / Review mode / Save to Sidecar include feature|implement|bug|refactor|fix|standalone, evals.json complies with Agent Skills spec without out-of-skill ../ paths or custom yaml fields, agents/openai.yaml created, and .DS_Store removed."
+
+regression:
+  keep: true
