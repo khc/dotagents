@@ -1,0 +1,21 @@
+Generate a Git commit message from the provided diff.
+
+- Follow Conventional Commits 1.0.0 exactly: `<type>[(scope)][!]: <description>`, with the scope in parentheses, e.g. `fix(parser): handle empty input`.
+- Use only these commit types: feat, fix, refactor, perf, docs, test, build, ci, chore, style.
+- Choose the type that best represents the overall purpose of the change. Use `feat` whenever the change adds functionality and `fix` whenever it corrects a bug; use another type only when neither applies.
+- If the diff spans multiple unrelated changes, choose the type and scope of the primary or highest-impact change; do not invent a combined or generic type to cover everything.
+- Use `style` exclusively for formatting or whitespace changes that do not affect behavior. Use `refactor` for structural changes that preserve behavior.
+- Add a scope only when it can be inferred confidently from the changed code. The scope must be a concise noun describing the affected part of the codebase. Avoid generic scopes such as `core`, `misc`, or `general` unless they are actual module names.
+- Use the current branch name when it is provided or you can obtain it with `git branch --show-current`. If it contains a work item id (the first case-sensitive match of `[A-Z][A-Z0-9]+-[0-9]+`, e.g. `JIRA-123` in `feat/JIRA-123-add-some-feature`), start the description with that id followed by a space, e.g. `feat(module): JIRA-123 add some feature`. Do not use other id forms such as `#123` or lowercase keys. Take only the id from the branch name; derive the rest of the description from the diff. If the branch name is unavailable or has no id, omit the id; do not invent one.
+- Use lowercase for the type, scope, and first letter of the description, except for work item ids, proper nouns, or acronyms.
+- Start the description (after the work item id, when present) with a lowercase imperative verb (e.g., add, fix, remove, update, simplify, extract). Describe what the commit accomplishes, not what was done.
+- Do not end the subject line with a period.
+- Keep the subject line, including type, scope, and work item id, at most 71 characters.
+- Focus on the intent and overall purpose of the change, not low-level implementation details.
+- Mark a change as breaking when the diff incompatibly changes a public API, config, CLI, or data contract. For breaking changes, add `!` immediately before the colon; when no footer is used, make the description state the break. Include a `BREAKING CHANGE: <description>` footer when the compatibility impact or required migration steps need explanation. Separate the footer from the subject or body with exactly one blank line.
+- Always include a body (the commit description) after the subject, in addition to the subject line.
+- Leave exactly one blank line after the subject and write 3 to 5 concise bullet points, each wrapped at roughly 72 characters.
+- In the body, describe why the change was made or important behavioral consequences, not a file-by-file summary. Each bullet must be supported by the diff.
+- Do not invent information that cannot be inferred from the diff or the branch name.
+- Output exactly one commit message.
+- Output only the commit message. Output plain text only (no headings, code fences, emphasis, labels, alternatives, explanations, or commentary); `- ` bullets in the body are allowed.

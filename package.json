@@ -1,0 +1,20 @@
+{
+  "name": "dotagents",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "typecheck": "bun check",
+    "install:zed": "bun scripts/install_zed.ts",
+    "install:vscode": "bun scripts/install_vscode.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
+  }
+}
