@@ -12,7 +12,12 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "dot"
 sys.path.insert(0, str(PLUGIN / "src"))
 
-from agents.workflows.review import aggregate_verdict, read_review_context, validate_review_context  # noqa: E402
+from agents.workflows.review import (  # noqa: E402
+    aggregate_verdict,
+    check_continuity,
+    read_review_context,
+    validate_review_context,
+)
 
 
 def finding(finding_id="F1", severity="high", blocking=True, status="open", **extra):
@@ -35,10 +40,26 @@ def gap(material=True):
     return {"description": "no plan supplied", "material": material, "effect": "requirements unchecked"}
 
 
+SUBJECT = {
+    "kind": "artifact",
+    "repo_root": "/repo",
+    "review_mode": "path",
+    "content_hashes": [{"path": "src/a.ts", "sha256": "0" * 64}],
+}
+
+
+EXECUTION = {
+    "strategy": "single", "override": "none", "reason": "below thresholds", "signals": {"mode": "path"},
+    "lenses": [], "research": "not_needed", "research_excerpt_authorized": False,
+}
+
+
 def context(findings=(), gaps=(), verdict=None, **extra):
     findings, gaps = list(findings), list(gaps)
     return {
         "schema_version": 2,
+        "subject": SUBJECT,
+        "execution": EXECUTION,
         "target": "src/a.ts",
         "review_mode": "path",
         "source_workflow": "standalone",
@@ -128,7 +149,9 @@ class ValidationTests(unittest.TestCase):
         ref = {"source": "research", "location": "docs"}
         self.reject(context([finding(evidence_refs=[ref])], verdict="not-ready"), "url and quote")
         ref.update(url="https://example.com", quote="exact")
-        validate_review_context(context([finding(evidence_refs=[ref])], verdict="not-ready"))
+        used = {**EXECUTION, "research": "used"}
+        validate_review_context(context([finding(evidence_refs=[ref])], verdict="not-ready", execution=used))
+        self.reject(context([finding(evidence_refs=[ref])], verdict="not-ready"), "execution.research = used")
 
     def test_gap_shape(self):
         self.reject(context(gaps=[{"description": "x", "material": "yes", "effect": "y"}], verdict="ready"), "material")
@@ -167,6 +190,124 @@ class HandoffAlignmentTests(unittest.TestCase):
         self.assertIn("verification_gaps", schema["properties"])
 
 
+AGENTS = {**EXECUTION, "strategy": "agents", "reason": "size: files over threshold",
+          "lenses": [{"name": "security", "status": "completed"}, {"name": "correctness", "status": "completed"}]}
+
+
+class ExecutionTests(unittest.TestCase):
+    def reject(self, execution, fragment, **extra):
+        with self.assertRaises(ValueError) as caught:
+            validate_review_context(context(execution=execution, **extra))
+        self.assertIn(fragment, str(caught.exception))
+
+    def test_valid_single_and_agents(self):
+        validate_review_context(context())
+        validate_review_context(context([finding(lens="security")], execution=AGENTS, verdict="not-ready"))
+
+    def test_execution_is_required(self):
+        ctx = context()
+        del ctx["execution"]
+        with self.assertRaises(ValueError):
+            validate_review_context(ctx)
+
+    def test_enums_and_required_fields(self):
+        self.reject({**EXECUTION, "strategy": "both"}, "execution.strategy")
+        self.reject({**EXECUTION, "override": "maybe"}, "execution.override")
+        self.reject({**EXECUTION, "research": "sometimes"}, "execution.research")
+        self.reject({**EXECUTION, "reason": ""}, "execution.reason")
+        self.reject({**EXECUTION, "research_excerpt_authorized": "no"}, "research_excerpt_authorized")
+        self.reject({**AGENTS, "lenses": [{"name": "style", "status": "completed"}]}, "execution.lenses[0].name")
+        self.reject({**AGENTS, "lenses": [{"name": "security", "status": "done"}]}, "execution.lenses[0].status")
+
+    def test_strategy_and_lenses_agree(self):
+        self.reject({**EXECUTION, "lenses": [{"name": "security", "status": "completed"}]}, "single-agent review cannot list lenses")
+        self.reject({**AGENTS, "lenses": []}, "must list its lenses")
+        twice = [{"name": "security", "status": "completed"}] * 2
+        self.reject({**AGENTS, "lenses": twice}, "must not repeat")
+
+    def test_override_consistency(self):
+        self.reject({**AGENTS, "override": "single"}, "override single requires strategy single")
+        self.reject({**EXECUTION, "override": "agents"}, "without a recorded fallback")
+        validate_review_context(context(execution={**EXECUTION, "override": "agents", "fallback": "sub-agents unavailable"}))
+
+    def test_failed_lens_needs_a_material_gap(self):
+        failed = {**AGENTS, "lenses": [{"name": "security", "status": "failed"}]}
+        self.reject(failed, "material verification gap")
+        self.reject(failed, "material verification gap", gaps=[gap(False)], verdict="ready")
+        validate_review_context(context(gaps=[gap(True)], execution=failed))  # verdict follows the material gap: not-ready
+
+    def test_research_unavailable_needs_a_gap(self):
+        unavailable = {**EXECUTION, "research": "unavailable"}
+        self.reject(unavailable, "needs a verification gap")
+        validate_review_context(context(gaps=[gap(False)], execution=unavailable))
+
+    def test_finding_lens_must_be_listed(self):
+        self.reject(AGENTS, "must be null or a listed lens", findings=[finding(lens="tests-observability")], verdict="not-ready")
+        self.reject(EXECUTION, "must be null or a listed lens", findings=[finding(lens="security")], verdict="not-ready")
+
+
+class ClosureRuleTests(unittest.TestCase):
+    def reject(self, ctx, fragment):
+        with self.assertRaises(ValueError) as caught:
+            validate_review_context(ctx)
+        self.assertIn(fragment, str(caught.exception))
+
+    def test_addressed_needs_direct_evidence(self):
+        lens_only = [{"source": "lens", "location": "src/a.ts:10"}]
+        self.reject(context([finding(status="addressed", evidence_refs=lens_only)]), "direct evidence_ref")
+        self.reject(context([finding(status="addressed", evidence_refs=[])]), "direct evidence_ref")
+        validate_review_context(context([finding(status="addressed")]))
+
+    def test_deferred_needs_disposition(self):
+        self.reject(context([finding(status="deferred")]), "deferred")
+        ok = finding(status="deferred", disposition={"authority": "user", "rationale": "next release"})
+        validate_review_context(context([ok]))
+
+    def test_observations_shape(self):
+        validate_review_context(context(observations=[{"location": "x.ts:1", "description": "unrelated"}]))
+        self.reject(context(observations=[{"location": "x.ts:1"}]), "observations[0]")
+        self.reject(context(observations="none"), "observations")
+
+    def test_all_blockers_survive_validation(self):
+        findings = [finding(f"F{n}", "critical") for n in range(1, 5)]
+        ctx = validate_review_context(context(findings))
+        self.assertEqual(len(ctx["findings"]), 4)
+        self.assertEqual(ctx["verdict"], "not-ready")
+
+
+class ContinuityTests(unittest.TestCase):
+    def prior(self, *findings):
+        return context(list(findings))
+
+    def test_open_prior_finding_must_be_carried(self):
+        prior = self.prior(finding("F1"), finding("F2", "medium"))
+        with self.assertRaises(ValueError) as caught:
+            check_continuity(context([finding("F1")]), prior)
+        self.assertIn("F2", str(caught.exception))
+
+    def test_closed_findings_and_moved_locations_are_fine(self):
+        prior = self.prior(finding("F1"), finding("F2", "medium"))
+        carried = context([
+            finding("F2", "medium", status="addressed"),  # reordered
+            finding("F1", location="src/a.ts:42"),  # line moved, same identity
+        ])
+        validate_review_context(carried)
+        check_continuity(carried, prior)
+
+    def test_fix_regression_is_a_new_blocking_finding(self):
+        prior = self.prior(finding("F1"))
+        after_fix = context([finding("F1", status="addressed"), finding("F2", "medium")])
+        validate_review_context(after_fix)
+        check_continuity(after_fix, prior)
+        self.assertEqual(after_fix["verdict"], "ready-with-fixes")
+
+    def test_closed_prior_finding_need_not_recur(self):
+        check_continuity(context([]), self.prior(finding("F1", status="addressed")))
+
+    def test_legacy_prior_has_nothing_to_carry(self):
+        check_continuity(context([finding("F1")]), read_review_context({"findings": [{"description": "old"}], "verdict": "ready"}))
+
+
 class HelperCliTests(unittest.TestCase):
     def run_review(self, project, payload):
         env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
@@ -192,6 +333,29 @@ class HelperCliTests(unittest.TestCase):
             self.assertIn("disagrees", rejected.stderr)
             count = sqlite3.connect(project / ".sidecar/sidecar.db").execute("SELECT COUNT(*) FROM sidecar").fetchone()
             self.assertEqual(count[0], 1)
+
+    def test_four_blockers_persist_and_re_review_continuity(self):
+        with tempfile.TemporaryDirectory(prefix="review contract ") as directory:
+            project = Path(directory)
+            subprocess.run(["git", "init", "--quiet", str(project)], check=True)
+            first = self.run_review(project, context([finding(f"F{n}", "critical") for n in range(1, 5)]))
+            self.assertEqual(first.returncode, 0, first.stderr)
+            prior_uuid = first.stdout.strip()
+            db = sqlite3.connect(project / ".sidecar/sidecar.db")
+            stored = json.loads(db.execute("SELECT context FROM sidecar WHERE uuid = ?", (prior_uuid,)).fetchone()[0])
+            self.assertEqual([f["finding_id"] for f in stored["findings"]], ["F1", "F2", "F3", "F4"])
+
+            dropped = self.run_review(project, context([finding("F1", status="addressed")], prior_review_uuid=prior_uuid))
+            self.assertNotEqual(dropped.returncode, 0)
+            self.assertIn("F2", dropped.stderr)
+
+            carried = [finding("F1", status="addressed")] + [finding(f"F{n}", "critical") for n in range(2, 5)]
+            ok = self.run_review(project, context(carried, prior_review_uuid=prior_uuid))
+            self.assertEqual(ok.returncode, 0, ok.stderr)
+
+            unknown = self.run_review(project, context([], prior_review_uuid="00000000-0000-0000-0000-000000000000"))
+            self.assertNotEqual(unknown.returncode, 0)
+            self.assertIn("not a saved review", unknown.stderr)
 
     def test_invalid_context_leaves_no_sidecar(self):
         with tempfile.TemporaryDirectory(prefix="review contract ") as directory:

@@ -142,6 +142,13 @@ STAGE_ID_FIELD = {
     "fix": "fix_uuid",
 }
 
+REREVIEW_NOTE = (
+    "\nIf a prior review artifact is listed below, this is a re-review: pass its `review_uuid` as "
+    "`prior_review_uuid`, keep every prior `finding_id`, and mark a finding `addressed` only on "
+    "evidence you inspected yourself."
+)
+
+
 def initial_stage(workflow: str) -> str:
     return {
         "feature": "feature",
@@ -297,7 +304,7 @@ def stage_prompt(
         "bug": "Use the original request. Invoke `$dot:bug`.",
         "plan": plan_stage_input() if stage == "plan" else "",
         "implement": "Read the latest plan artifact and invoke `$dot:implement` against that exact plan.",
-        "review": review_stage_input(),
+        "review": review_stage_input() + REREVIEW_NOTE,
         "fix": "Read the latest review artifact and invoke `$dot:fix` for its findings.",
     }[stage]
 

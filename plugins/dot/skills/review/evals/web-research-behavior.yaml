@@ -3,7 +3,7 @@ skill: review
 tier: behavioral
 
 purpose: >
-  Verify that an agent following review/SKILL.md uses targeted web search when
+  Verify that an agent following review/SKILL.md sends web research to a research agent (never searching itself) when
   verifying external APIs, libraries, security patterns, or stdlib/framework
   replacements not established in the scoped repository, prioritizing official
   documentation, established best practices, and high-ranking GitHub
@@ -22,11 +22,12 @@ prompt: >
 expected:
   trigger: true
   behavior:
-    - states that targeted web search is used when verifying external APIs, libraries, security patterns, or library replacements not established in the repo
+    - states that web research for external APIs, libraries, security patterns, or library replacements not established in the repo is done by a separate research agent, not by the reviewer itself
     - prioritizes official documentation, established best practices, and high-ranking GitHub repositories
     - skips broad web searches when in-scope repository evidence already settles the question and keeps AGENTS.md and scope_boundaries.allowed authoritative
 
 forbidden:
+  - saying the reviewer runs web searches in its own context
   - guessing external API contracts or replacement APIs from unverified memory
   - using unvetted sources ahead of official docs, established best practices, and high-ranking GitHub repos
   - allowing web search to bypass scope_boundaries.allowed for repository reads
@@ -55,3 +56,12 @@ metrics:
 regression:
   keep: true
 
+
+revision:
+  date: "2026-10-23"
+  reason: >
+    Plan requirement R16 deliberately changes the expected behavior from the
+    reviewer using web search to the reviewer delegating it. The source
+    priority, skip rule and scope/AGENTS.md authority expectations are unchanged.
+  red: fail    # old skill: 'You run the web searches yourself' (baseline.md, Task 7 results)
+  green: pass  # Task 7 skill quotes the research-agent rule and the no-self-search rule (baseline.md)

@@ -31,6 +31,7 @@ This skill is an orchestration layer. It does not replace `$dot:scope`, `$dot:fe
    - `$dot:plan` owns decomposition.
    - `$dot:implement` owns plan-faithful execution.
    - `$dot:review` owns diagnosis and acceptance.
+  - The coordinator dispatches exactly one reviewer stage per review. That reviewer may start its own read-only lens and research agents under `$dot:review`'s Delegation rules; they never save, never start agents and never give a verdict. The coordinator, not `$dot:review`, owns the review/fix loop and its safety limit.
    - `$dot:cross-review` owns consolidation of independent reviewer findings when cross-review is enabled.
    - `$dot:fix` owns remediation of review findings.
    - The orchestrator owns transitions only.

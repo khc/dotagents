@@ -5,7 +5,10 @@ from typing import Annotated, Any
 
 from agents.context_loader import ContextInput, load_context
 from agents.project_root import project_root
-from agents.sidecar import add_sidecar_entry
+from agents.redact import redact_value
+from agents.sidecar import add_sidecar_entry, get_sidecar_entry
+from agents.workflows.review_strategy import LENSES
+from agents.workflows.review_subject import is_stale
 
 SCHEMA_VERSION = 2
 UNAVAILABLE = "unavailable"
@@ -60,9 +63,9 @@ def _open_blocking(finding: dict[str, Any]) -> bool:
 
 
 def aggregate_verdict(
-    findings: list[dict[str, Any]], verification_gaps: list[dict[str, Any]]
+    findings: list[dict[str, Any]], verification_gaps: list[dict[str, Any]], stale: bool = False
 ) -> str:
-    if any(gap["material"] for gap in verification_gaps):
+    if stale or any(gap["material"] for gap in verification_gaps):
         return "not-ready"
     blocking = [f for f in findings if _open_blocking(f)]
     if any(f["severity"] in {"critical", "high"} for f in blocking):
@@ -92,11 +95,110 @@ def _validate_finding(finding: Any, index: int) -> None:
     _require(isinstance(finding.get("evidence_refs"), list), f"{where}.evidence_refs must be a list")
     for ref_index, ref in enumerate(finding["evidence_refs"]):
         _validate_evidence_ref(ref, f"{where}.evidence_refs[{ref_index}]")
+    disposition = finding.get("disposition")
+    has_disposition = (
+        isinstance(disposition, dict) and _text(disposition.get("authority")) and _text(disposition.get("rationale"))
+    )
     if finding["severity"] in {"critical", "high"} and not finding["blocking"]:
-        disposition = finding.get("disposition")
+        _require(has_disposition, f"{where} is non-blocking {finding['severity']} and needs disposition with authority and rationale")
+    if finding["status"] == "deferred":
+        _require(has_disposition, f"{where} is deferred and needs disposition with authority and rationale")
+    if finding["status"] == "addressed":
         _require(
-            isinstance(disposition, dict) and _text(disposition.get("authority")) and _text(disposition.get("rationale")),
-            f"{where} is non-blocking {finding['severity']} and needs disposition with authority and rationale",
+            any(ref["source"] == "direct" for ref in finding["evidence_refs"]),
+            f"{where} is addressed and needs a direct evidence_ref inspected by the reviewer",
+        )
+
+
+SUBJECT_KINDS = {"commit_range", "index", "working_tree", "artifact"}
+
+
+def _validate_subject(subject: Any, context: dict[str, Any]) -> None:
+    _require(isinstance(subject, dict), "subject must be an object")
+    kind = subject.get("kind")
+    _require(kind in SUBJECT_KINDS, f"subject.kind must be one of {sorted(SUBJECT_KINDS)}")
+    _require(_text(subject.get("repo_root")), "subject.repo_root is required")
+    _require(subject.get("review_mode") == context["review_mode"], "subject.review_mode must equal review_mode")
+    hashes = subject.get("content_hashes")
+    _require(isinstance(hashes, list), "subject.content_hashes must be a list")
+    for index, entry in enumerate(hashes):
+        _require(
+            isinstance(entry, dict) and _text(entry.get("path")) and _text(entry.get("sha256")),
+            f"subject.content_hashes[{index}] needs path and sha256",
+        )
+    if kind == "artifact":
+        _require(bool(hashes), "an artifact subject needs at least one content hash")
+        return
+    _require(_text(subject.get("head")), f"a {kind} subject needs head")
+    if kind == "commit_range":
+        _require(_text(subject.get("base")), "a commit_range subject needs base")
+    else:
+        _require(_text(subject.get("diff_sha256")), f"a {kind} subject needs diff_sha256; head alone does not identify uncommitted state")
+    if context["review_mode"] == "change":
+        _require(_text(subject.get("base_justification")), "a change review needs subject.base_justification")
+
+
+STRATEGIES = {"single", "agents"}
+OVERRIDES = {"none", "single", "agents"}
+RESEARCH = {"not_needed", "used", "unavailable"}
+LENS_STATUSES = {"completed", "failed", "skipped"}
+
+
+def _validate_execution(execution: Any, context: dict[str, Any]) -> None:
+    _require(isinstance(execution, dict), "execution must be an object")
+    _require(execution.get("strategy") in STRATEGIES, f"execution.strategy must be one of {sorted(STRATEGIES)}")
+    _require(execution.get("override") in OVERRIDES, f"execution.override must be one of {sorted(OVERRIDES)}")
+    _require(_text(execution.get("reason")), "execution.reason is required")
+    _require(isinstance(execution.get("signals"), dict), "execution.signals must be an object")
+    _require(execution.get("research") in RESEARCH, f"execution.research must be one of {sorted(RESEARCH)}")
+    _require(isinstance(execution.get("research_excerpt_authorized"), bool), "execution.research_excerpt_authorized must be a boolean")
+    lenses = execution.get("lenses")
+    _require(isinstance(lenses, list), "execution.lenses must be a list")
+    for index, lens in enumerate(lenses):
+        where = f"execution.lenses[{index}]"
+        _require(isinstance(lens, dict) and lens.get("name") in LENSES, f"{where}.name must be one of {sorted(LENSES)}")
+        _require(lens.get("status") in LENS_STATUSES, f"{where}.status must be one of {sorted(LENS_STATUSES)}")
+    names = [lens["name"] for lens in lenses]
+    _require(len(names) == len(set(names)), "execution.lenses must not repeat a lens")
+    if execution["strategy"] == "single":
+        _require(not lenses, "a single-agent review cannot list lenses")
+    else:
+        _require(bool(lenses), "an agents review must list its lenses")
+    override = execution["override"]
+    if override == "single":
+        _require(execution["strategy"] == "single", "override single requires strategy single")
+    if override == "agents" and execution["strategy"] == "single":
+        _require(_text(execution.get("fallback")), "override agents ran as single without a recorded fallback")
+    gaps = context["verification_gaps"]
+    if any(lens["status"] != "completed" for lens in lenses):
+        _require(any(gap["material"] for gap in gaps), "a failed or skipped lens needs a material verification gap")
+    if execution["research"] == "unavailable":
+        _require(bool(gaps), "research unavailable needs a verification gap for the affected finding")
+    sources = {ref["source"] for finding in context["findings"] for ref in finding["evidence_refs"]}
+    _require("research" not in sources or execution["research"] == "used", "research evidence needs execution.research = used")
+    for index, finding in enumerate(context["findings"]):
+        lens = finding.get("lens")
+        _require(lens is None or lens in names, f"findings[{index}].lens must be null or a listed lens")
+
+
+def _validate_observation(observation: Any, index: int) -> None:
+    where = f"observations[{index}]"
+    _require(isinstance(observation, dict), f"{where} must be an object")
+    _require(_text(observation.get("location")) and _text(observation.get("description")), f"{where} needs location and description")
+
+
+def check_continuity(context: dict[str, Any], prior: dict[str, Any]) -> None:
+    prior_findings = prior.get("findings")
+    if not isinstance(prior_findings, list):
+        return
+    current = {finding["finding_id"] for finding in context["findings"]}
+    for finding in prior_findings:
+        finding_id = finding.get("finding_id")
+        if finding_id in (None, UNAVAILABLE):
+            continue  # legacy finding: no identity to carry
+        _require(
+            finding.get("status") != "open" or finding_id in current,
+            f"prior open finding {finding_id} is missing from the re-review; carry it with a status",
         )
 
 
@@ -122,9 +224,19 @@ def validate_review_context(context: dict[str, Any]) -> dict[str, Any]:
         _validate_finding(finding, index)
     for index, gap in enumerate(context["verification_gaps"]):
         _validate_gap(gap, index)
+    observations = context.get("observations", [])
+    _require(isinstance(observations, list), "observations must be a list")
+    for index, observation in enumerate(observations):
+        _validate_observation(observation, index)
+    prior_uuid = context.get("prior_review_uuid")
+    _require(prior_uuid is None or _text(prior_uuid), "prior_review_uuid must be a non-empty string")
     ids = [finding["finding_id"] for finding in context["findings"]]
     _require(len(ids) == len(set(ids)), "finding_id values must be unique")
-    expected = aggregate_verdict(context["findings"], context["verification_gaps"])
+    _validate_subject(context.get("subject"), context)
+    _validate_execution(context.get("execution"), context)
+    stale = context.get("stale", False)
+    _require(isinstance(stale, bool), "stale must be a boolean")
+    expected = aggregate_verdict(context["findings"], context["verification_gaps"], stale)
     _require(
         context.get("verdict") == expected,
         f"verdict {context.get('verdict')!r} disagrees with the findings and gaps, which give {expected!r}",
@@ -146,20 +258,33 @@ def read_review_context(context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _prior_context(db_path: str, review_uuid: str) -> dict[str, Any]:
+    entries = get_sidecar_entry(db_path=db_path, uuid=review_uuid, limit=1)
+    _require(bool(entries) and entries[0]["skill"] == "review", f"prior_review_uuid {review_uuid} is not a saved review")
+    return read_review_context(json.loads(entries[0]["context"]))
+
+
 def review_workflow(args: Args) -> str:
     context_json = load_context(args.context, args.context_input)
-    validate_review_context(json.loads(context_json))
+    context = json.loads(context_json)
+    validate_review_context(context)
 
     root_dir = project_root(args.start_path)
     sidecar_dir = root_dir / ".sidecar"
+    db_path = str(sidecar_dir / "sidecar.db")
+    if isinstance(context, dict) and context.get("prior_review_uuid"):
+        check_continuity(context, _prior_context(db_path, context["prior_review_uuid"]))
+    if isinstance(context, dict) and "subject" in context and not context.get("stale"):
+        _require(not is_stale(context["subject"]), "reviewed material changed since the subject was captured; re-inspect it or set stale: true")
     sidecar_dir.mkdir(parents=True, exist_ok=True)
 
+    redacted = redact_value(context)
     return add_sidecar_entry(
-        db_path=str(sidecar_dir / "sidecar.db"),
+        db_path=db_path,
         project=root_dir.name,
         skill="review",
         scope=args.scope,
         agent=args.agent,
         model=args.model or f"{args.agent}/unknown",
-        context=context_json,
+        context=json.dumps(redacted) if redacted != context else context_json,
     )

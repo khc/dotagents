@@ -306,7 +306,7 @@ Before the final response, if a review entry UUID is available from sidecar or f
 
      ```json
      {
-       "findings_fixed": [{"location": "...", "description": "..."}],
+       "findings_fixed": [{"finding_id": "F1 (schema version 2 reviews)", "location": "...", "description": "..."}],
        "summary": "one-sentence summary of what was fixed",
        "verification": "fresh test/lint/static-check evidence used to support the fix",
        "review_mode": "change|path|symbol when available",

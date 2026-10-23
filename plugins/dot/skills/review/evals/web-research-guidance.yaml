@@ -10,7 +10,7 @@ purpose: >
   repositories, and preserves existing scope_boundaries.allowed and target
   not-found rules.
 
-command: >
+command: |
   python3 -c '
   import pathlib
   text = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/review/SKILL.md").read_text()
@@ -20,6 +20,8 @@ command: >
   assert "official documentation" in lower, "Missing official docs preference"
   assert "established best practices" in lower, "Missing best practices preference"
   assert "high-ranking github repositories" in lower, "Missing high-ranking GitHub repos preference"
+  assert "research agent" in lower, "Missing research-agent delegation"
+  assert "never search the web yourself" in lower, "Reviewer must not search the web itself"
   assert "scope_boundaries.allowed" in text, "Missing scope boundary preservation"
   assert "Error: target \"<path>\" not found." in text, "Missing target-not-found rule"
   '
@@ -40,3 +42,12 @@ green:
 
 regression:
   keep: true
+
+revision:
+  date: "2026-10-23"
+  reason: >
+    Plan requirement R16: web research is always done by a separate research
+    agent. The source-priority phrases must stay in SKILL.md; the new
+    assertions require the delegation wording. Previous assertions are kept.
+  red: "Fails against the pre-Task-7 SKILL.md: no 'research agent' wording, and it told the reviewer to search the web itself."
+  green: "Passes against the Task 7 SKILL.md (run in the Task 7 verification)."

@@ -14,6 +14,7 @@ Before repo work, activate `$dot:scope` on exactly `<scope>` if this fresh runti
 does not already have that scope active. Do not broaden scope.
 
 Perform an independent review in a fresh context. Read only the relevant plan/implementation/prior-review/fix artifacts. Invoke `$dot:review`.
+If a prior review artifact is listed below, this is a re-review: pass its `review_uuid` as `prior_review_uuid`, keep every prior `finding_id`, and mark a finding `addressed` only on evidence you inspected yourself.
 
 Available prior stage artifacts:
 - none

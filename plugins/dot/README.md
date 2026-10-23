@@ -53,6 +53,8 @@ Set `dot_plugin_root` to that resolved absolute path and keep cwd in the target 
 dot_plugin_root="/absolute/path/to/dot"
 uv run --no-project "$dot_plugin_root/scripts/context_workflow.py" .
 uv run --no-project "$dot_plugin_root/scripts/review_workflow.py" --help
+uv run --no-project "$dot_plugin_root/scripts/review_subject.py" --help
+uv run --no-project "$dot_plugin_root/scripts/review_strategy.py" --help
 uv run --no-project "$dot_plugin_root/scripts/fix_workflow.py" --help
 uv run --no-project "$dot_plugin_root/scripts/sidecar_workflow.py" --help
 ```

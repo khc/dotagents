@@ -48,7 +48,8 @@
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "description": "finding_id values (F<n>) from the reviewed entry; legacy reviews without ids use the finding description."
     },
     "touched_files": {
       "type": "array",

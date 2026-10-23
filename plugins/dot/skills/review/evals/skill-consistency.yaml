@@ -15,7 +15,7 @@ purpose: >
      scope dependency.
   5. No stray .DS_Store files exist in the skill directory.
 
-command: >
+command: |
   python3 -c '
   import json, pathlib
   root = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/review")
@@ -29,6 +29,21 @@ command: >
   assert all("yaml" not in item for item in evals_obj["evals"]), "evals.json contains custom yaml field"
   assert (root / "agents" / "openai.yaml").exists(), "Missing agents/openai.yaml"
   assert not (root / ".DS_Store").exists(), "Stray .DS_Store present in skill directory"
+  import re, yaml
+  assert len(skill.encode()) < 20000, "SKILL.md is not under 20,000 bytes"
+  fm = yaml.safe_load(skill.split("---", 2)[1])
+  assert fm["name"] == root.name, "name must match the directory"
+  assert fm["description"].startswith("Use when") and len(fm["description"]) <= 1024, "description must start with Use when and fit 1024 characters"
+  assert len(fm.get("compatibility", "")) <= 500, "compatibility over 500 characters"
+  assert skill.startswith("---\nname: review\ndescription: "), "frontmatter must start with name then description"
+  for link in re.findall(r"\]\(([^)#]+\.md)", skill):
+      assert (root / link).is_file(), f"broken link {link}"
+  assert not [p for p in (root / "references").rglob("*") if p.is_dir()], "references must stay one level deep"
+  for ref in (root / "references").glob("*.md"):
+      for link in re.findall(r"\]\(([^)#]+\.md)", ref.read_text()):
+          assert (ref.parent / link).is_file(), f"broken link {link} in {ref.name}"
+  for word in ("dot_plugin_root", "uv run --no-project", "parents[2]"):
+      assert word in skill, f"portable instruction missing: {word}"
   '
 
 assert:
