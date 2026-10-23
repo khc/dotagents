@@ -243,6 +243,37 @@ class SignalTests(unittest.TestCase):
         self.assertEqual((s["mode"], s["criteria"], s["files"]), ("symbol", 4, 1))
 
 
+class CliErrorTests(unittest.TestCase):
+    def run_cli(self, *args, cwd):
+        env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+        env.pop("PYTHONPATH", None)
+        return subprocess.run([sys.executable, "-B", str(PLUGIN / "scripts/review_strategy.py"), *args],
+                              cwd=cwd, env=env, text=True, capture_output=True)
+
+    def assert_one_line_rejection(self, done, fragment):
+        self.assertEqual(done.returncode, 2, done.stderr)
+        self.assertNotIn("Traceback", done.stderr)
+        self.assertEqual(len(done.stderr.strip().splitlines()), 1, done.stderr)
+        self.assertIn("review_strategy rejected", done.stderr)
+        self.assertIn(fragment, done.stderr)
+
+    def test_unbalanced_quote_in_the_request(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assert_one_line_rejection(self.run_cli("parse", "--request", "single 'unterminated", cwd=directory), "No closing quotation")
+
+    def test_not_a_git_repository(self):
+        with tempfile.TemporaryDirectory(prefix="not a repo ") as directory:
+            done = self.run_cli("choose", "--mode", "path", "--target", ".", "--start-path", directory, cwd=directory)
+        self.assert_one_line_rejection(done, "not a git repository")
+
+    def test_target_outside_the_repository(self):
+        with tempfile.TemporaryDirectory(prefix="review strategy ") as directory:
+            repo = Path(directory)
+            git(repo, "init", "--quiet")
+            done = self.run_cli("choose", "--mode", "path", "--target", "../elsewhere", "--start-path", str(repo), cwd=repo)
+        self.assert_one_line_rejection(done, "outside the repository")
+
+
 class CliTests(unittest.TestCase):
     def run_cli(self, *args, cwd=None):
         env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}

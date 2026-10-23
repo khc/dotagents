@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from agents.project_root import project_root
-from agents.workflows.review_subject import git_output, git_paths
+from agents.workflows.review_subject import git_output, git_paths, repo_relative
 
 # Each category belongs to exactly one lens.
 LENSES: dict[str, list[str]] = {
@@ -135,7 +135,7 @@ def _area(path: str) -> str:
 
 def compute_signals(args: Choose) -> dict[str, Any]:
     repo = project_root(args.start_path)
-    target = str((Path(args.start_path).resolve() / args.target).resolve().relative_to(repo.resolve()))
+    target = repo_relative(repo, args.target, args.start_path)
     lines = 0
     if args.mode == "change":
         paths, lines = _numstat(repo, args.base or "HEAD", target)

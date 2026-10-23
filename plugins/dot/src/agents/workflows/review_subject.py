@@ -44,10 +44,13 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _rel(repo: Path, target: str, start_path: str) -> str:
+def repo_relative(repo: Path, target: str, start_path: str) -> str:
     """Repo-relative form of target; a relative target is resolved from start_path (the working directory by default)."""
     resolved = (Path(start_path).resolve() / target).resolve()
-    return str(resolved.relative_to(repo.resolve()))
+    try:
+        return str(resolved.relative_to(repo.resolve()))
+    except ValueError as error:
+        raise ValueError(f"target {target} is outside the repository {repo}") from error
 
 
 def _diff_args(kind: Kind, base: str | None, head: str) -> list[str]:
@@ -91,7 +94,7 @@ def capture_subject(args: Args) -> dict[str, Any]:
     if args.kind == "commit_range" and not args.base:
         raise ValueError("commit_range needs --base")
     repo = project_root(args.start_path)
-    target = _rel(repo, args.target, args.start_path)
+    target = repo_relative(repo, args.target, args.start_path)
     head = args.head or git_output(repo, "rev-parse", "HEAD").strip()
     diff_sha, hashes = _snapshot(repo, args.kind, target, args.base, head, args.review_mode, args.include)
     subject: dict[str, Any] = {

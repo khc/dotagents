@@ -301,6 +301,38 @@ class SaveTimeGitFailureTests(RepoCase):
         self.assertNotIn("Traceback", done.stderr)
 
 
+class CliErrorTests(RepoCase):
+    def run_cli(self, *args, cwd=None):
+        env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+        env.pop("PYTHONPATH", None)
+        return subprocess.run([sys.executable, "-B", str(PLUGIN / "scripts/review_subject.py"), *args],
+                              cwd=cwd or self.repo, env=env, text=True, capture_output=True)
+
+    def assert_one_line_rejection(self, done, fragment):
+        self.assertEqual(done.returncode, 2, done.stderr)
+        self.assertNotIn("Traceback", done.stderr)
+        self.assertEqual(len(done.stderr.strip().splitlines()), 1, done.stderr)
+        self.assertIn("review_subject rejected", done.stderr)
+        self.assertIn(fragment, done.stderr)
+
+    def test_not_a_git_repository(self):
+        with tempfile.TemporaryDirectory(prefix="not a repo ") as directory:
+            done = self.run_cli("--kind", "working_tree", "--review-mode", "path", "--target", ".", "--start-path", directory, cwd=directory)
+        self.assert_one_line_rejection(done, "not a git repository")
+
+    def test_target_outside_the_repository(self):
+        done = self.run_cli("--kind", "working_tree", "--review-mode", "path", "--target", "../elsewhere", "--start-path", str(self.repo))
+        self.assert_one_line_rejection(done, "outside the repository")
+
+    def test_commit_range_without_base(self):
+        done = self.run_cli("--kind", "commit_range", "--review-mode", "change", "--target", "src", "--start-path", str(self.repo))
+        self.assert_one_line_rejection(done, "--base")
+
+    def test_unknown_revision(self):
+        done = self.run_cli("--kind", "working_tree", "--review-mode", "path", "--target", "src", "--head", "nosuchrev", "--start-path", str(self.repo))
+        self.assert_one_line_rejection(done, "bad revision")
+
+
 class CliTests(RepoCase):
     def test_cli_prints_the_subject(self):
         self.layers()
