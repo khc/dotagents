@@ -94,7 +94,8 @@
         ],
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Same value as the review context finding_id (F<n>)."
           },
           "category": {
             "type": "string"
@@ -121,6 +122,39 @@
           },
           "fix_direction": {
             "type": "string"
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "addressed",
+              "deferred"
+            ]
+          },
+          "lens": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "disposition": {
+            "type": "object",
+            "properties": {
+              "authority": {
+                "type": "string"
+              },
+              "rationale": {
+                "type": "string"
+              }
+            }
           }
         }
       }
@@ -194,6 +228,31 @@
                 "type": "string"
               }
             }
+          }
+        }
+      }
+    },
+    "schema_version": {
+      "type": "integer"
+    },
+    "verification_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "description",
+          "material",
+          "effect"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "material": {
+            "type": "boolean"
+          },
+          "effect": {
+            "type": "string"
           }
         }
       }

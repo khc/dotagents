@@ -10,6 +10,7 @@ from agents.sidecar import (
     get_sidecar_entry,
     update_sidecar_entry,
 )
+from agents.workflows.review import read_review_context
 
 
 @dataclass
@@ -59,7 +60,8 @@ def get_review(args: GetReviewArgs) -> str:
     context_data = entry.get("context")
     if not isinstance(context_data, str):
         raise TypeError("Expected context to be a string")
-    entry["context"] = json.loads(context_data)
+    context = json.loads(context_data)
+    entry["context"] = read_review_context(context) if entry["skill"] == "review" else context
     return json.dumps(entry, indent=2)
 
 

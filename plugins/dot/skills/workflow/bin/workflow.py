@@ -346,6 +346,7 @@ After completing the normal skill response, append EXACTLY one machine result:
 
 Use valid JSON: double quotes, no comments, no trailing commas.
 Do not claim success/ready unless the invoked skill's evidence requirements are met.
+For a review with verdict not-ready, zero findings and a material verification gap, put the gap text in "blocker".
 """
 
 def run_process(

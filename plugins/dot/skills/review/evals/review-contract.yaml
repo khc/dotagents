@@ -1,0 +1,89 @@
+id: review-contract
+skill: dot:review
+tier: behavioral
+
+purpose: >
+  Scenarios for the review-contract plan (.plans/plan_1792760593.md, Task 1).
+  Each scenario is persisted before it is run. Observed results are recorded
+  only in baseline.md; nothing here claims an outcome.
+
+scenarios:
+  - id: four-blockers-one-category
+    fixture: ../../../evals/review/files/four-blockers/
+    prompt: >
+      Scope is active on plugins/dot/evals/review/files/four-blockers/.
+      Review server.ts for security issues.
+    expected:
+      - all four unrelated security findings (hard-coded token, SQL
+        concatenation in findUser, command injection in ping, path traversal in
+        readUpload) appear in the response
+      - all four are present in the persisted sidecar entry
+    forbidden:
+      - dropping or merging any of the four into another
+    probes: three-finding-per-category cap
+
+  - id: duplicate-symptoms-one-root-cause
+    fixture: ../../../evals/review/files/duplicate-symptoms/
+    prompt: >
+      Scope is active on plugins/dot/evals/review/files/duplicate-symptoms/.
+      Review users.ts for bugs.
+    expected:
+      - one root-cause finding (getUser may return undefined and callers
+        dereference it), not one finding per caller
+    forbidden:
+      - three separate findings for emailFor, greeting and domainOf
+    probes: root-cause merging
+
+  - id: dirty-tree-change-review
+    fixture: built at run time in a temporary git repository
+    setup: >
+      commit a base, then leave one committed change, one staged change, one
+      unstaged change and one untracked file touching the reviewed path
+    prompt: Review the change in this repository.
+    expected:
+      - the response states which layers (commit range, index, working tree,
+        untracked) were reviewed
+    forbidden:
+      - describing the reviewed state by HEAD alone
+    probes: reviewed-state identity
+
+  - id: insufficient-evidence-requirements
+    fixture: ../../../evals/review/files/duplicate-symptoms/
+    prompt: >
+      Scope is active on plugins/dot/evals/review/files/duplicate-symptoms/.
+      Check users.ts against the requirements in the ticket and say whether it
+      is ready. (No ticket or plan is supplied.)
+    expected:
+      - the missing requirements are reported as a verification gap
+      - the verdict is not ready
+    forbidden:
+      - inventing requirements
+      - a favorable verdict because no findings were reported
+    probes: no-findings with insufficient evidence
+
+  - id: repeated-review-after-fix
+    fixture: ../../../evals/review/files/four-blockers/
+    setup: >
+      review once, apply a fix that moves server.ts lines and fixes only three
+      of the four findings, then re-review
+    prompt: Re-review server.ts after the fix, in the original mode.
+    expected:
+      - the unfixed finding is still reported and still identifiable as the
+        same finding after its line moved
+      - an implementer success claim is not accepted as closure
+    probes: finding continuity, line movement
+
+  - id: persistence-failure
+    fixture: ../../../evals/review/files/four-blockers/
+    setup: make the project's .sidecar directory read-only before the review
+    prompt: >
+      Scope is active on plugins/dot/evals/review/files/four-blockers/.
+      Review server.ts for security issues.
+    expected:
+      - the full review is still shown with every finding
+      - the save error is reported in one line, separately from the review
+    forbidden:
+      - withholding or shortening findings because the save failed
+    probes: persistence failure policy
+
+status: not run

@@ -1,0 +1,26 @@
+{
+  "target": "src/users.ts",
+  "review_mode": "path",
+  "source_workflow": "standalone",
+  "findings": [
+    {
+      "category": "Security",
+      "location": "src/users.ts:12",
+      "description": "SQL built by string concatenation from the request parameter.",
+      "severity": "high",
+      "confidence": "confirmed",
+      "fix_direction": "Use a parameterized query in findUser."
+    },
+    {
+      "category": "Maintainability",
+      "location": "src/users.ts:30",
+      "description": "Duplicated name normalization in two helpers.",
+      "severity": "low",
+      "confidence": "confirmed",
+      "fix_direction": "Extract normalizeName and reuse it in both helpers."
+    }
+  ],
+  "summary": "One high security issue and one low maintainability issue.",
+  "reasoning": "Synthetic schema-version-less (v1) entry used as a regression fixture for the legacy read path. Fields mirror the payload documented in skills/review/references/runtime-and-persistence.md; no finding_id, blocking, evidence_refs, subject or execution fields exist.",
+  "verdict": "not-ready"
+}

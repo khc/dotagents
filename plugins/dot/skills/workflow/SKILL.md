@@ -138,6 +138,7 @@ Normalize `$dot:review` output deterministically:
 | `ready-with-fixes` with one or more findings | `findings` |
 | `not-ready` with one or more findings | `findings` |
 | any verdict with an explicit scope/evidence blocker preventing a valid review | `blocked` |
+| `not-ready` with zero findings and a material verification gap (gap text in `blocker`) | `blocked` |
 
 `ready-with-fixes` is **never** a terminal workflow state. It always transitions to `$dot:fix` when findings exist.
 

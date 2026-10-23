@@ -38,7 +38,7 @@ uv run --no-project "$dot_plugin_root/scripts/fix_workflow.py" get_review
 Extract:
 
 - `scope` — top-level row field; use as the required work scope and require matching active $dot:scope scope before edits
-- `context.findings` — source of truth for what to fix; each finding has `category`, `location`, `description`, `severity` (`critical|high|medium|low`), `confidence`, and `fix_direction`
+- `context.findings` — source of truth for what to fix; each finding has `category`, `location`, `description`, `severity` (`critical|high|medium|low`), `confidence`, and `fix_direction`; schema version 2 entries also carry `finding_id` (reference findings by it), `blocking` and `status` (fix `open` blocking findings first within a severity); legacy entries show these as `"unavailable"`
 - `context.reasoning` — analytical context explaining why each finding matters
 - `context.review_mode` — `change|path|symbol` when persisted by review
 - `context.target_symbol` — reviewed symbol when `review_mode` is `symbol`
