@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-bun $HOME/.agents/scripts/commit.ts $*
-

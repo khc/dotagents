@@ -4,9 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "typecheck": "bun check",
-    "install:zed": "bun scripts/install_zed.ts",
-    "install:vscode": "bun scripts/install_vscode.ts"
+    "typecheck": "bun check"
   },
   "devDependencies": {
     "@types/bun": "latest"

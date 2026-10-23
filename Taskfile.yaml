@@ -3,7 +3,84 @@ version: "3"
 env:
   UV_CACHE_DIR: .task-cache/uv
 
+vars:
+  ROOT: "{{.TASKFILE_DIR}}"
+  PLUGIN: "{{.TASKFILE_DIR}}/plugins/dot"
+
 tasks:
+  # 0. Plugin Install / Update / Remove
+  install:
+    desc: "Installs the dot plugin into Claude Code, Codex, and Antigravity"
+    cmds:
+      - task: install:claude
+      - task: install:codex
+      - task: install:agy
+
+  install:claude:
+    cmds:
+      - claude plugin marketplace add {{.ROOT}}
+      - claude plugin install dot@dotagents
+
+  install:codex:
+    cmds:
+      - codex plugin marketplace add {{.ROOT}}
+
+  install:agy:
+    cmds:
+      - agy plugin install {{.PLUGIN}}
+
+  install:vscode:
+    desc: "Points VS Code Copilot commit message generation at prompts/commit_message.md"
+    cmds:
+      - bun {{.ROOT}}/scripts/install_vscode.ts
+
+  install:zed:
+    desc: "Copies prompts/commit_message.md into Zed's commit message instructions"
+    cmds:
+      - bun {{.ROOT}}/scripts/install_zed.ts
+
+  update:
+    desc: "Updates the dot plugin in Claude Code, Codex, and Antigravity"
+    cmds:
+      - task: update:claude
+      - task: update:codex
+      - task: update:agy
+
+  update:claude:
+    cmds:
+      - claude plugin marketplace update dotagents
+
+  update:codex:
+    cmds:
+      - codex plugin marketplace upgrade
+
+  update:agy:
+    cmds:
+      - cmd: agy plugin uninstall dot
+        ignore_error: true
+      - agy plugin install {{.PLUGIN}}
+
+  remove:
+    desc: "Removes the dot plugin from Claude Code, Codex, and Antigravity"
+    cmds:
+      - task: remove:claude
+      - task: remove:codex
+      - task: remove:agy
+
+  remove:claude:
+    cmds:
+      - cmd: claude plugin uninstall dot@dotagents
+        ignore_error: true
+      - claude plugin marketplace remove dotagents
+
+  remove:codex:
+    cmds:
+      - codex plugin marketplace remove dotagents
+
+  remove:agy:
+    cmds:
+      - agy plugin uninstall dot
+
   # 1. Structural Schema Validation
   skillcheck:
     desc: "Validates SKILL.md structure against the agentskills schema"
