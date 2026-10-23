@@ -150,11 +150,11 @@ tasks:
     requires:
       vars: [skill]
     cmds:
-      - uv run python scripts/skill_report_workflow.py --skill {{.skill}} --output json
+      - bun scripts/skill_report.ts --skill {{.skill}} --output json
 
   report:md:
     desc: "Generates one combined validator report for the target skill"
     requires:
       vars: [skill]
     cmds:
-      - uv run python scripts/skill_report_workflow.py --skill {{.skill}} --output markdown
+      - bun scripts/skill_report.ts --skill {{.skill}} --output markdown

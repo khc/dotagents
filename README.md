@@ -44,8 +44,7 @@ plugins/dot/
 └── evals/
 skills/synced/                 # independent synced collection
 scripts/                      # development tools
-src/skill_report.py
-src/quick_validate.py
+scripts/skill_report.ts
 ```
 
 Only `plugins/dot/` is the installable package. Both catalogs resolve `./plugins/dot` from this repository root. Synced skills remain independent.

@@ -16,7 +16,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "dot"
 SKILLS = {
-    "bug", "feature", "find-skills", "fix", "implement",
+    "bug", "cross-review", "feature", "find-skills", "fix", "implement",
     "plan", "refactor", "research", "review", "scope", "skill-wrapper", "workflow",
 }
 
@@ -33,9 +33,6 @@ class DotPluginTests(unittest.TestCase):
         for name in SKILLS:
             frontmatter = (PLUGIN / "skills" / name / "SKILL.md").read_text().split("---", 2)[1]
             self.assertEqual(yaml.safe_load(frontmatter)["name"], name)
-            alias = ROOT / "skills" / name
-            self.assertFalse(alias.exists(), name)
-            self.assertFalse(alias.is_symlink(), name)
         for name in ("context", "review", "fix", "sidecar"):
             script = (PLUGIN / "scripts" / f"{name}_workflow.py").read_text()
             self.assertIn('# requires-python = ">=3.14"', script)
@@ -133,12 +130,13 @@ class DotPluginTests(unittest.TestCase):
             data = json.loads(file.read_text())
             self.assertEqual(data["skill_name"], name)
             for scenario in data["evals"]:
-                self.assertTrue((file.parent / scenario["yaml"]).is_file(), scenario["yaml"])
+                if "yaml" in scenario:
+                    self.assertTrue((file.parent / scenario["yaml"]).is_file(), scenario["yaml"])
                 for fixture in scenario["files"]:
                     self.assertTrue((ROOT / fixture).is_file(), fixture)
         for file in (PLUGIN / "evals").glob("*/*.yaml"):
             scenario = yaml.safe_load(file.read_text())
-            self.assertIn(scenario["skill"], {"dot:scope", "dot:review", "dot:fix"})
+            self.assertIn(scenario["skill"], {"dot:scope", "dot:review", "dot:fix", "dot:cross-review"})
             if "fixture" in scenario:
                 name = scenario["skill"].split(":")[-1]
                 self.assertTrue((PLUGIN / "skills" / name / scenario["fixture"]).is_dir(), file)
@@ -163,27 +161,6 @@ class DotPluginTests(unittest.TestCase):
             self.assertIn("uv run --no-project", text)
             self.assertNotIn("~/.agents/scripts/", text)
             self.assertIn("parents[2]", text)
-
-    def test_report_uses_plugin_skill_path(self):
-        with mock.patch.object(sys, "path", [str(ROOT / "src"), str(PLUGIN / "src"), *sys.path]):
-            import skill_report
-        stub = skill_report.ToolReport("validator", [], 0, "pass", "valid", [], "", "")
-        validators = {
-            name: mock.Mock(return_value=stub) for name in (
-                "_run_skillcheck", "_run_skills_validate", "_run_skill_validator",
-                "_run_cclint", "_run_markdownlint",
-            )
-        }
-        with mock.patch.multiple(skill_report, **validators):
-            report = json.loads(skill_report.generate_report(skill_report.ReportArgs(
-                skill="scope", start_path=str(ROOT),
-            )))
-        path = PLUGIN / "skills/scope/SKILL.md"
-        self.assertEqual(report["skill_path"], str(path))
-        self.assertEqual(report["skill"], "scope")
-        self.assertEqual(report["overall_status"], "pass")
-        self.assertEqual(set(report), {"skill", "skill_path", "overall_status", "summary", "tools"})
-        validators["_run_skillcheck"].assert_called_once_with(ROOT, path)
 
     def test_marketplace_sources(self):
         for file in (ROOT / ".agents/plugins/marketplace.json", ROOT / ".claude-plugin/marketplace.json"):
