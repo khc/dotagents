@@ -16,7 +16,7 @@ install-agy:
 	agy plugin install $(PLUGIN)
 
 install-vscode:
-	uv run $(ROOT)/scripts/install_copilot_commit_instructions.py
+	bun $(ROOT)/scripts/install_vscode.ts
 
 update: update-claude update-codex update-agy
 
