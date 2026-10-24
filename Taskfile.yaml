@@ -6,11 +6,14 @@ env:
 vars:
   ROOT: "{{.TASKFILE_DIR}}"
   PLUGIN: "{{.TASKFILE_DIR}}/plugins/dot"
+  SUPERPOWERS_CLAUDE: "superpowers@claude-plugins-official"
+  SUPERPOWERS_CODEX: "superpowers@openai-curated-remote"
+  SUPERPOWERS_SRC: "{{.TASKFILE_DIR}}/.task-cache/superpowers"
 
 tasks:
-  # 0. Plugin Install / Update / Remove
+  # 0. Plugin Install / Update / Remove (dot + its obra/superpowers dependency)
   install:
-    desc: "Installs the dot plugin into Claude Code, Codex, and Antigravity"
+    desc: "Installs the dot plugin and superpowers into Claude Code, Codex, and Antigravity"
     cmds:
       - task: install:claude
       - task: install:codex
@@ -20,14 +23,26 @@ tasks:
     cmds:
       - claude plugin marketplace add {{.ROOT}}
       - claude plugin install dot@dotagents
+      - claude plugin install {{.SUPERPOWERS_CLAUDE}}
 
   install:codex:
     cmds:
       - codex plugin marketplace add {{.ROOT}}
+      - codex plugin add {{.SUPERPOWERS_CODEX}}
 
   install:agy:
     cmds:
+      - task: superpowers:sync
+      - agy plugin install {{.SUPERPOWERS_SRC}}
       - agy plugin install {{.PLUGIN}}
+
+  superpowers:sync:
+    desc: "Clones or fast-forwards obra/superpowers for the Antigravity install"
+    cmds:
+      - cmd: git -C {{.SUPERPOWERS_SRC}} pull --ff-only
+        ignore_error: true
+        # falls through to clone when the checkout does not exist yet
+      - cmd: test -d {{.SUPERPOWERS_SRC}} || git clone --depth 1 https://github.com/obra/superpowers {{.SUPERPOWERS_SRC}}
 
   install:vscode:
     desc: "Points VS Code Copilot commit message generation at prompts/commit_message.md"
@@ -40,7 +55,7 @@ tasks:
       - bun {{.ROOT}}/scripts/install_zed.ts
 
   update:
-    desc: "Updates the dot plugin in Claude Code, Codex, and Antigravity"
+    desc: "Updates the dot plugin and superpowers in Claude Code, Codex, and Antigravity"
     cmds:
       - task: update:claude
       - task: update:codex
@@ -48,20 +63,29 @@ tasks:
 
   update:claude:
     cmds:
-      - claude plugin marketplace update dotagents
+      - claude plugin marketplace update
+      - claude plugin update dot@dotagents
+      - claude plugin update {{.SUPERPOWERS_CLAUDE}}
 
   update:codex:
     cmds:
       - codex plugin marketplace upgrade
+      - cmd: codex plugin remove {{.SUPERPOWERS_CODEX}}
+        ignore_error: true
+      - codex plugin add {{.SUPERPOWERS_CODEX}}
 
   update:agy:
     cmds:
+      - task: superpowers:sync
+      - cmd: agy plugin uninstall superpowers
+        ignore_error: true
+      - agy plugin install {{.SUPERPOWERS_SRC}}
       - cmd: agy plugin uninstall dot
         ignore_error: true
       - agy plugin install {{.PLUGIN}}
 
   remove:
-    desc: "Removes the dot plugin from Claude Code, Codex, and Antigravity"
+    desc: "Removes the dot plugin and superpowers from Claude Code, Codex, and Antigravity"
     cmds:
       - task: remove:claude
       - task: remove:codex
@@ -71,14 +95,20 @@ tasks:
     cmds:
       - cmd: claude plugin uninstall dot@dotagents
         ignore_error: true
+      - cmd: claude plugin uninstall {{.SUPERPOWERS_CLAUDE}}
+        ignore_error: true
       - claude plugin marketplace remove dotagents
 
   remove:codex:
     cmds:
+      - cmd: codex plugin remove {{.SUPERPOWERS_CODEX}}
+        ignore_error: true
       - codex plugin marketplace remove dotagents
 
   remove:agy:
     cmds:
+      - cmd: agy plugin uninstall superpowers
+        ignore_error: true
       - agy plugin uninstall dot
 
   # 1. Structural Schema Validation
