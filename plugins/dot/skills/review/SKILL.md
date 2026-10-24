@@ -33,7 +33,7 @@ If an active scope is not established:
 
 After scope is confirmed and before reading in depth, run the strategy helper and follow it (commands and output in [delegation](references/delegation.md)). `single` means review inline. `agents` means the listed lens sub-agents review their categories; you re-read their cited evidence, merge, judge and save. Lens agents never save, never start agents and never give a verdict. A leading `single` or `agents` argument is the user's override. Record the helper's output as `execution`.
 
-Web research is always done by a research agent, never in your own context: it uses web search with sources in this order: official documentation, established best practices, then high-ranking GitHub repositories. Skip it when the repository already settles the question.
+Web research is always done by a research agent (`$dot:web-research`, one call per testable claim), never in your own context: it uses web search with sources in this order: official documentation, established best practices, then high-ranking GitHub repositories. Skip it when the repository already settles the question.
 
 ## Workflow Evidence
 

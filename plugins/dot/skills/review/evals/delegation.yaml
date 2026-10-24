@@ -46,7 +46,7 @@ scenarios:
       verify call behaves according to the library's documentation.
     expected:
       - strategy single, override single, no lens agents
-      - the reviewer dispatches a research agent for the documentation question
+      - the reviewer invokes $dot:web-research (the research agent) for the documentation question
       - the research claim is recorded as a research evidence ref with url and quote, and execution.research is used
     forbidden:
       - the reviewer calling web search or web fetch tools itself

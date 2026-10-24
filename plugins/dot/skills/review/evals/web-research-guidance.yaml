@@ -24,6 +24,11 @@ command: |
   assert "never search the web yourself" in lower, "Reviewer must not search the web itself"
   assert "scope_boundaries.allowed" in text, "Missing scope boundary preservation"
   assert "Error: target \"<path>\" not found." in text, "Missing target-not-found rule"
+  assert "$dot:web-research" in text, "SKILL.md must name $dot:web-research"
+  deleg = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/review/references/delegation.md").read_text()
+  assert "$dot:web-research" in deleg, "delegation.md must invoke $dot:web-research"
+  assert "Answer this question using web search only" not in deleg, "research prompt must live only in web-research"
+  assert len(text.encode()) < 20000, "SKILL.md over 20,000 bytes"
   '
 
 assert:
@@ -51,3 +56,14 @@ revision:
     assertions require the delegation wording. Previous assertions are kept.
   red: "Fails against the pre-Task-7 SKILL.md: no 'research agent' wording, and it told the reviewer to search the web itself."
   green: "Passes against the Task 7 SKILL.md (run in the Task 7 verification)."
+
+revision_2:
+  date: "2026-10-24"
+  reason: >
+    The research agent is now the $dot:web-research skill: review/SKILL.md
+    names it and references/delegation.md section 4 invokes it instead of
+    carrying its own sub-agent prompt, so the prompt has one owner. All previous
+    assertions are kept; the new ones check the delegation wording, the absence
+    of the duplicated prompt, and the SKILL.md size cap.
+  red: "Fails against the pre-change files: SKILL.md does not name $dot:web-research."
+  green: "Passes after the SKILL.md and delegation.md edit (Tier 0 exit 0; SKILL.md 19,556 bytes)."
