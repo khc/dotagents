@@ -1,0 +1,12 @@
+{
+  "skill_name": "web-research",
+  "split": "validation",
+  "queries": [
+    { "query": "Check the official docs: does FastAPI's lifespan replace on_event startup handlers?", "should_trigger": true },
+    { "query": "Find out if the cryptography package has any open security advisories for 43.x.", "should_trigger": true },
+    { "query": "What do established best practices say about idempotency keys for payment APIs?", "should_trigger": true },
+    { "query": "Fix the failing test in tests/test_auth.py.", "should_trigger": false },
+    { "query": "Explain what this function does.", "should_trigger": false },
+    { "query": "Pick the leanest existing solution for CSV parsing in this project.", "should_trigger": false, "note": "near miss: research skill (it may call web-research for package verification)" }
+  ]
+}

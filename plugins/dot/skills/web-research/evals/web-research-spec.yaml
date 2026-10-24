@@ -1,0 +1,36 @@
+id: web-research-spec
+skill: web-research
+tier: deterministic
+
+purpose: >
+  Verify Agent Skills structure, the no-self-search rule, the sub-agent
+  contract, and that SKILL.md stays small.
+
+command: |
+  python3 -c '
+  import pathlib, re
+  d = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/web-research")
+  t = (d / "SKILL.md").read_text()
+  m = re.match(r"---\nname: web-research\ndescription: (.+)\n---\n", t)
+  assert m and len(m.group(1)) <= 1024 and m.group(1).startswith("Use when"), "frontmatter"
+  assert "You never run web searches yourself" in t
+  assert "references/integration.md" in t and (d / "references/integration.md").exists()
+  assert (d / "scripts/web_research.py").exists()
+  assert len(t.encode()) < 5000, "SKILL.md too large"
+  '
+
+assert:
+  exit_code: 0
+
+red:
+  status: fail
+  evidence:
+    - "SKILL.md absent."
+
+green:
+  status: pass
+  evidence:
+    - "Exit 0; skillcheck --strict: 1 passed, 0 failed."
+
+regression:
+  keep: true

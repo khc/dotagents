@@ -1,0 +1,27 @@
+id: web-research-script
+skill: web-research
+tier: deterministic
+
+purpose: >
+  Verify domain planning (kind defaults, overrides, caps, read-only prompt) and
+  merge rules (verdicts, community never decides, invalid claims rejected,
+  dedup, partial/unavailable status).
+
+command: >
+  uv run --no-project /Users/khc/.agents/plugins/dot/skills/web-research/evals/test_web_research.py
+
+assert:
+  exit_code: 0
+
+red:
+  status: fail
+  evidence:
+    - "Skill did not exist; script and tests absent (nothing to run)."
+
+green:
+  status: pass
+  evidence:
+    - "Ran 15 tests ... OK"
+
+regression:
+  keep: true

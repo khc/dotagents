@@ -1,0 +1,17 @@
+{
+  "skill_name": "web-research",
+  "split": "train",
+  "queries": [
+    { "query": "Does urllib3 1.26's Retry still accept method_whitelist or only allowed_methods? Check the docs.", "should_trigger": true },
+    { "query": "Verify against current sources that Node 22 supports require(esm) before we plan this migration.", "should_trigger": true },
+    { "query": "Is there a CVE for the version of pyyaml we pin? Look it up.", "should_trigger": true },
+    { "query": "What's the recommended way to rotate JWT signing keys? Find authoritative guidance.", "should_trigger": true },
+    { "query": "While reviewing, I need to confirm this library API is deprecated upstream.", "should_trigger": true },
+    { "query": "Is httpx still maintained and which Python versions does the latest release support?", "should_trigger": true },
+    { "query": "Review src/parser.py for bugs.", "should_trigger": false },
+    { "query": "Which function in this repo calls retry()?", "should_trigger": false },
+    { "query": "Replace my bespoke retry loop with something from the stdlib or an installed dependency.", "should_trigger": false },
+    { "query": "Refactor utils/parser.ts to remove duplication.", "should_trigger": false },
+    { "query": "Write a plan to add rate limiting to the API; the repo already uses slowapi.", "should_trigger": false }
+  ]
+}

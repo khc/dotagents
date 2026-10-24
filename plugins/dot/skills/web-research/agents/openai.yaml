@@ -1,0 +1,12 @@
+interface:
+  display_name: "Web Research"
+  short_description: "Answer external-facts questions with sourced evidence from parallel domain sub-agents"
+  default_prompt: "Use $dot:web-research to verify an external library, API, security, or best-practice question with sourced claims and a merged verdict."
+
+policy:
+  allow_implicit_invocation: true
+
+constraints:
+  - "Never search the web in the orchestrator's own context; use one sub-agent per source domain"
+  - "Sub-agents are read-only and never read repository files"
+  - "Send identifiers only; send repository excerpts only when the user authorized them"
