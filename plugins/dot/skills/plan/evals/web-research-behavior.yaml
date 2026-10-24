@@ -20,12 +20,13 @@ prompt: >
 expected:
   trigger: true
   behavior:
-    - states that web search is used for external API/library/domain research when repo context is insufficient
+    - states that web search for external API/library/domain research is delegated to $dot:web-research (sub-agents), not run by the planner, when repo context is insufficient
     - prioritizes official documentation, established best practices, and high-ranking GitHub repositories
     - preserves local repo grounding and scope_boundaries.allowed without adding generic unrelated best-practice tasks
 
 forbidden:
   - claiming web search is prohibited when external domain/API knowledge is required
+  - saying the planner runs web searches in its own context
   - relying on unvetted sources or guessing external APIs without source ranking
   - letting external best practices override repo-grounded conventions or expand scope
 
@@ -54,3 +55,11 @@ metrics:
 regression:
   keep: true
 
+revision:
+  date: "2026-10-24"
+  reason: >
+    Web research is delegated to $dot:web-research instead of the planner
+    searching itself, matching review's research-agent rule. Source priority,
+    skip rule and scope/AGENTS.md authority expectations are unchanged.
+  red: fail    # old skill: planner searches the web itself
+  green: pass    # delegation behavior verified by web-research-delegation.yaml (tabletop) and web-research-guidance.yaml (Tier 0)

@@ -8,7 +8,7 @@
       "files": [],
       "assertions": [
         "Explores in-scope repository context within scope_boundaries.allowed",
-        "Uses web search for external API, framework, or domain research when repo context is insufficient",
+        "Delegates web search for external API, framework, or domain research to $dot:web-research when repo context is insufficient, and does not search the web itself",
         "Prioritizes official documentation first, then established best practices and high-ranking GitHub repositories",
         "Does not let external best practices override repo-specific conventions or add unrelated scope creep"
       ]

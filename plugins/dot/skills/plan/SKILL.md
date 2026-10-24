@@ -176,7 +176,7 @@ Read, in this order:
 4. existing tests for the affected behavior
 5. directly relevant callers, callees, interfaces, schemas, or configuration
 6. recent Git history for affected files only when it materially informs compatibility, intent, or avoided regressions
-7. targeted web search when the plan depends on external APIs, libraries, frameworks, protocols, or domain patterns not already established in the scoped repo — prioritize sources in this order:
+7. targeted web search when the plan depends on external APIs, libraries, frameworks, protocols, or domain patterns not already established in the scoped repo. Run it through `$dot:web-research`, once per testable claim, with `kind` `library` (APIs, versions), `practice` (patterns) or `security` (advisories) and identifiers-only `context`; never search the web yourself. It ranks sources in this order:
    - **official documentation** and canonical specifications
    - **established best practices** from authoritative engineering/vendor guides relevant to the task
    - **high-ranking GitHub repositories** (widely adopted, actively maintained reference implementations) for idiomatic usage
@@ -193,7 +193,8 @@ If required planning evidence lies outside the active scope, stop and request th
    - Do not invent file paths, symbols, APIs, test commands, or dependencies.
    - Mark a file as `Create` only when the plan actually requires a new file.
    - Cite existing symbols exactly as they appear.
-   - When external library, framework, or domain research is required, verify API contracts and patterns via web search (preferring official documentation, established best practices, and high-ranking GitHub repositories) while keeping `AGENTS.md` and local repo conventions authoritative.
+   - When external library, framework, or domain research is required, verify API contracts and patterns through `$dot:web-research` (web search by sub-agents, preferring official documentation, established best practices, and high-ranking GitHub repositories) while keeping `AGENTS.md` and local repo conventions authoritative.
+   - Ground the plan only on `supported` or `contradicted` results; a `conflicting`, `inconclusive` or `unavailable` result goes under Risks / Stop Conditions as an open question, never into Requirements or Tasks as fact.
 
 2. **Separate requirements from implementation choices.**
    - Requirements/acceptance criteria describe what must be true.

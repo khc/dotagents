@@ -9,7 +9,7 @@ purpose: >
   high-ranking GitHub repositories, while preserving local scope and
   repo-grounding rules.
 
-command: >
+command: |
   python3 -c '
   import pathlib
   text = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/plan/SKILL.md").read_text()
@@ -20,6 +20,9 @@ command: >
   assert "established best practices" in lower, "Missing best practices preference"
   assert "high-ranking github repositories" in lower, "Missing high-ranking GitHub repos preference"
   assert "scope_boundaries.allowed" in text, "Missing scope boundary preservation"
+  assert "$dot:web-research" in text, "Missing web-research delegation"
+  assert "never search the web yourself" in lower, "Planner must not search the web itself"
+  assert "web-research" in pathlib.Path("/Users/khc/.agents/plugins/dot/skills/web-research/SKILL.md").read_text(), "Callee skill missing"
   '
 
 assert:
@@ -39,3 +42,12 @@ green:
 regression:
   keep: true
 
+revision:
+  date: "2026-10-24"
+  reason: >
+    Web research is delegated to $dot:web-research (per-domain sub-agents)
+    instead of the planner searching itself, matching review's research-agent
+    rule. Source-priority phrases must stay in SKILL.md; the new assertions
+    require the delegation wording. Previous assertions are kept.
+  red: "Fails against the pre-change SKILL.md: no '$dot:web-research' and it told the planner to search the web itself."
+  green: "Passes after the plan/SKILL.md edit (see run below)."

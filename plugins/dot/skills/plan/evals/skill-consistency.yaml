@@ -16,7 +16,7 @@ purpose: >
   5. Trigger evaluation datasets (trigger-train.json, trigger-validation.json)
      exist and are valid JSON.
 
-command: >
+command: |
   python3 -c '
   import json, pathlib
   root = pathlib.Path("/Users/khc/.agents/plugins/dot/skills/plan")
