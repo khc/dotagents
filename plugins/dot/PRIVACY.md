@@ -12,7 +12,7 @@ All data stays on your machine, inside the project you run it in:
 - `.sidecar/` holds a local SQLite database of saved reviews and fixes.
 - `.workflow/<id>/` under the active scope holds workflow requests and stage artifacts.
 
-The plugin does not read credentials from your environment and does not store any. Reviews write `[REDACTED:<type>]` in place of secret values, and the helpers redact common credential shapes before saving. Redaction is a safeguard, not a guarantee, so keep secrets out of reviewed material where you can. Delete these folders to remove the data.
+The plugin does not read credentials from your environment and does not store any. Reviews write `[REDACTED:<type>]` in place of secret values, and the helpers redact common credential shapes before saving. Redaction is a safeguard, not a guarantee, so keep secrets out of reviewed material where you can. The plugin does not look for personal data. If reviewed files contain any (for example names or email addresses in code or comments), a saved review may quote it in these local folders. Delete these folders to remove the data.
 
 ## What leaves your machine
 
