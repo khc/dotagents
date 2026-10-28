@@ -1,6 +1,6 @@
 {
-  "name": "dot",
-  "version": "0.2.4",
+  "name": "dotagents",
+  "version": "1.0.0",
   "description": "Personal skills for scoped planning, implementation, review, and reusable workflows.",
   "author": {
     "name": "khc"
