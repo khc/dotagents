@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """Plan and merge domain-based web research. Standard library only."""
 
 from __future__ import annotations

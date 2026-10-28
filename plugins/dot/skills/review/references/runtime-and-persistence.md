@@ -55,7 +55,7 @@ After composing the review output and before sending the final response, persist
 2. **Save review entry** — run:
 
    ```bash
-   uv run --no-project "$dot_plugin_root/scripts/review_workflow.py" \
+   uv run --no-project --locked "$dot_plugin_root/scripts/review_workflow.py" \
      --context - \
      --context-input stdin \
      --scope '{scope}' \

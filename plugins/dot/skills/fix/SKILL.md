@@ -32,7 +32,7 @@ Use the review findings from the current session.
 Load the most recent open `review` entry from the sidecar using the fix workflow helper. Do not invoke or activate the $sidecar skill.
 
 ```bash
-uv run --no-project "$dot_plugin_root/scripts/fix_workflow.py" get_review
+uv run --no-project --locked "$dot_plugin_root/scripts/fix_workflow.py" get_review
 ```
 
 Extract:
@@ -51,7 +51,7 @@ If no entry is found: STOP — report `Error: no review entry found in sidecar.`
 Load a specific review entry from the sidecar using the fix workflow helper. Do not invoke or activate the $sidecar skill.
 
 ```bash
-uv run --no-project "$dot_plugin_root/scripts/fix_workflow.py" get_review \
+uv run --no-project --locked "$dot_plugin_root/scripts/fix_workflow.py" get_review \
   --review_uuid "{uuid}"
 ```
 
@@ -290,7 +290,7 @@ Before the final response, if a review entry UUID is available from sidecar or f
 2. **Save fix entry** — run:
 
    ```bash
-   uv run --no-project "$dot_plugin_root/scripts/fix_workflow.py" save_fix \
+   uv run --no-project --locked "$dot_plugin_root/scripts/fix_workflow.py" save_fix \
      --agent "{agent}" \
      --model "{model}" \
      --review_uuid "{review_uuid}" \

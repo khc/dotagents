@@ -27,7 +27,7 @@ The plugin name supplies `dot:`. Each skill's frontmatter name remains unqualifi
 ## Prerequisites
 
 - Git and `uv` on PATH; `uv` manages Python 3.14.
-- `tyro>=1.0.13` for review/fix/sidecar helpers, declared as inline script dependencies.
+- `tyro==1.0.13` for review/fix/sidecar helpers, declared as inline script dependencies.
 - Claude Code or Codex CLI for workflow subprocess stages, or the existing Agy adapter for native stages.
 - External `superpowers:writing-skills` for `dot:skill-wrapper`.
 
@@ -51,17 +51,26 @@ Set `dot_plugin_root` to that resolved absolute path and keep cwd in the target 
 
 ```bash
 dot_plugin_root="/absolute/path/to/dot"
-uv run --no-project "$dot_plugin_root/scripts/context_workflow.py" .
-uv run --no-project "$dot_plugin_root/scripts/review_workflow.py" --help
-uv run --no-project "$dot_plugin_root/scripts/review_subject.py" --help
-uv run --no-project "$dot_plugin_root/scripts/review_strategy.py" --help
-uv run --no-project "$dot_plugin_root/scripts/fix_workflow.py" --help
-uv run --no-project "$dot_plugin_root/scripts/sidecar_workflow.py" --help
+uv run --no-project --locked "$dot_plugin_root/scripts/context_workflow.py" .
+uv run --no-project --locked "$dot_plugin_root/scripts/review_workflow.py" --help
+uv run --no-project --locked "$dot_plugin_root/scripts/review_subject.py" --help
+uv run --no-project --locked "$dot_plugin_root/scripts/review_strategy.py" --help
+uv run --no-project --locked "$dot_plugin_root/scripts/fix_workflow.py" --help
+uv run --no-project --locked "$dot_plugin_root/scripts/sidecar_workflow.py" --help
 ```
 
-Inline script metadata supplies Python/dependency requirements. Modules and the SQL schema live under the bundled `src/`. First execution may require network access to obtain missing dependencies; there is no reliance on `~/.agents/.venv`.
+Inline script metadata supplies Python/dependency requirements, and each script ships a `uv lock --script` lockfile (`<script>.py.lock`) so `--locked` installs exactly `tyro==1.0.13` and nothing else. Modules and the SQL schema live under the bundled `src/`. First execution may require network access to download that pinned package; there is no reliance on `~/.agents/.venv`.
 
 Plans stay at `<target repo>/.plans/`, sidecar data at `<target repo>/.sidecar/`, and workflow handoffs at `<active scope>/.workflow/<workflow-id>/` (for a single-file scope, `<file's directory>/.workflow/<id>/`). Persisted skill identifiers remain `review` and `fix`; workflow stage names and approval gates also remain unchanged.
+
+## What the plugin runs, sends, and fetches
+
+- **Local commands:** `git rev-parse` and `git -C <repo>` read-only queries, `uv run --no-project --locked` for the bundled helpers, and SQLite for sidecar storage under `<target repo>/.sidecar/`.
+- **Subprocess stages:** `skills/workflow/bin/workflow.py` starts fresh `claude`, `codex`, or `agy` CLI processes (overridable with `CLAUDE_CMD`, `CODEX_CMD`, `AGY_CMD`) and passes them the stage prompt and the artifacts it writes under `<active scope>/.workflow/`. Those CLIs send that content to their own providers under their own terms; the plugin sends nothing else.
+- **Network from plugin code:** none. The bundled Python makes no HTTP requests. The only download is the pinned `tyro==1.0.13` package fetched by `uv` on first run of the helpers.
+- **Web research:** `dot:web-research` asks an agent with web access to look up external facts. The skill passes identifiers only (library and API names, versions, error strings), never repository text unless you authorize an excerpt, and redacts credentials first.
+- **Skills installer:** `dot:find-skills` runs `npx skills@1.7.4` (the Skills CLI, pinned) only when you ask it to find or install a skill.
+- **Credentials:** the plugin reads no credentials from your environment and stores none. Reviews print `[REDACTED:<type>]` instead of secret values.
 
 ## Validation
 

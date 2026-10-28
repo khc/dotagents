@@ -255,7 +255,7 @@ After rendering the feature output, persist the entry using the direct sidecar s
 
 2. **Save feature entry** — run:
    ```bash
-   uv run --no-project "$dot_plugin_root/scripts/sidecar_workflow.py" save \
+   uv run --no-project --locked "$dot_plugin_root/scripts/sidecar_workflow.py" save \
      --skill feature \
      --scope "{scope}" \
      --agent "{agent}" \

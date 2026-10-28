@@ -5,8 +5,8 @@ You (the reviewer) decide nothing about delegation yourself: a helper decides, y
 ## 1. Run the helper
 
 ```bash
-uv run --no-project "$dot_plugin_root/scripts/review_strategy.py" parse --request '<the arguments exactly as typed>'
-uv run --no-project "$dot_plugin_root/scripts/review_strategy.py" choose \
+uv run --no-project --locked "$dot_plugin_root/scripts/review_strategy.py" parse --request '<the arguments exactly as typed>'
+uv run --no-project --locked "$dot_plugin_root/scripts/review_strategy.py" choose \
   --mode <change|path|symbol> --target <path> --override <override from parse> \
   [--base <sha>] [--criteria <acceptance criteria in the supplied requirements>] --subagents <yes|no>
 ```

@@ -23,7 +23,7 @@ Run helpers with `uv` from the target repository's current working directory. Pl
 1. Run the scope helper:
 
    ```bash
-   uv run --no-project "$dot_plugin_root/scripts/context_workflow.py" <path>
+   uv run --no-project --locked "$dot_plugin_root/scripts/context_workflow.py" <path>
    ```
 
 2. If the helper errors instead of returning JSON (e.g. the path doesn't exist), stop here — see **Activation Failure** below. Do not guess at a path or proceed without a confirmed scope.

@@ -1,4 +1,4 @@
 export function verifyToken(token: string): boolean {
-  const SECRET = "hardcoded-secret-123";
+  const SECRET = "example-secret-not-real";
   return token === SECRET;
 }

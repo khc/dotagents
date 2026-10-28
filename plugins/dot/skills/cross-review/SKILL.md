@@ -38,10 +38,10 @@ The active scope boundary is authoritative for every read in this skill.
 
 ## Protocol
 
-1. **Fan out.** Follow `references/fanout.md` exactly: write the user's arguments, unchanged, to a request file with your file-writing tool, then run `uv run --no-project "$dot_plugin_root/skills/workflow/bin/workflow.py" review-fanout --scope '<active scope>' --runtimes <csv> --request-file '<request file>'`. When a workflow prompt supplies a complete `review-fanout --state-dir ...` command, run that command instead.
+1. **Fan out.** Follow `references/fanout.md` exactly: write the user's arguments, unchanged, to a request file with your file-writing tool, then run `uv run --no-project --locked "$dot_plugin_root/skills/workflow/bin/workflow.py" review-fanout --scope '<active scope>' --runtimes <csv> --request-file '<request file>'`. When a workflow prompt supplies a complete `review-fanout --state-dir ...` command, run that command instead.
    - The reference has the setup, background polling for `FANOUT_RESULT=<path>`, the output contract, and what to do for each blocker. The fan-out report is runner output, not a repository file, so reading it is allowed for any scope.
    - If the command exits non-zero or `ok` is `false`: STOP. Report `blocked` with each failed reviewer's `runtime` and `blocker`. Do not synthesize a partial ensemble.
-2. **Load the reviews.** For each `review_uuid` in the fan-out report, run `uv run --no-project "$dot_plugin_root/scripts/sidecar_workflow.py" read --uuid '<uuid>' --start-path '<scope>'`. Read `context.findings`, `context.verdict`, and `context.reasoning`.
+2. **Load the reviews.** For each `review_uuid` in the fan-out report, run `uv run --no-project --locked "$dot_plugin_root/scripts/sidecar_workflow.py" read --uuid '<uuid>' --start-path '<scope>'`. Read `context.findings`, `context.verdict`, and `context.reasoning`.
 3. **Normalize and merge.** Map every finding to the six sidecar keys (`category`, `location`, `description`, `severity`, `confidence`, `fix_direction`). Merge findings that share a root cause into one. In `reasoning`, record for each merged finding which reviewers raised it: `unanimous`, `majority`, `single`, or `disputed`.
 4. **List disagreements.** Severity conflicts on the same finding, findings only some reviewers raised, and verdict conflicts.
 5. **Verify.** Verify every `single` and `disputed` finding against the code, read-only, within the active scope.
@@ -59,7 +59,7 @@ The active scope boundary is authoritative for every read in this skill.
    }
    ```
 
-8. **Supersede the sources.** After the save succeeds, run `uv run --no-project "$dot_plugin_root/scripts/sidecar_workflow.py" update --uuid '<source uuid>' --status superseded --start-path '<scope>'` for each source review UUID. If an update fails, note it in one line in `reasoning` and continue.
+8. **Supersede the sources.** After the save succeeds, run `uv run --no-project --locked "$dot_plugin_root/scripts/sidecar_workflow.py" update --uuid '<source uuid>' --status superseded --start-path '<scope>'` for each source review UUID. If an update fails, note it in one line in `reasoning` and continue.
 9. **Workflow envelope.** When a workflow prompt asked for an `ORCHESTRATION_RESULT`, append exactly one for `stage: "review"` after the review. Normalize it as `$dot:workflow` does: `ready` only for verdict `ready` with zero findings, `findings` when any finding remains, `blocked` when fan-out failed or a scope/evidence blocker prevents a valid review. Put the consolidated entry's UUID in `review_uuid`.
 
 ## Rules

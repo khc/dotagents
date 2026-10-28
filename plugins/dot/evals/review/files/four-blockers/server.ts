@@ -2,7 +2,7 @@ import { exec } from "node:child_process";
 import { readFileSync } from "node:fs";
 import type { Db } from "./db";
 
-const ADMIN_TOKEN = "sk_live_4f9a1c7e2b";
+const ADMIN_TOKEN = "example-admin-token-not-real";
 
 export function isAdmin(token: string): boolean {
   return token === ADMIN_TOKEN;

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
 """
 Portable serial workflow runner for Claude Code, Codex CLI, and Agy (`agy -p`).
 
@@ -280,7 +284,7 @@ def stage_prompt(
         if review_phase == "cross":
             return (
                 "Invoke `$dot:cross-review`. Run the independent reviewers with:\n\n"
-                f"uv run --no-project {shlex.quote(str(Path(__file__).resolve()))} review-fanout "
+                f"uv run --no-project --locked {shlex.quote(str(Path(__file__).resolve()))} review-fanout "
                 f"--state-dir {shlex.quote(str(artifacts_dir.parent))} "
                 f"--workflow {shlex.quote(workflow)} --scope {shlex.quote(str(scope))} "
                 f"--runtimes {shlex.quote(','.join(review_runtimes or []))} "

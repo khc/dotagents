@@ -3,9 +3,7 @@
 ## Versioning
 
 - Every change to this plugin requires a [semver](https://semver.org) bump of `version`.
-- Bump `version` in both manifests and keep them identical:
-  - `plugin.json`
-  - `.claude-plugin/plugin.json`
+- Bump `version` in `.claude-plugin/plugin.json`, the only manifest.
 - Patch: fixes, wording, docs, evals. Minor: new or changed skill behavior, new skills, scripts. Major: breaking changes (renamed or removed skills, changed handoff contracts).
 
 ## Skills

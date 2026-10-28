@@ -1,8 +1,9 @@
 {
   "name": "dot",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Personal skills for scoped planning, implementation, review, and reusable workflows.",
   "author": {
     "name": "khc"
-  }
+  },
+  "license": "MIT"
 }

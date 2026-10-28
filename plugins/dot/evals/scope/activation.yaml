@@ -13,7 +13,7 @@ prompt: >
 expected:
   trigger: true
   behavior:
-    - runs `uv run --no-project <dot_plugin_root>/scripts/context_workflow.py <path>` (or equivalent) before
+    - runs `uv run --no-project --locked <dot_plugin_root>/scripts/context_workflow.py <path>` (or equivalent) before
       reading/searching any repo files
     - renders the "## Scope" confirmation (Active Scope / Instructions Loaded /
       Scope Boundaries) before doing further repo work

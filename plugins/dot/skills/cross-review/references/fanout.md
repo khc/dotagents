@@ -21,7 +21,7 @@ The reviewers must receive exactly what the user typed after `$dot:cross-review`
 ## 3. Run the command
 
 ```bash
-uv run --no-project "$dot_plugin_root/skills/workflow/bin/workflow.py" review-fanout \
+uv run --no-project --locked "$dot_plugin_root/skills/workflow/bin/workflow.py" review-fanout \
   --scope '<active scope path, exactly as activated>' \
   --runtimes claude,codex,agy \
   --request-file '<request file from step 2>'

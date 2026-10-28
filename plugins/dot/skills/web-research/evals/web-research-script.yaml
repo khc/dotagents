@@ -8,7 +8,7 @@ purpose: >
   dedup, partial/unavailable status).
 
 command: >
-  uv run --no-project /Users/khc/.agents/plugins/dot/skills/web-research/evals/test_web_research.py
+  python3 /Users/khc/.agents/plugins/dot/skills/web-research/evals/test_web_research.py
 
 assert:
   exit_code: 0

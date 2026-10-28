@@ -21,7 +21,7 @@ This skill does no repository work, so it needs no scope of its own; the caller'
 
 ## Run
 
-Resolve `skill_dir` from this file's path. All helper commands are `uv run --no-project "$skill_dir/scripts/web_research.py" ...`; it uses only the standard library and needs Python 3.9+, so `python3` also works where `uv` is absent.
+Resolve `skill_dir` from this file's path. All helper commands are `uv run --no-project --locked "$skill_dir/scripts/web_research.py" ...`; it uses only the standard library and needs Python 3.9+, so `python3` also works where `uv` is absent.
 
 1. Plan: `plan --claim '<claim>' --context '<ids>' (--kind <kind> | --domains a,b)` prints `{agents: [{domain, prompt}]}`. At most 4 domains. Add `community` only when asked; it never decides a verdict.
 2. Dispatch: start one fresh sub-agent per entry in parallel, passing its `prompt` unchanged. Give each web search and fetch tools only when the runtime can restrict tools.

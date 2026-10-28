@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.14"
-# dependencies = ["tyro>=1.0.13"]
+# dependencies = ["tyro==1.0.13"]
 # ///
 
 import sys

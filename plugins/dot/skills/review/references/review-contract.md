@@ -26,7 +26,7 @@ The saved review entry (`context` JSON passed to `review_workflow.py`). `review_
 `subject` identifies exactly what was reviewed. Produce it with the helper instead of writing it by hand:
 
 ```bash
-uv run --no-project "$dot_plugin_root/scripts/review_subject.py" \
+uv run --no-project --locked "$dot_plugin_root/scripts/review_subject.py" \
   --kind <commit_range|index|working_tree|artifact> --review-mode <change|path|symbol> \
   --target <path> [--base <sha>] [--base-justification '<why this base covers the change>'] \
   [--include <adjacent file you inspected>]...
