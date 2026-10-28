@@ -1,11 +1,16 @@
 {
   "name": "dot",
   "displayName": "dotagents",
-  "version": "0.2.8",
+  "version": "0.2.12",
   "description": "Scope-locked engineering workflows: plan, implement, review, and fix code changes with evidence-backed reviews, multi-agent cross-review, and sourced web research.",
   "author": {
     "name": "khc"
   },
+  "repository": "https://github.com/khc/agents",
+  "documentationUrl": "https://github.com/khc/agents/blob/main/plugins/dot/README.md",
+  "supportUrl": "https://github.com/khc/agents/issues",
+  "privacyPolicyUrl": "https://github.com/khc/agents/blob/main/plugins/dot/PRIVACY.md",
+  "termsOfServiceUrl": "https://github.com/khc/agents/blob/main/plugins/dot/LICENSE",
   "license": "MIT",
   "keywords": [
     "workflow",
