@@ -1,4 +1,4 @@
-# Dot skills
+# dotagents
 
 The `dot` plugin packages 12 skills for Codex CLI/desktop and Claude Code. Invoke `$dot:plan` in Codex or `/dot:plan` in Claude Code. The plugin supplies the namespace; frontmatter names remain unqualified.
 
