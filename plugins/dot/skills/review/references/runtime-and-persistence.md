@@ -42,7 +42,7 @@ Never write a credential value into the review text or the saved entry. Show its
 - known token shapes (Stripe, GitHub, AWS, Slack, JWT, `sk-` keys), private-key blocks and `Bearer <token>` values;
 - assignments where the name contains `password`, `passwd`, `secret`, `token` or `api key`: quoted values of 6 or more characters (`name = "value"`, JSON keys) and unquoted values of 8 or more characters that contain a digit or symbol (`NAME=value`, `name: value`).
 
-It deliberately does not redact: unquoted values made only of letters (`password=correcthorsebattery`), values shorter than those limits, credentials under other names, code references such as `process.env.TOKEN`, or numeric token counters such as `max_tokens=1234567890`. Anything outside the list above is saved as written, so always write `[REDACTED:<type>]` yourself.
+It deliberately does not redact: unquoted values made only of letters (`password=correcthorsebattery`), values shorter than those limits, credentials under other names, code references such as `process.env.NAME`, or numeric token counters such as `max_tokens=1234567890`. Anything outside the list above is saved as written, so always write `[REDACTED:<type>]` yourself.
 
 ## Save to Sidecar
 

@@ -26,7 +26,7 @@ UNQUOTED = re.compile(
     rf"""(?P<name>{NAME})(?P<sep>\s*[:=]\s*)(?!\[REDACTED:)(?P<value>[A-Za-z0-9_\-+/=.~]{{8,}})""",  # no trailing lookahead: a rejected match would be rescanned from every inner start
     re.I,
 )
-CODE_PATH = re.compile(r"^[A-Za-z_]+(\.[A-Za-z_]+)+$")  # process.env.TOKEN, os.environ.API_KEY: code, not a value
+CODE_PATH = re.compile(r"^[A-Za-z_]+(\.[A-Za-z_]+)+$")  # dotted code references (process.env.NAME): code, not a value
 SKIPPED_KEYS = {"subject"}
 
 
