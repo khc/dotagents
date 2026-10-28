@@ -2,6 +2,8 @@
 
 This directory is the complete installable package. It does not require the surrounding development checkout or its virtual environment.
 
+Nothing runs automatically on install: the plugin has no hooks, MCP servers, or background processes. Skills run the bundled helper scripts and workflow subprocesses only when you invoke them; see [What the plugin runs, sends, and fetches](#what-the-plugin-runs-sends-and-fetches).
+
 ## Skills
 
 Includes 14 skills: `bug`, `cross-review`, `feature`, `find-skills`, `fix`, `implement`, `plan`, `refactor`, `research`, `review`, `scope`, `skill-wrapper`, `web-research`, and `workflow`.
