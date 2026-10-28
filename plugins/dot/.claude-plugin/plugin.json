@@ -1,10 +1,21 @@
 {
   "name": "dot",
   "displayName": "dotagents",
-  "version": "0.2.6",
+  "version": "0.2.8",
   "description": "Scope-locked engineering workflows: plan, implement, review, and fix code changes with evidence-backed reviews, multi-agent cross-review, and sourced web research.",
   "author": {
     "name": "khc"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "planning",
+    "code-review",
+    "cross-review",
+    "refactoring",
+    "debugging",
+    "web-research",
+    "skills",
+    "multi-agent"
+  ]
 }

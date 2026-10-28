@@ -5,7 +5,7 @@
   },
   "plugins": [
     {
-      "name": "dotagents",
+      "name": "dot",
       "source": {
         "source": "local",
         "path": "./plugins/dot"

@@ -1,4 +1,4 @@
-# Dot plugin
+# dotagents plugin
 
 This directory is the complete installable package. It does not require the surrounding development checkout or its virtual environment.
 
