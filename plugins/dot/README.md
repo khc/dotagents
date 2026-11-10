@@ -6,7 +6,7 @@ Nothing runs automatically on install: the plugin has no hooks, MCP servers, or 
 
 ## Skills
 
-Includes 14 skills: `bug`, `cross-review`, `feature`, `find-skills`, `fix`, `implement`, `plan`, `refactor`, `research`, `review`, `scope`, `skill-wrapper`, `web-research`, and `workflow`.
+Includes 13 skills: `bug`, `feature`, `find-skills`, `fix`, `implement`, `plan`, `refactor`, `research`, `review`, `scope`, `skill-wrapper`, `web-research`, and `workflow`.
 
 Codex examples:
 
@@ -87,6 +87,6 @@ The development repository also provides relocation tests, per-skill validation,
 
 Confirm native discovery before removing external old copies of these same skills. Synced skills and unrelated plugins stay separate; this migration deletes no external copies.
 
-The package retains 14 skills and intentionally excludes NotebookLM. The development checkout uses the native plugin layout without local skill aliases.
+The package retains 13 skills and intentionally excludes NotebookLM. The development checkout uses the native plugin layout without local skill aliases.
 
 Rollback restores the former repository paths from the reviewed migration diff and removes the new package/catalog files. Target-project plans, sidecar entries, and workflow artifacts keep their locations and identifiers throughout.

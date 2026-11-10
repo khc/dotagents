@@ -1,14 +1,14 @@
 id: duplicate-merge
-skill: dot:cross-review
+skill: cross-review:cross-review
 tier: behavioral
 
 purpose: >
   Verify protocol step 3: findings with the same root cause from different reviewers merge into one finding with reviewer attribution in reasoning.
 
-fixture: ../../evals/cross-review/files/duplicate-merge/
+fixture: ../../evals/files/duplicate-merge/
 
 prompt: >
-  Scope is already active on plugins/dot/evals/cross-review/files/duplicate-merge/. The review-fanout step is already complete: plugins/dot/evals/cross-review/files/duplicate-merge/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/dot/evals/cross-review/files/duplicate-merge/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers saved reviews of src/paginate.ts.
+  Scope is already active on plugins/cross-review/evals/files/duplicate-merge/. The review-fanout step is already complete: plugins/cross-review/evals/files/duplicate-merge/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/cross-review/evals/files/duplicate-merge/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers saved reviews of src/paginate.ts.
 
 expected:
   trigger: true

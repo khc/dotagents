@@ -8,6 +8,10 @@
     {
       "name": "dot",
       "source": "./plugins/dot"
+    },
+    {
+      "name": "cross-review",
+      "source": "./plugins/cross-review"
     }
   ]
 }

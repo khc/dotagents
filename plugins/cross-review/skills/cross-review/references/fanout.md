@@ -4,15 +4,16 @@ Copy these steps as written. Do not look for another way to start the reviewers.
 
 ## 1. Setup
 
-Resolve `dot_plugin_root` from the path of this skill's `SKILL.md`: `Path(skill_file).resolve().parents[2]`, where `skill_file` is `.../skills/cross-review/SKILL.md` (so the result is the directory that contains `skills/` and `scripts/`; do not apply it to this reference file). Set the shell variable before the commands below:
+Resolve `cross_review_root` from the path of this skill's `SKILL.md`: `Path(skill_file).resolve().parents[2]`, where `skill_file` is `.../skills/cross-review/SKILL.md` (so the result is the directory that contains `skills/` and `scripts/`; do not apply it to this reference file). Resolve `dot_plugin_root` as the SKILL.md Bundled Helpers section says (the user's path, else `DOT_PLUGIN_ROOT`, else `$cross_review_root/../dot`). Set both shell variables before the commands below:
 
 ```bash
-dot_plugin_root='<resolved plugin root>'
+cross_review_root='<resolved cross-review plugin root>'
+dot_plugin_root='<resolved dot plugin root>'
 ```
 
 ## 2. Write the request file
 
-The reviewers must receive exactly what the user typed after `$dot:cross-review`. Create a temporary file (for example in the scratchpad or a temp directory) with your **file-writing tool**, not a shell heredoc or `echo`, so no quoting, expansion, or newline change can touch the text. The file content is the user's arguments, unchanged:
+The reviewers must receive exactly what the user typed after the skill name. Create a temporary file (for example in the scratchpad or a temp directory) with your **file-writing tool**, not a shell heredoc or `echo`, so no quoting, expansion, or newline change can touch the text. The file content is the user's arguments, unchanged:
 
 - no summary, correction, translation, or added requirements
 - no trailing newline added or removed
@@ -21,7 +22,8 @@ The reviewers must receive exactly what the user typed after `$dot:cross-review`
 ## 3. Run the command
 
 ```bash
-uv run --no-project --locked "$dot_plugin_root/skills/workflow/bin/workflow.py" review-fanout \
+uv run --no-project --locked "$cross_review_root/scripts/review_fanout.py" \
+  --dot-plugin-root "$dot_plugin_root" \
   --scope '<active scope path, exactly as activated>' \
   --runtimes claude,codex,agy \
   --request-file '<request file from step 2>'
@@ -29,7 +31,7 @@ uv run --no-project --locked "$dot_plugin_root/skills/workflow/bin/workflow.py" 
 
 - The scope can be a file or a directory. Pass it unchanged; never substitute its parent directory.
 - Use the runtimes the user named; otherwise `claude,codex,agy`. At least two are required.
-- Do not pass `--state-dir` unless a workflow prompt supplied a complete command.
+- Do not pass `--state-dir`.
 - Never pass rewritten text with `--request`; use `--request-file`.
 - `--review-timeout` (default 900 seconds) bounds each reviewer. A reviewer gets one retry only for a missing or malformed result envelope.
 

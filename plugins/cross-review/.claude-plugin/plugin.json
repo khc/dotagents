@@ -1,0 +1,20 @@
+{
+  "name": "cross-review",
+  "displayName": "cross-review",
+  "version": "0.1.0",
+  "description": "Multi-agent cross-review: run independent fresh reviewers on Claude, Codex and Agy, then synthesize their saved reviews into one evidence-backed review. Requires the dot plugin.",
+  "author": {
+    "name": "khc"
+  },
+  "homepage": "https://github.com/khc/agents",
+  "repository": "https://github.com/khc/agents",
+  "documentationUrl": "https://github.com/khc/agents/blob/main/plugins/cross-review/README.md",
+  "supportUrl": "https://github.com/khc/agents/issues",
+  "license": "MIT",
+  "keywords": [
+    "code-review",
+    "cross-review",
+    "multi-agent",
+    "skills"
+  ]
+}

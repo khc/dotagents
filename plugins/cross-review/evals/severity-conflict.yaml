@@ -1,14 +1,14 @@
 id: severity-conflict
-skill: dot:cross-review
+skill: cross-review:cross-review
 tier: behavioral
 
 purpose: >
   Verify protocol step 5: a severity conflict is settled by reading the code, not by vote.
 
-fixture: ../../evals/cross-review/files/severity-conflict/
+fixture: ../../evals/files/severity-conflict/
 
 prompt: >
-  Scope is already active on plugins/dot/evals/cross-review/files/severity-conflict/. The review-fanout step is already complete: plugins/dot/evals/cross-review/files/severity-conflict/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/dot/evals/cross-review/files/severity-conflict/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers disagree on the severity of the same finding in src/paginate.ts.
+  Scope is already active on plugins/cross-review/evals/files/severity-conflict/. The review-fanout step is already complete: plugins/cross-review/evals/files/severity-conflict/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/cross-review/evals/files/severity-conflict/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers disagree on the severity of the same finding in src/paginate.ts.
 
 expected:
   trigger: true

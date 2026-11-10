@@ -1,5 +1,5 @@
 {
-  "state_dir": "evals/cross-review/files/severity-conflict",
+  "state_dir": "evals/files/severity-conflict",
   "ok": true,
   "reviewers": [
     {

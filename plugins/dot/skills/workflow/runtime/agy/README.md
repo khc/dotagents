@@ -47,9 +47,6 @@ The `dot` skills must be discoverable by `agy` in the target workspace, and the
 configured permissions must allow read-only review and sidecar writes. Do not
 use `--continue` or `--conversation`: every lifecycle stage must start fresh.
 
-Cross-review (`--review-runtimes`) requires `bin/workflow.py`; native
-`invoke_subagent` stages run a single reviewer.
-
 ## Native invocation contract
 
 The parent invokes a fresh custom subagent with `invoke_subagent`, using

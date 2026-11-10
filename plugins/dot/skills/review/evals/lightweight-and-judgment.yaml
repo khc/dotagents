@@ -62,7 +62,7 @@ scenarios:
       - all four reviews are saved and each prints a UUID line, including the clean standalone one
     forbidden:
       - skipping the save because the diff is small or has no findings
-    probes: a clean review still has a UUID (workflow stages and cross-review fan-out require one)
+    probes: a clean review still has a UUID (workflow stages and fan-outs of independent reviewers require one)
 
   - id: large-untracked-file-is-not-lightweight
     setup: >

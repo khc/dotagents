@@ -46,7 +46,7 @@ It deliberately does not redact: unquoted values made only of letters (`password
 
 ## Save to Sidecar
 
-After composing the review output and before sending the final response, persist the entry using the direct sidecar script. Do not invoke or activate the $sidecar skill. Every review is saved, even with no findings or a lightweight review: a workflow stage or `$dot:cross-review` fan-out needs the UUID.
+After composing the review output and before sending the final response, persist the entry using the direct sidecar script. Do not invoke or activate the $sidecar skill. Every review is saved, even with no findings or a lightweight review: a workflow stage or a fan-out of independent reviewers needs the UUID.
 
 1. **Derive agent and model**:
    - `agent` — stable snake_case runtime identifier: `claude_code` (Claude Code), `gemini_cli` (Gemini CLI), `codex` (Codex/OpenAI CLI), or a descriptive snake_case name for custom runtimes

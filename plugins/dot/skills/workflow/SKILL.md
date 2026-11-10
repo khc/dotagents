@@ -32,7 +32,6 @@ This skill is an orchestration layer. It does not replace `$dot:scope`, `$dot:fe
    - `$dot:implement` owns plan-faithful execution.
    - `$dot:review` owns diagnosis and acceptance.
   - The coordinator dispatches exactly one reviewer stage per review. That reviewer may start its own read-only lens and research agents under `$dot:review`'s Delegation rules; they never save, never start agents and never give a verdict. The coordinator, not `$dot:review`, owns the review/fix loop and its safety limit.
-   - `$dot:cross-review` owns consolidation of independent reviewer findings when cross-review is enabled.
    - `$dot:fix` owns remediation of review findings.
    - The orchestrator owns transitions only.
 
@@ -360,7 +359,7 @@ For standalone review, give:
 - explicit target and optional symbol
 - explicit requirements/change range only if supplied
 
-Require `$dot:review`. When cross-review is enabled (`--review-runtimes`), require `$dot:cross-review` instead; see Cross-Review below.
+Require `$dot:review`.
 
 Collect a `review-handoff` artifact.
 
@@ -393,16 +392,6 @@ Give:
 Require `$dot:fix`.
 
 Collect a `fix-handoff` artifact.
-
-## Cross-Review (optional)
-
-`start ... --review-runtimes claude,codex,agy` (at least two runtimes, default timeout `--review-timeout 900`) makes the `review` stage cross-review. Nothing changes without the flag.
-
-- The fresh reviewer-stage agent invokes `$dot:cross-review` instead of `$dot:review`. That agent runs `bin/workflow.py review-fanout`, which starts one fresh independent reviewer process per runtime; each runs `$dot:review` and saves its review to the sidecar.
-- Each reviewer gets one retry for a missing or malformed envelope, and a timeout. If any reviewer fails, fan-out exits non-zero and the stage reports `blocked`; a partial ensemble is never `ready`.
-- The stage agent reads the saved reviews by UUID, verifies disputed findings against the code, saves one consolidated `review` entry (with `context.cross_review`), and marks the source entries `superseded`. Its result is normalized like any other review, so the transition tables are unchanged.
-- Implementation and fix remain single-agent stages.
-- Fan-out needs `bin/workflow.py` and nested CLI processes. The native Agy `invoke_subagent` runtime can use it only by running the shell command.
 
 ## Re-review Continuity
 
@@ -452,7 +441,7 @@ Use the runtime transport available in the current harness:
 
 - **Claude Code** — `bin/workflow.py --runtime claude`; every stage is a fresh `claude -p` process.
 - **Codex CLI** — `bin/workflow.py --runtime codex`; every stage is a fresh `codex exec` process.
-- **Agy subprocess** — `bin/workflow.py --runtime agy`; every stage is a fresh `agy -p` process. Cross-review fan-out accepts any mix of `claude`, `codex`, and `agy` via `--review-runtimes`.
+- **Agy subprocess** — `bin/workflow.py --runtime agy`; every stage is a fresh `agy -p` process.
 - **Agy / Antigravity** — run this skill in the parent agent and dispatch every stage with native `invoke_subagent` using the custom agents under `runtime/agy/agents/`.
 
 Filesystem stage artifacts under `<scope>/.workflow/<workflow-id>/` are the

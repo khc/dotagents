@@ -38,23 +38,6 @@ python bin/workflow.py start feature --runtime agy --scope . --request "..."
 
 Uses a fresh `agy -p` subprocess per lifecycle stage.
 
-### Cross-review
-
-Run independent reviewers on several runtimes, then synthesize with `$dot:cross-review`:
-
-```bash
-# stage agent / skill entry point: fan out and print reviewer sidecar UUIDs
-python bin/workflow.py review-fanout --scope . --runtimes claude,codex,agy --request "Review src/auth"
-
-# workflow: the review stage invokes $dot:cross-review
-python bin/workflow.py start review --runtime claude --scope . \
-  --request "Review src/auth" --review-runtimes claude,codex,agy
-```
-
-`--review-timeout` (default 900 s) bounds each reviewer; a missing or malformed envelope is retried once. Any reviewer failure blocks the review. Cross-review needs `bin/workflow.py`; native Agy `invoke_subagent` stages run a single reviewer.
-
-`review-fanout` accepts a file or a directory as `--scope` and passes the request text to every reviewer verbatim, as the arguments of `$dot:review`. For a single-file scope the reviewers run in the file's directory and see only that file; `start` requires a directory scope. See `../cross-review/references/fanout.md` for the full run instructions.
-
 ### Agy / Antigravity
 
 Copy the custom stage agents:

@@ -16,7 +16,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "dot"
 SKILLS = {
-    "bug", "cross-review", "feature", "find-skills", "fix", "implement",
+    "bug", "feature", "find-skills", "fix", "implement",
     "plan", "refactor", "research", "review", "scope", "skill-wrapper", "workflow",
 }
 
@@ -136,7 +136,7 @@ class DotPluginTests(unittest.TestCase):
                     self.assertTrue((ROOT / fixture).is_file(), fixture)
         for file in (PLUGIN / "evals").glob("*/*.yaml"):
             scenario = yaml.safe_load(file.read_text())
-            self.assertIn(scenario["skill"], {"dot:scope", "dot:review", "dot:fix", "dot:cross-review"})
+            self.assertIn(scenario["skill"], {"dot:scope", "dot:review", "dot:fix"})
             if "fixture" in scenario:
                 name = scenario["skill"].split(":")[-1]
                 self.assertTrue((PLUGIN / "skills" / name / scenario["fixture"]).is_dir(), file)
@@ -162,16 +162,26 @@ class DotPluginTests(unittest.TestCase):
             self.assertNotIn("~/.agents/scripts/", text)
             self.assertIn("parents[2]", text)
 
+    def test_workflow_smoke_check(self):
+        proc = subprocess.run(
+            [sys.executable, "-B", str(PLUGIN / "skills" / "workflow" / "bin" / "smoke_check.py")],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("PASS", proc.stdout)
+
     def test_marketplace_sources(self):
         for file in (ROOT / ".agents/plugins/marketplace.json", ROOT / ".claude-plugin/marketplace.json"):
             marketplace = json.loads(file.read_text())
             self.assertEqual(marketplace["name"], "dotagents")
-            self.assertEqual(len(marketplace["plugins"]), 1)
-            entry = marketplace["plugins"][0]
-            self.assertEqual(entry["name"], "dot")
-            source = entry["source"]
-            path = source["path"] if isinstance(source, dict) else source
-            self.assertEqual((ROOT / path).resolve(), PLUGIN)
+            entries = {entry["name"]: entry for entry in marketplace["plugins"]}
+            self.assertEqual(set(entries), {"dot", "cross-review"})
+            for name, entry in entries.items():
+                source = entry["source"]
+                path = source["path"] if isinstance(source, dict) else source
+                self.assertEqual((ROOT / path).resolve(), ROOT / "plugins" / name)
+                manifest = json.loads((ROOT / "plugins" / name / ".claude-plugin" / "plugin.json").read_text())
+                self.assertEqual(manifest["name"], name)
 
 
 if __name__ == "__main__":

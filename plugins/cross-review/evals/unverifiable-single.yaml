@@ -1,14 +1,14 @@
 id: unverifiable-single
-skill: dot:cross-review
+skill: cross-review:cross-review
 tier: behavioral
 
 purpose: >
   Verify protocol step 5: an unverifiable single-source finding is kept as likely with severity capped at medium.
 
-fixture: ../../evals/cross-review/files/unverifiable-single/
+fixture: ../../evals/files/unverifiable-single/
 
 prompt: >
-  Scope is already active on plugins/dot/evals/cross-review/files/unverifiable-single/. The review-fanout step is already complete: plugins/dot/evals/cross-review/files/unverifiable-single/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/dot/evals/cross-review/files/unverifiable-single/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers saved reviews of src/client.ts; only codex reported a finding.
+  Scope is already active on plugins/cross-review/evals/files/unverifiable-single/. The review-fanout step is already complete: plugins/cross-review/evals/files/unverifiable-single/fanout.json lists the reviewers, and each reviewer's saved sidecar context is the file under plugins/cross-review/evals/files/unverifiable-single/reviewers/ (read those files instead of calling sidecar_workflow.py; do not run review-fanout again). Run the rest of cross-review (normalize, merge, verify, final review) and print the consolidated sidecar payload JSON instead of saving it. Two reviewers saved reviews of src/client.ts; only codex reported a finding.
 
 expected:
   trigger: true

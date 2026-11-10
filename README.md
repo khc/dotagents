@@ -42,12 +42,17 @@ plugins/dot/
 ├── src/agents/
 ├── src/schemas/sidecar.schema.sql
 └── evals/
+plugins/cross-review/          # requires plugin dot
+├── .claude-plugin/plugin.json
+├── skills/cross-review/
+├── scripts/
+└── evals/
 skills/synced/                 # independent synced collection
 scripts/                      # development tools
 scripts/skill_report.ts
 ```
 
-Only `plugins/dot/` is the installable package. Both catalogs resolve `./plugins/dot` from this repository root. Synced skills remain independent.
+Two packages are installable: `plugins/dot/` (the workflows) and `plugins/cross-review/` (multi-agent cross-review, which requires `dot`). Both catalogs resolve `./plugins/dot` and `./plugins/cross-review` from this repository root. Synced skills remain independent.
 
 ## Install
 

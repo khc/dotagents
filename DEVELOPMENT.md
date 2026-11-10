@@ -1,6 +1,6 @@
 # Development
 
-The `dot` plugin lives in `plugins/dot/` and is exposed to each host through a marketplace catalog:
+The `dot` plugin lives in `plugins/dot/`, and the `cross-review` plugin (which requires `dot`) lives in `plugins/cross-review/`. Both are exposed to each host through a marketplace catalog:
 
 | Host | Catalog | Plugin manifest |
 | --- | --- | --- |
@@ -8,7 +8,7 @@ The `dot` plugin lives in `plugins/dot/` and is exposed to each host through a m
 | Codex | `.agents/plugins/marketplace.json` | `plugins/dot/plugin.json` |
 | Antigravity | none (installs from a directory) | `plugins/dot/plugin.json` |
 
-Both catalogs resolve `./plugins/dot` from the repository root. Registering or installing changes host settings; editing the repo does not.
+The table shows the `dot` plugin's manifests; `cross-review` has only a Claude manifest, `plugins/cross-review/.claude-plugin/plugin.json`, and is listed in both catalogs. Both catalogs resolve `./plugins/dot` and `./plugins/cross-review` from the repository root. Registering or installing changes host settings; editing the repo does not.
 
 ## Claude Code
 
