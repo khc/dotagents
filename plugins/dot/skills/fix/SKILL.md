@@ -279,6 +279,15 @@ Render on successful fix:
 `$dot:review` — re-review the fixed findings in the original review mode and determine whether they are closed.
 ```
 
+### Handoff prompt
+
+Ask instead of rendering the Handoff block above when the session is interactive: a user-question tool is available (`AskUserQuestion` in Claude Code, or the runtime's equivalent), and the prompt did not require an `ORCHESTRATION_RESULT` or forbid invoking the next lifecycle skill. Ask one question, "Next step?", with two options; the tool's automatic "Other" is the third:
+
+1. `(Recommended) Handoff to $dot:review`: re-review the fixed findings in the original review mode and determine whether they are closed
+2. `Handoff to <alternative skill>`: the most likely alternative given this run's outcome, with one line on why (`$dot:plan` when a finding needed a design change, `$dot:fix` for findings still open)
+
+Invoke the chosen skill with the context the Handoff block names; the user's choice is the instruction to chain. For "Other", follow the user's text. If no prompt is possible, render the Handoff block as written and end there.
+
 ## Save to Sidecar
 
 Before the final response, if a review entry UUID is available from sidecar or from the current session, persist the fix using the fix workflow helper. Do not invoke or activate the $sidecar skill.

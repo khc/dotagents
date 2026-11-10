@@ -234,7 +234,7 @@ Maintain a strict lifecycle boundary:
 - mark the overall change `ready`
 - perform an independent production-readiness review
 - fix unrelated defects
-- invoke `$dot:review` or `$dot:fix` internally
+- invoke `$dot:review` or `$dot:fix` internally (the user choosing the handoff in the Handoff prompt is not internal)
 
 After successful refactoring and fresh verification, hand off to `$dot:review`.
 
@@ -285,6 +285,15 @@ If the refactor escalates:
 ```
 
 Keep output concise. Do not repeat broad analysis.
+
+### Handoff prompt
+
+Ask instead of rendering the Handoff block above when the session is interactive: a user-question tool is available (`AskUserQuestion` in Claude Code, or the runtime's equivalent), and the prompt did not require an `ORCHESTRATION_RESULT` or forbid invoking the next lifecycle skill. Ask one question, "Next step?", with two options; the tool's automatic "Other" is the third:
+
+1. `(Recommended) Handoff to $dot:review`: independently review the refactor for behavior preservation, structural correctness, and unintended change
+2. `Handoff to <alternative skill>`: the most likely alternative given this run's outcome, with one line on why (`$dot:plan` for a larger follow-up refactor)
+
+Invoke the chosen skill with the context the Handoff block names; the user's choice is the instruction to chain. For "Other", follow the user's text. If no prompt is possible, render the Handoff block as written and end there.
 
 ## Save to Sidecar
 

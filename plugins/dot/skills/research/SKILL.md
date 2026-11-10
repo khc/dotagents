@@ -316,6 +316,15 @@ If implementation discovers that the selected package/API is unavailable or inco
 - return to `$dot:research`
 - do not silently substitute another external dependency
 
+### Handoff prompt
+
+Ask instead of rendering the Handoff block above when the session is interactive: a user-question tool is available (`AskUserQuestion` in Claude Code, or the runtime's equivalent), and the prompt did not require an `ORCHESTRATION_RESULT` or forbid invoking the next lifecycle skill. Ask one question, "Next step?", with two options; the tool's automatic "Other" is the third:
+
+1. `(Recommended) Handoff to $dot:plan` for a result that needs several independent tasks, or `$dot:feature` for one bounded change: whichever fits this result
+2. `Handoff to <the other of $dot:feature / $dot:plan>`, with one line on why
+
+Invoke the chosen skill with this reuse decision as its implementation input; the user's choice is the instruction to chain. For "Other", follow the user's text. If no prompt is possible, render the Handoff block as written and end there.
+
 ## Style
 
 - Reuse-first

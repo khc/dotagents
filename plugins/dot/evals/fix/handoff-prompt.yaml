@@ -1,0 +1,66 @@
+id: handoff-prompt
+skill: dot:fix
+tier: behavioral
+
+purpose: >
+  Scenarios for the handoff-prompt plan (.plans/plan_1794339811.md, Task 4).
+  fix, implement, feature, bug, refactor, plan (after approval) and research
+  end with a human-in-the-loop question in interactive sessions, and keep the
+  text Handoff block when no prompt is possible. The scenarios use the fix
+  skill as the representative; the unit test in test/test_dot_plugin.py
+  guards that all seven skills carry the same rule. Each scenario is persisted
+  before it is run; nothing here claims an outcome.
+
+scenarios:
+  - id: interactive-session-asks
+    prompt: >
+      Interactive Claude Code session with the AskUserQuestion tool available.
+      A review found one confirmed finding in a small file; run $dot:fix for it.
+    expected:
+      - after the fix is verified, the agent asks one question ("Next step?") with the question tool instead of printing the Handoff block
+      - the first option is "(Recommended) Handoff to $dot:review", described as re-reviewing the fixed findings in the original review mode
+      - the second option is "Handoff to <alternative skill>" with one line on why, chosen from this run's outcome
+      - choosing the first option invokes $dot:review with the review mode and target of the fixed review
+    forbidden:
+      - printing the full text Handoff block and also asking the question
+      - invoking $dot:review without the user choosing it
+
+  - id: workflow-stage-does-not-prompt
+    prompt: >
+      The prompt is a workflow stage: "You are the fix stage of workflow `review`. This is a fresh isolated
+      lifecycle-stage invocation ... Do not invoke the next lifecycle skill ... append EXACTLY one machine result:
+      <ORCHESTRATION_RESULT>". Apply the same single confirmed finding.
+    expected:
+      - the agent does not call the question tool
+      - the output ends with the text Handoff block and the ORCHESTRATION_RESULT envelope as before
+    forbidden:
+      - asking the user anything at the end of the stage
+      - invoking $dot:review from inside the stage
+
+  - id: runtime-without-a-question-tool
+    prompt: >
+      A runtime with no user-question tool available. Apply the same single confirmed finding.
+    expected:
+      - the output ends with the text Handoff block, unchanged from before the prompt rule
+    forbidden:
+      - inventing a tool call or pretending to have asked a question
+
+  - id: other-is-followed
+    prompt: >
+      Interactive session with the question tool. At the "Next step?" question the user picks "Other" and types
+      "stop here, I will review it myself".
+    expected:
+      - the agent follows the typed text and stops without invoking any skill
+    forbidden:
+      - invoking $dot:review anyway
+
+  - id: blocked-fix-keeps-its-text
+    prompt: >
+      Interactive session with the question tool. The finding's assumption is disproved, so $dot:fix stops and hands
+      back to $dot:review as a diagnosis mismatch.
+    expected:
+      - the stop is reported in the existing text form and no handoff prompt replaces it
+    forbidden:
+      - presenting the success handoff question for a fix that did not succeed
+
+status: not run  # results are recorded in baseline.md once the scenarios are run

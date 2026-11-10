@@ -419,6 +419,15 @@ When `$dot:implement` returns a re-plan blocker:
 
 After `$dot:implement`, acceptance belongs to `$dot:review`, not to `$dot:implement`.
 
+### Handoff prompt
+
+Only after the plan is approved (a draft plan still ends with the invitation to review). Ask instead of ending with the exact `$dot:implement` handoff when the session is interactive: a user-question tool is available (`AskUserQuestion` in Claude Code, or the runtime's equivalent), and the prompt did not require an `ORCHESTRATION_RESULT` or forbid invoking the next lifecycle skill. Ask one question, "Next step?", with two options; the tool's automatic "Other" is the third:
+
+1. `(Recommended) Handoff to $dot:implement <plan file>`: execute this exact approved plan in order, preserving scope and acceptance criteria
+2. `Handoff to $dot:research` when Risks list an open library question, otherwise `Keep refining the plan` (stay in `$dot:plan`), with one line on why
+
+Invoke the chosen skill with the plan file and revision named in the handoff; the user's choice is the instruction to chain. For "Other", follow the user's text. If no prompt is possible, end with the exact `$dot:implement <plan-file>` handoff as written.
+
 ## Style
 
 - Direct

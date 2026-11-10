@@ -273,7 +273,7 @@ Maintain a strict lifecycle boundary:
 - close review findings
 - perform an independent production-readiness review
 - re-rank or reinterpret requirements
-- invoke `$dot:review` or `$dot:fix` internally
+- invoke `$dot:review` or `$dot:fix` internally (the user choosing the handoff in the Handoff prompt is not internal)
 
 After implementation completes, hand off to `$dot:review`.
 
@@ -334,6 +334,15 @@ If all planned tasks are implemented and freshly verified:
 ```
 
 Keep completion reporting concise. Do not repeat the full plan.
+
+### Handoff prompt
+
+Ask instead of rendering the Handoff block above when the session is interactive: a user-question tool is available (`AskUserQuestion` in Claude Code, or the runtime's equivalent), and the prompt did not require an `ORCHESTRATION_RESULT` or forbid invoking the next lifecycle skill. Ask one question, "Next step?", with two options; the tool's automatic "Other" is the third:
+
+1. `(Recommended) Handoff to $dot:review`: review the completed implementation against the exact governing plan and the captured change boundary
+2. `Handoff to <alternative skill>`: the most likely alternative given this run's outcome, with one line on why (`$dot:plan` when the work exposed a plan gap that did not block completion)
+
+Invoke the chosen skill with the context the Handoff block names; the user's choice is the instruction to chain. For "Other", follow the user's text. If no prompt is possible, render the Handoff block as written and end there.
 
 ## Style
 

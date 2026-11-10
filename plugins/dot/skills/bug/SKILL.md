@@ -269,7 +269,7 @@ Maintain strict lifecycle boundaries:
 - mark the overall change `ready`
 - perform a broad independent code review
 - fix review findings via `$dot:fix` semantics
-- invoke `$dot:review` or `$dot:fix` internally
+- invoke `$dot:review` or `$dot:fix` internally (the user choosing the handoff in the Handoff prompt is not internal)
 
 After a successful bug fix and fresh verification, hand off to `$dot:review`.
 
@@ -324,6 +324,15 @@ If blocked:
 ```
 
 Keep output concise. Do not reproduce broad investigation logs.
+
+### Handoff prompt
+
+Ask instead of rendering the Handoff block above when the session is interactive: a user-question tool is available (`AskUserQuestion` in Claude Code, or the runtime's equivalent), and the prompt did not require an `ORCHESTRATION_RESULT` or forbid invoking the next lifecycle skill. Ask one question, "Next step?", with two options; the tool's automatic "Other" is the third:
+
+1. `(Recommended) Handoff to $dot:review`: independently review the bug fix against the reported symptom, regression evidence, and change boundary
+2. `Handoff to <alternative skill>`: the most likely alternative given this run's outcome, with one line on why (`$dot:plan` when the root cause points to a broader change)
+
+Invoke the chosen skill with the context the Handoff block names; the user's choice is the instruction to chain. For "Other", follow the user's text. If no prompt is possible, render the Handoff block as written and end there.
 
 ## Save to Sidecar
 

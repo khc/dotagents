@@ -170,6 +170,22 @@ class DotPluginTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIn("PASS", proc.stdout)
 
+    def test_handoff_prompts(self):
+        required = (
+            "### Handoff prompt", "AskUserQuestion", "ORCHESTRATION_RESULT", "(Recommended) Handoff to",
+            "the user's choice is the instruction to chain",
+        )
+        for name in ("fix", "implement", "feature", "bug", "refactor", "plan", "research"):
+            with self.subTest(name):
+                text = (PLUGIN / "skills" / name / "SKILL.md").read_text()
+                for needle in required:
+                    self.assertIn(needle, text)
+                self.assertLess(len(text.splitlines()), 500)
+        for name in ("implement", "bug", "refactor"):
+            with self.subTest(f"{name} ownership exception"):
+                text = (PLUGIN / "skills" / name / "SKILL.md").read_text()
+                self.assertIn("the user choosing the handoff in the Handoff prompt is not internal", text)
+
     def test_marketplace_sources(self):
         for file in (ROOT / ".agents/plugins/marketplace.json", ROOT / ".claude-plugin/marketplace.json"):
             marketplace = json.loads(file.read_text())
