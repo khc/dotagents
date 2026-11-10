@@ -1,0 +1,120 @@
+id: lightweight-and-judgment
+skill: dot:review
+tier: behavioral
+
+purpose: >
+  Scenarios for the lightweight-review plan (.plans/plan_1794322606.md, Task 5).
+  Each scenario is persisted before it is run. Observed results are recorded
+  only in baseline.md; nothing here claims an outcome. The lightweight limits
+  (files <= 3, lines <= 100) are provisional; the first run is their calibration.
+  Fixtures are built at run time in a temporary git repository.
+
+scenarios:
+  - id: small-clean-change-is-lightweight
+    setup: >
+      commit a base, then change one non-risky source file by a few lines
+      (no paths or content matching auth, crypto, secrets, exec, SQL templates)
+    prompt: >
+      Scope is active on the repository. Review the change since the base commit.
+    expected:
+      - the reviewer renders the Scope block, runs the strategy helper `parse` and `choose`, and sees lightweight true
+      - only the changed file is read; no adjacent files
+      - change-review.md is read before the verdict
+      - the persisted execution is the helper output plus research and research_excerpt_authorized (strategy single)
+    forbidden:
+      - skipping the strategy helper
+      - reading files outside the diff
+    probes: lightweight path reads the helper key, not a guessed size
+
+  - id: override-token-is-not-the-target
+    setup: same small clean change as small-clean-change-is-lightweight
+    prompt: >
+      Scope is active on the repository. Typed arguments: `single <changed file>`.
+    expected:
+      - the helper parse step strips `single` and the review targets the changed file
+      - execution.override is single
+    forbidden:
+      - treating `single` as part of the target path
+    probes: parse still runs in lightweight mode
+
+  - id: risky-small-change-is-not-lightweight
+    setup: >
+      commit a base, then change one line in a file under an `auth/` directory
+    prompt: >
+      Scope is active on the repository. Review the change since the base commit.
+    expected:
+      - the helper returns agents with the security lens and lightweight false
+      - the review follows the agents strategy, not Lightweight mode
+    forbidden:
+      - a lightweight review of a risk-sensitive path
+    probes: security routing is kept
+
+  - id: every-lightweight-review-is-saved
+    setup: >
+      four small non-risky changes: one with a clear bug (for example an
+      off-by-one in a loop bound), one with no defects reviewed standalone, one
+      with no defects reviewed after $dot:implement (source_workflow implement),
+      and one re-review after $dot:fix with prior_review_uuid
+    prompt: >
+      Scope is active on the repository. Review the change since the base commit.
+    expected:
+      - the bug is reported as a finding with a concrete fix_direction
+      - all four reviews are saved and each prints a UUID line, including the clean standalone one
+    forbidden:
+      - skipping the save because the diff is small or has no findings
+    probes: a clean review still has a UUID (workflow stages and cross-review fan-out require one)
+
+  - id: large-untracked-file-is-not-lightweight
+    setup: >
+      commit a base, then add one new untracked non-risky source file of about
+      200 lines and one new untracked binary file
+    prompt: >
+      Scope is active on the repository. Review the change since the base commit.
+    expected:
+      - the helper's signals count the untracked file's lines and report the binary file as unmeasured
+      - lightweight is false and the review does not use Lightweight mode
+    forbidden:
+      - a lightweight review of a change whose new files exceed the limits
+    probes: untracked and binary files count toward the size gate
+
+  - id: other-judgment-is-an-observation
+    setup: >
+      change that adds a feature flag default which fits no checklist category and
+      whose rationale is not in the diff
+    prompt: >
+      Scope is active on the repository. Review the change since the base commit.
+    expected:
+      - the concern appears under "Other / judgment" with a quoted evidence line and what would resolve it
+      - the saved entry lists it under observations, not findings
+      - the verdict is unaffected by it
+    forbidden:
+      - an Other / judgment item without quoted evidence
+      - an Other / judgment item saved as a finding or marked blocking
+    probes: Other / judgment contract
+
+  - id: material-question-blocks-the-verdict
+    setup: >
+      change whose correctness depends on an intent that cannot be inferred
+      (for example a changed default whose caller expectations are not visible)
+    prompt: >
+      Scope is active on the repository. Review the change since the base commit.
+    expected:
+      - the question appears under "Questions for the author"
+      - because the verdict could change with the answer, it is also recorded as a material verification_gap and the verdict is not-ready
+    forbidden:
+      - guessing the intent and giving ready
+      - persisting the question outside verification_gaps
+    probes: material question handling
+
+  - id: change-review-reads-the-reference
+    setup: a change review with a base/head range and a supplied requirement
+    prompt: >
+      Scope is active on the repository. Review the change against the requirement.
+    expected:
+      - references/change-review.md is read before the verdict
+      - requirements compliance and diff integrity are both checked
+    forbidden:
+      - a verdict on a change review without reading the reference
+    probes: the read-gate
+
+status: not run  # see baseline.md for observed results once recorded
