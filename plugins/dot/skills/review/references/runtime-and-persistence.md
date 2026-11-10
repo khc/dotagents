@@ -46,7 +46,7 @@ It deliberately does not redact: unquoted values made only of letters (`password
 
 ## Save to Sidecar
 
-After composing the review output and before sending the final response, persist the entry using the direct sidecar script. Do not invoke or activate the $sidecar skill.
+After composing the review output and before sending the final response, persist the entry using the direct sidecar script. Do not invoke or activate the $sidecar skill. Every review is saved, even with no findings or a lightweight review: a workflow stage or `$dot:cross-review` fan-out needs the UUID.
 
 1. **Derive agent and model**:
    - `agent` — stable snake_case runtime identifier: `claude_code` (Claude Code), `gemini_cli` (Gemini CLI), `codex` (Codex/OpenAI CLI), or a descriptive snake_case name for custom runtimes
@@ -79,9 +79,9 @@ After composing the review output and before sending the final response, persist
    - `source_uuid` — originating feature/implement/plan entry identifier when available
    - `base_sha` — reviewed change base when available
    - `head_sha` — reviewed change head/current HEAD when available
-   - `findings` — list of dicts, one per finding: `{"finding_id": "F1", "category": "Security|Bugs|Design|Performance|Maintainability|Observability|Testing|Requirements / Plan|Production Readiness|Documentation|Library / Reuse", "location": ..., "description": ..., "severity": "critical|high|medium|low", "confidence": "confirmed|likely", "fix_direction": ..., "blocking": true|false, "status": "open", "evidence_refs": [...]}`
+   - `findings` — list of dicts, one per finding: `{"finding_id": "F1", "category": "<a category from the review contract>", "location": ..., "description": ..., "severity": "critical|high|medium|low", "confidence": "confirmed|likely", "fix_direction": ..., "blocking": true|false, "status": "open", "evidence_refs": [...]}`
    - `prior_review_uuid` — on re-review, the UUID of the saved review that was fixed (omit otherwise)
-   - `observations` — optional `[{location, description}]` for unrelated notes that are not findings
+   - `observations` — optional `[{location, description}]` for unrelated notes that are not findings and for Other / judgment concerns (see the contract). Questions for the author are not saved; a material one is a material `verification_gaps` entry
    - `summary` — one-sentence prose summary of the review
    - `reasoning` — analytical context for downstream agents: dominant concern, requirements/plan evidence used (or unavailable), Git range/diff evidence used (or unavailable), relevant test evidence, what was deprioritized and why, any constraints or scope limits observed
    - `verdict` — `ready|ready-with-fixes|not-ready`, equal to the aggregate verdict in the review contract

@@ -3,6 +3,7 @@
 // Usage: bun scripts/skill_report.ts --skill <name> [--output json|markdown] [--start-path <path>]
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { $ } from "bun";
 
 type OutputFormat = "json" | "markdown";
 type ToolStatus = "pass" | "warn" | "fail";
@@ -48,7 +49,7 @@ export interface RunResult {
   stderr: string;
 }
 
-export type Run = (command: string[]) => RunResult;
+export type Run = (command: string[]) => RunResult | Promise<RunResult>;
 
 const finding = (
   tool: string,
@@ -66,8 +67,8 @@ export function projectRoot(startPath: string): string {
 
 export function commandRunner(rootDir: string): Run {
   const env = { ...process.env, UV_CACHE_DIR: join(rootDir, ".task-cache", "uv") };
-  return (command) => {
-    const result = Bun.spawnSync(command, { cwd: rootDir, env });
+  return async (command) => {
+    const result = await $`${command}`.cwd(rootDir).env(env).quiet().nothrow();
     return {
       exitCode: result.exitCode ?? -1,
       stdout: result.stdout.toString(),
@@ -85,13 +86,13 @@ export async function generateReport(args: ReportArgs, makeRun = commandRunner):
   }
 
   const run = makeRun(rootDir);
-  const tools = [
+  const tools = await Promise.all([
     runSkillcheck(run, skillFile),
     runSkillsValidate(run, skillFile),
     runSkillValidator(run, skillDir),
     runCclint(run, skillFile),
     runMarkdownlint(run, skillFile),
-  ];
+  ]);
   const combined: CombinedReport = {
     skill: args.skill,
     skill_path: skillFile,
@@ -102,9 +103,9 @@ export async function generateReport(args: ReportArgs, makeRun = commandRunner):
   return args.output === "markdown" ? toMarkdown(combined) : JSON.stringify(combined, null, 2);
 }
 
-function runSkillcheck(run: Run, skillFile: string): ToolReport {
+async function runSkillcheck(run: Run, skillFile: string): Promise<ToolReport> {
   const command = ["uv", "run", "skillcheck", skillFile, "--strict", "--format", "json"];
-  const [result, payload, failure] = runJsonTool(run, command, "skillcheck");
+  const [result, payload, failure] = await runJsonTool(run, command, "skillcheck");
   if (failure) return failure;
 
   const findings = (payload.results ?? []).flatMap((file: Json) =>
@@ -130,9 +131,9 @@ function runSkillcheck(run: Run, skillFile: string): ToolReport {
   };
 }
 
-function runSkillsValidate(run: Run, skillFile: string): ToolReport {
+async function runSkillsValidate(run: Run, skillFile: string): Promise<ToolReport> {
   const command = ["uv", "run", "skills", "validate", skillFile];
-  const result = run(command);
+  const result = await run(command);
   const failed = result.exitCode !== 0;
   const messages = (result.stdout + result.stderr)
     .split("\n")
@@ -150,9 +151,9 @@ function runSkillsValidate(run: Run, skillFile: string): ToolReport {
   };
 }
 
-function runSkillValidator(run: Run, skillDir: string): ToolReport {
+async function runSkillValidator(run: Run, skillDir: string): Promise<ToolReport> {
   const command = ["skill-validator", "check", skillDir, "-o", "json"];
-  const [result, payload, failure] = runJsonTool(run, command, "skill-validator");
+  const [result, payload, failure] = await runJsonTool(run, command, "skill-validator");
   if (failure) return failure;
 
   const findings = (payload.results ?? [])
@@ -180,9 +181,9 @@ function runSkillValidator(run: Run, skillDir: string): ToolReport {
   };
 }
 
-function runCclint(run: Run, skillFile: string): ToolReport {
+async function runCclint(run: Run, skillFile: string): Promise<ToolReport> {
   const command = ["bunx", "cclint", "lint", skillFile, "-f", "json"];
-  const [result, payload, failure] = runJsonTool(run, command, "cclint");
+  const [result, payload, failure] = await runJsonTool(run, command, "cclint");
   if (failure) return failure;
 
   const findings = (payload.violations ?? []).map((v: Json) =>
@@ -207,9 +208,9 @@ function runCclint(run: Run, skillFile: string): ToolReport {
   };
 }
 
-function runMarkdownlint(run: Run, skillFile: string): ToolReport {
+async function runMarkdownlint(run: Run, skillFile: string): Promise<ToolReport> {
   const command = ["bunx", "markdownlint-cli2", "--config", ".markdownlint-cli2.skills.yaml", skillFile];
-  const result = run(command);
+  const result = await run(command);
   const findings = parseMarkdownlintOutput(result.stdout + result.stderr);
   if (result.exitCode !== 0 && findings.length === 0) {
     const message = failureMessage(result, "validator failed without parseable findings");
@@ -247,8 +248,8 @@ function parseMarkdownlintOutput(output: string): Finding[] {
   });
 }
 
-function runJsonTool(run: Run, command: string[], tool: string): [RunResult, Json, null] | [RunResult, null, ToolReport] {
-  const result = run(command);
+async function runJsonTool(run: Run, command: string[], tool: string): Promise<[RunResult, Json, null] | [RunResult, null, ToolReport]> {
+  const result = await run(command);
   if (!result.stdout.trim()) {
     return [result, null, failureReport(tool, command, result, "validator exited without JSON output")];
   }

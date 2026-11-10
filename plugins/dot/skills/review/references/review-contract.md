@@ -17,9 +17,9 @@ The saved review entry (`context` JSON passed to `review_workflow.py`). `review_
 | `summary`, `reasoning` | yes | One sentence; analytical context for downstream agents |
 | `verdict` | yes | Must equal the aggregate verdict below |
 | `prior_review_uuid` | re-review | UUID of the saved review being re-reviewed; see Re-review |
-| `observations` | optional | `[{location, description}]`: unrelated notes that are not findings and never affect the verdict |
+| `observations` | optional | `[{location, description}]`: notes that are not findings, carry no `finding_id` and never affect the verdict. Holds unrelated notes and Other / judgment concerns that fit no checklist category; an Other / judgment description quotes the inspected evidence and names the evidence or author decision that would resolve it |
 
-`subject` and `execution` are required (see Reviewed state and Execution). `stale` is an optional boolean.
+`subject` and `execution` are required (see Reviewed state and Execution). `stale` is an optional boolean. Questions for the author are not persisted; a material question is recorded as a material `verification_gap`.
 
 ## Reviewed state
 

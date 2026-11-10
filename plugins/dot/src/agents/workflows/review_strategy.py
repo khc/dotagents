@@ -20,13 +20,23 @@ LENSES: dict[str, list[str]] = {
 # Size thresholds come from the baseline calibration. None disables that rule.
 THRESHOLDS: dict[str, int | None] = {"files": None, "lines": None, "areas": None, "criteria": None}
 
+# A Change review at or below these limits, with a single-agent result and no risk signal, is a lightweight review.
+# Provisional: there is no calibration data behind these values.
+LIGHTWEIGHT_LIMITS: dict[str, int] = {"files": 3, "lines": 100}
+
 RISK_PATH = re.compile(
-    r"(^|/)(auth|crypto|secrets?|tokens?|passwords?|passwd|sessions?|login|permissions?|acl|payments?|migrat\w*|schema)(/|\.|_|-|$)|\.sql$",
+    r"(^|/)(auth|crypto|secrets?|tokens?|passwords?|passwd|sessions?|login|permissions?|acl|payments?|migrat\w*|schema)(/|\.|_|-|$)|\.sql$|\.sh$|\.ps1$|\.tf$|\.mk$|\.dockerfile$|(^|/)(dockerfile|containerfile|makefile|jenkinsfile)(\.[\w-]+)?$|(^|/)\.env(\.|$)|(^|/)\.github/|\.gitlab-ci\.ya?ml$|(^|/)docker-compose(\.[\w-]+)*\.ya?ml$|(^|/)\.npmrc$|\.(pem|key|crt|p12|pfx)$|(^|/)requirements[\w-]*\.txt$|(^|/)setup\.py$|(^|/)\.gitmodules$",
     re.I,
 )
-RISK_CONTENT = re.compile(r"(\bexec\(|\beval\(|child_process|private key|password|secret|api[_-]?key|\bSELECT\b[^\n]{1,200}\$\{|createCipher)", re.I)
+RISK_CONTENT = re.compile(r"(\bexec\(|\beval\(|child_process|private key|password|secret|api[_-]?key|\bSELECT\b[^\n]{1,200}\$\{|createCipher|(?m:^)#!)", re.I)
 PROSE_OR_DATA = {".md", ".txt", ".rst", ".json"}  # words like "secret" there are prose or fixtures, not a risk signal
 MAX_SCAN_BYTES = 1_000_000
+MAX_LIGHTWEIGHT_BYTES = LIGHTWEIGHT_LIMITS["lines"] * 200  # an untracked file or a diff larger than this is unmeasured: its line count hides its size
+# A changed file with any other suffix (config, manifests, scripts, no suffix) is unmeasured: not plain source or docs.
+PLAIN_SUFFIXES = {
+    ".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".go", ".rs", ".java", ".kt", ".swift", ".c", ".h", ".cc", ".cpp", ".rb", ".php", ".cs",
+    ".md", ".txt", ".rst",
+}
 
 Override = Literal["none", "single", "agents"]
 
@@ -71,7 +81,30 @@ def applicable_lenses(criteria: int) -> list[dict[str, Any]]:
     return lenses
 
 
+def is_lightweight(signals: dict[str, Any], result: dict[str, Any], limits: dict[str, int]) -> bool:
+    return (
+        signals["mode"] == "change"
+        and result["strategy"] == "single"
+        and "fallback" not in result
+        and not signals["risky"]
+        and not signals.get("unmeasured")
+        and signals["files"] <= limits["files"]
+        and signals["lines"] <= limits["lines"]
+    )
+
+
 def choose_strategy(
+    signals: dict[str, Any],
+    thresholds: dict[str, int | None],
+    override: Override,
+    subagents: bool,
+    lightweight_limits: dict[str, int] = LIGHTWEIGHT_LIMITS,
+) -> dict[str, Any]:
+    result = _choose_strategy(signals, thresholds, override, subagents)
+    return {**result, "lightweight": is_lightweight(signals, result, lightweight_limits)}
+
+
+def _choose_strategy(
     signals: dict[str, Any],
     thresholds: dict[str, int | None],
     override: Override,
@@ -104,20 +137,21 @@ def choose_strategy(
     return single("below thresholds, no risk-sensitive content" if not unset else "thresholds unset and no risk-sensitive content")
 
 
-def _numstat(repo: Path, base: str, target: str) -> tuple[list[str], int]:
-    tokens = git_output(repo, "diff", "-z", "--numstat", base, "--", target).split("\0")
+def _numstat(repo: Path, base: str, target: str) -> tuple[list[str], int, int]:
+    tokens = git_output(repo, "diff", "-z", "--no-renames", "--numstat", base, "--", target).split("\0")
     paths: list[str] = []
-    lines = 0
+    lines = unmeasured = 0
     i = 0
     while i < len(tokens) and tokens[i]:
         added, deleted, path = tokens[i].split("\t", 2)
-        if not path:  # rename or copy: the next two tokens are the old and new path
-            path, i = tokens[i + 2], i + 2
-        if added.isdigit() and deleted.isdigit():
+        counted = added.isdigit() and deleted.isdigit()
+        if counted:
             lines += int(added) + int(deleted)
+        if not counted or added == deleted == "0":  # binary ("-") or mode-only ("0 0"): no line count to trust
+            unmeasured += 1
         paths.append(path)
         i += 1
-    return paths, lines
+    return paths, lines, unmeasured
 
 
 def _area(path: str) -> str:
@@ -136,10 +170,15 @@ def _area(path: str) -> str:
 def compute_signals(args: Choose) -> dict[str, Any]:
     repo = project_root(args.start_path)
     target = repo_relative(repo, args.target, args.start_path)
-    lines = 0
+    lines = unmeasured = 0
+    untracked: set[str] = set()
     if args.mode == "change":
-        paths, lines = _numstat(repo, args.base or "HEAD", target)
-        paths += git_paths(repo, "ls-files", "--others", "--exclude-standard", "--", target)
+        base = args.base or "HEAD"
+        paths, lines, unmeasured = _numstat(repo, base, target)
+        untracked = set(git_paths(repo, "ls-files", "--others", "--exclude-standard", "--", target))
+        paths += sorted(untracked)
+        if len(git_output(repo, "diff", "--no-renames", "-U0", base, "--", target)) > MAX_LIGHTWEIGHT_BYTES:
+            unmeasured += 1  # a few lines can carry a lot of bytes (a minified file)
     else:
         paths = git_paths(repo, "ls-files", "--cached", "--others", "--exclude-standard", "--", target)
     risky: list[str] = []
@@ -147,12 +186,24 @@ def compute_signals(args: Choose) -> dict[str, Any]:
         file = repo / rel
         if RISK_PATH.search(rel):
             risky.append(f"path:{rel}")
-        if file.is_file() and file.stat().st_size <= MAX_SCAN_BYTES:
-            text = file.read_text(errors="ignore")
-            if args.mode != "change":
-                lines += text.count("\n")
-            if file.suffix.lower() not in PROSE_OR_DATA and (match := RISK_CONTENT.search(text)):
-                risky.append(f"content:{rel}:{match.group(0)[:20]}")
+        if args.mode == "change" and file.suffix.lower() not in PLAIN_SUFFIXES:
+            unmeasured += 1
+        if not file.exists() and not file.is_symlink():
+            continue  # deleted: only its path matters
+        try:
+            size = file.stat().st_size
+            text = file.read_text(errors="ignore") if file.is_file() and size <= MAX_SCAN_BYTES else None
+        except OSError:  # dangling symlink, unreadable, or gone while scanning
+            size, text = 0, None
+        if text is None:  # oversized, a directory (a submodule) or unreadable: never scanned
+            unmeasured += 1
+            continue
+        if args.mode != "change" or rel in untracked:  # tracked change lines come from the numstat
+            lines += len(text.splitlines())
+        if rel in untracked and ("\0" in text or size > MAX_LIGHTWEIGHT_BYTES):  # binary or too big for its line count to mean anything
+            unmeasured += 1
+        if file.suffix.lower() not in PROSE_OR_DATA and (match := RISK_CONTENT.search(text)):
+            risky.append(f"content:{rel}:{match.group(0)[:20]}")
     unique = sorted(set(paths))
     return {
         "mode": args.mode,
@@ -161,6 +212,7 @@ def compute_signals(args: Choose) -> dict[str, Any]:
         "areas": len({_area(p) for p in unique}),
         "criteria": args.criteria,
         "risky": risky[:5],
+        "unmeasured": unmeasured,
     }
 
 

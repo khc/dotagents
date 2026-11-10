@@ -11,7 +11,7 @@ uv run --no-project --locked "$dot_plugin_root/scripts/review_strategy.py" choos
   [--base <sha>] [--criteria <acceptance criteria in the supplied requirements>] --subagents <yes|no>
 ```
 
-`parse` strips a leading `single` or `agents` token (only when a target follows it; `--single` and `--agents` also work) and returns `{override, arguments}`; review the remaining `arguments`. `choose` prints `{strategy, lenses, reason, override, signals, thresholds_unset, fallback?}`. Follow `strategy`. An override never widens scope or permissions. Set `--subagents no` only if your runtime cannot start sub-agents.
+`parse` strips a leading `single` or `agents` token (only when a target follows it; `--single` and `--agents` also work) and returns `{override, arguments}`; review the remaining `arguments`. `choose` prints `{strategy, lenses, reason, override, signals, thresholds_unset, lightweight, fallback?}`. Follow `strategy`; `lightweight` is `true` only for a `single` Change review with no risk signal, no unmeasured file (binary, oversized or unreadable, mode-only, a submodule, or not plain source or docs by extension), and at or below the helper's small-diff limits (files and lines, untracked files included), and switches on Lightweight mode in `SKILL.md`. The risk signal is a best-effort path and content heuristic, not a guarantee. If `choose` errors, treat the review as not lightweight and review inline. An override never widens scope or permissions. Set `--subagents no` only if your runtime cannot start sub-agents.
 
 - `single`: review inline.
 - `agents`: run only the listed `lenses`, one sub-agent each, as below. If `lenses` is just `security`, review everything else inline.
@@ -30,6 +30,8 @@ Each category belongs to exactly one lens.
 | `tests-observability` | Testing, Observability |
 | `design-production` | Design, Performance, Maintainability, Production Readiness, Documentation |
 | `library-reuse` | Library / Reuse |
+
+Other / judgment items and Questions for the author are not categories: only you produce them, and lens agents never report them.
 
 ## 3. Lens agent prompt
 

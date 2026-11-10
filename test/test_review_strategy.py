@@ -15,7 +15,11 @@ sys.path.insert(0, str(PLUGIN / "src"))
 
 from agents.workflows.review_strategy import (  # noqa: E402
     LENSES,
+    LIGHTWEIGHT_LIMITS,
+    MAX_LIGHTWEIGHT_BYTES,
+    MAX_SCAN_BYTES,
     RISK_CONTENT,
+    RISK_PATH,
     THRESHOLDS,
     Choose,
     applicable_lenses,
@@ -29,6 +33,7 @@ BIG = {"mode": "change", "files": 40, "lines": 2500, "areas": 4, "criteria": 6, 
 RISKY = {**SMALL, "risky": ["path:app/auth/token.ts"]}
 LIMITS = {"files": 10, "lines": 800, "areas": 3, "criteria": 8}
 UNSET = {k: None for k in LIMITS}
+SMALL_CHANGE = {**SMALL, "mode": "change", "files": 3, "lines": 100}
 
 
 def names(result):
@@ -49,6 +54,11 @@ class RiskContentTests(unittest.TestCase):
                 self.assertIsNotNone(RISK_CONTENT.search(text))
         self.assertIsNone(RISK_CONTENT.search("SELECT a FROM b WHERE id = 1"))
 
+    def test_shebang_at_the_start_of_a_line_is_risky(self):
+        self.assertIsNotNone(RISK_CONTENT.search("#!/bin/sh\necho hi\n"))
+        self.assertIsNotNone(RISK_CONTENT.search("x = 1\n#!/usr/bin/env python\n"))
+        self.assertIsNone(RISK_CONTENT.search("echo '#!' is text"))
+
     def test_bounded_pattern_matches_the_old_one_on_short_lines(self):
         old = re.compile(r"(\bexec\(|\beval\(|child_process|private key|password|secret|api[_-]?key|\bSELECT\b.+\$\{|createCipher)", re.I)
         pieces = ["SELECT", "select", " ", "x", "${", "$", "{", "}", "\n", "exec(", "eval(", "password", "a", "FROM", "t", "`", "createCipher"]
@@ -56,6 +66,32 @@ class RiskContentTests(unittest.TestCase):
         for _ in range(4000):
             text = "".join(rng.choice(pieces) for _ in range(rng.randint(1, 30)))
             self.assertEqual(bool(RISK_CONTENT.search(text)), bool(old.search(text)), text)
+
+
+class RiskPathTests(unittest.TestCase):
+    def test_ci_container_shell_and_env_paths_are_risky(self):
+        paths = (
+            ".github/workflows/ci.yml", ".github/actions/x/action.yml", "Dockerfile", "docker/Dockerfile.prod", "app.dockerfile",
+            "Containerfile", "scripts/deploy.sh", "tools/run.ps1", ".env", "app/.env.production", "Makefile", "sub/Makefile",
+            ".gitlab-ci.yml", "Jenkinsfile", "docker-compose.yml", "docker-compose.prod.yaml", "infra/main.tf", ".npmrc",
+            "certs/server.pem", "requirements.txt", "requirements-dev.txt", "setup.py", "pkg/setup.py", ".gitmodules",
+        )
+        for path in paths:
+            with self.subTest(path):
+                self.assertIsNotNone(RISK_PATH.search(path))
+
+    def test_ordinary_paths_are_not_risky(self):
+        for path in ("src/app.ts", "docs/guide.md", "src/environment.ts", "src/shell.ts", "docs/dockerfile_notes.md",
+                     "docs/makefile_notes.md", "src/jenkinsfile_parser.ts", "src/requirements_view.ts"):
+            with self.subTest(path):
+                self.assertIsNone(RISK_PATH.search(path))
+
+    def test_long_paths_finish_quickly(self):
+        for path in ("a/" * 2000 + "docker-compose" + ".a-a" * 1000, "requirements" + "-a" * 2000, "Makefile" + ".a" * 2000, "/migrat" * 600):
+            with self.subTest(path[:20]):
+                start = time.perf_counter()
+                RISK_PATH.search(path)
+                self.assertLess(time.perf_counter() - start, 1.0)
 
 
 class OverrideParsingTests(unittest.TestCase):
@@ -138,6 +174,43 @@ class DecisionTableTests(unittest.TestCase):
         self.assertEqual(first, choose_strategy(dict(BIG), dict(LIMITS), "none", True))
 
 
+class LightweightTests(unittest.TestCase):
+    def test_limits_are_their_own_constant(self):
+        self.assertEqual(LIGHTWEIGHT_LIMITS, {"files": 3, "lines": 100})
+        self.assertNotIn("lightweight", THRESHOLDS)
+
+    def test_table(self):
+        risky = {**SMALL_CHANGE, "risky": ["path:app/auth/token.ts"]}
+        cases = [
+            ("at the limits", SMALL_CHANGE, "none", True, True),
+            ("one file over", {**SMALL_CHANGE, "files": 4}, "none", True, False),
+            ("one line over", {**SMALL_CHANGE, "lines": 101}, "none", True, False),
+            ("risky content", risky, "none", True, False),
+            ("path mode", {**SMALL_CHANGE, "mode": "path"}, "none", True, False),
+            ("symbol mode", {**SMALL_CHANGE, "mode": "symbol"}, "none", True, False),
+            ("agents override", SMALL_CHANGE, "agents", True, False),
+            ("no sub-agent support", SMALL_CHANGE, "none", False, False),
+            ("single override", SMALL_CHANGE, "single", True, True),
+            ("single override on risky content", risky, "single", True, False),
+            ("large change", BIG, "none", True, False),
+            ("unmeasured file", {**SMALL_CHANGE, "unmeasured": 1}, "none", True, False),
+        ]
+        for name, signals, override, subagents, expected in cases:
+            with self.subTest(name):
+                result = choose_strategy(signals, LIMITS, override, subagents)
+                self.assertIs(result["lightweight"], expected)
+
+    def test_does_not_depend_on_unset_size_thresholds(self):
+        self.assertIs(choose_strategy(SMALL_CHANGE, UNSET, "none", True)["lightweight"], True)
+
+    def test_custom_limits_are_honoured(self):
+        self.assertIs(choose_strategy(SMALL_CHANGE, LIMITS, "none", True, {"files": 2, "lines": 100})["lightweight"], False)
+
+    def test_existing_result_keys_are_unchanged(self):
+        result = choose_strategy(SMALL, LIMITS, "none", True)
+        self.assertEqual(set(result) - {"lightweight"}, {"override", "signals", "thresholds_unset", "strategy", "lenses", "reason"})
+
+
 class LensTests(unittest.TestCase):
     def test_every_category_belongs_to_exactly_one_lens(self):
         categories = [c for cats in LENSES.values() for c in cats]
@@ -188,7 +261,130 @@ class SignalTests(unittest.TestCase):
         (self.repo / "src/a.ts").write_text("one\ntwo\nthree\n")
         (self.repo / "src/new.ts").write_text("x\n")
         s = self.signals("change", base=self.base)
-        self.assertEqual((s["files"], s["lines"]), (2, 1))  # a.ts +1; untracked new.ts not in the numstat
+        self.assertEqual((s["files"], s["lines"]), (2, 2))  # a.ts +1 from the numstat; untracked new.ts +1 from its content
+
+    def test_untracked_files_count_toward_change_lines(self):
+        (self.repo / "new.ts").write_text("x\n" * 200)
+        s = self.signals("change", base=self.base)
+        self.assertEqual((s["files"], s["lines"], s["unmeasured"]), (1, 200, 0))
+
+    def test_binary_files_are_unmeasured(self):
+        (self.repo / "b.py").write_bytes(b"\0\1\2")
+        git(self.repo, "add", ".")
+        git(self.repo, "commit", "--quiet", "-m", "binary")
+        base = git(self.repo, "rev-parse", "HEAD")
+        (self.repo / "b.py").write_bytes(b"\0\3\4\5")  # tracked binary change: the numstat reports "-"
+        (self.repo / "c.py").write_bytes(b"\0\1")  # untracked binary
+        s = self.signals("change", base=base)
+        self.assertEqual((s["files"], s["unmeasured"]), (2, 2))  # a binary file's line count is not meaningful, so only unmeasured is asserted
+
+    def test_oversized_untracked_file_is_unmeasured(self):
+        (self.repo / "big.txt").write_text("x" * (MAX_SCAN_BYTES + 1))
+        s = self.signals("change", base=self.base)
+        self.assertEqual((s["files"], s["unmeasured"]), (1, 1))
+
+    def test_large_untracked_file_is_not_lightweight(self):
+        (self.repo / "new.ts").write_text("x\n" * 200)
+        s = self.signals("change", base=self.base)
+        self.assertIs(choose_strategy(s, UNSET, "none", True)["lightweight"], False)
+
+    def test_renamed_risky_path_is_flagged(self):
+        (self.repo / ".github/workflows").mkdir(parents=True)
+        (self.repo / ".github/workflows/ci.yml").write_text("on: push\n")
+        git(self.repo, "add", ".")
+        git(self.repo, "commit", "--quiet", "-m", "ci")
+        base = git(self.repo, "rev-parse", "HEAD")
+        git(self.repo, "mv", ".github/workflows/ci.yml", "ci.yml.off")
+        s = self.signals("change", base=base)
+        self.assertIn("path:.github/workflows/ci.yml", s["risky"])
+        self.assertIs(choose_strategy(s, UNSET, "none", True)["lightweight"], False)
+
+    def test_mode_only_change_is_unmeasured(self):
+        (self.repo / "run.py").write_text("print('hi')\n")
+        git(self.repo, "add", ".")
+        git(self.repo, "commit", "--quiet", "-m", "script")
+        base = git(self.repo, "rev-parse", "HEAD")
+        (self.repo / "run.py").chmod(0o755)
+        s = self.signals("change", base=base)
+        self.assertEqual((s["files"], s["lines"], s["unmeasured"]), (1, 0, 1))
+
+    def test_single_line_untracked_file_is_unmeasured(self):
+        (self.repo / "min.js").write_text("a" * (MAX_LIGHTWEIGHT_BYTES + 1))
+        s = self.signals("change", base=self.base)
+        self.assertEqual((s["lines"], s["unmeasured"]), (1, 1))
+
+    def test_last_line_without_a_newline_is_counted(self):
+        (self.repo / "new.ts").write_text("x\ny")
+        s = self.signals("change", base=self.base)
+        self.assertEqual(s["lines"], 2)
+
+    def commit_file(self, name, text):
+        (self.repo / name).write_text(text)
+        git(self.repo, "add", ".")
+        git(self.repo, "commit", "--quiet", "-m", f"add {name}")
+        return git(self.repo, "rev-parse", "HEAD")
+
+    def lightweight(self, signals):
+        return choose_strategy(signals, UNSET, "none", True)["lightweight"]
+
+    def test_oversized_tracked_file_is_unmeasured(self):
+        base = self.commit_file("huge.py", "x = 1\n" * 200000)  # larger than MAX_SCAN_BYTES
+        with (self.repo / "huge.py").open("a") as f:
+            f.write("eval(x)\n")
+        s = self.signals("change", base=base)
+        self.assertGreaterEqual(s["unmeasured"], 1)
+        self.assertIs(self.lightweight(s), False)
+
+    def test_submodule_bump_is_unmeasured(self):
+        other = Path(self.enterContext(tempfile.TemporaryDirectory(prefix="review strategy sub ")))  # outside self.repo, or it would be an untracked path
+        git(other, "init", "--quiet")
+        (other / "f.py").write_text("one\n")
+        git(other, "add", ".")
+        git(other, "commit", "--quiet", "-m", "one")
+        git(self.repo, "-c", "protocol.file.allow=always", "submodule", "add", "--quiet", str(other), "sub")
+        git(self.repo, "commit", "--quiet", "-m", "submodule")
+        base = git(self.repo, "rev-parse", "HEAD")
+        (other / "f.py").write_text("two\n")
+        git(other, "commit", "--quiet", "-am", "two")
+        git(self.repo / "sub", "-c", "protocol.file.allow=always", "pull", "--quiet")
+        s = self.signals("change", base=base)
+        self.assertGreaterEqual(s["unmeasured"], 1)
+        self.assertIs(self.lightweight(s), False)
+
+    def test_rewritten_tracked_single_line_file_is_unmeasured(self):
+        base = self.commit_file("min.js", "a" * 50000)
+        (self.repo / "min.js").write_text("b" * 50000)
+        s = self.signals("change", base=base)
+        self.assertGreaterEqual(s["unmeasured"], 1)
+        self.assertIs(self.lightweight(s), False)
+
+    def test_small_edit_to_a_large_tracked_file_stays_lightweight(self):
+        base = self.commit_file("big.py", "x = 1\n" * 4000)  # 24 KB, many short lines
+        text = (self.repo / "big.py").read_text().replace("x = 1", "x = 2", 1)
+        (self.repo / "big.py").write_text(text)
+        s = self.signals("change", base=base)
+        self.assertEqual(s["unmeasured"], 0)
+        self.assertIs(self.lightweight(s), True)
+
+    def test_files_that_are_not_plain_source_or_docs_are_unmeasured(self):
+        base = self.commit_file("package.json", "{}\n")
+        (self.repo / "package.json").write_text('{"scripts": {"postinstall": "curl x | sh"}}\n')
+        s = self.signals("change", base=base)
+        self.assertGreaterEqual(s["unmeasured"], 1)
+        self.assertIs(self.lightweight(s), False)
+
+    def test_unreadable_untracked_file_is_unmeasured_not_a_crash(self):
+        locked = self.repo / "locked.ts"
+        locked.write_text("x\n")
+        locked.chmod(0)
+        self.addCleanup(locked.chmod, 0o644)
+        s = self.signals("change", base=self.base)
+        self.assertGreaterEqual(s["unmeasured"], 1)
+
+    def test_dangling_symlink_is_unmeasured(self):
+        os.symlink("missing-target", self.repo / "link.ts")
+        s = self.signals("change", base=self.base)
+        self.assertGreaterEqual(s["unmeasured"], 1)
 
     def test_risky_path_and_content_are_detected(self):
         (self.repo / "src/auth").mkdir()
@@ -307,6 +503,21 @@ class CliTests(unittest.TestCase):
             nosub = json.loads(self.run_cli("choose", "--mode", "path", "--target", ".", "--override", "agents",
                                             "--subagents", "no", "--start-path", str(repo), cwd=repo).stdout)
             self.assertEqual((nosub["strategy"], nosub["fallback"]), ("single", "sub-agents unavailable in this runtime"))
+
+    def test_choose_reports_lightweight_for_a_small_change(self):
+        with tempfile.TemporaryDirectory(prefix="review strategy ") as tmp:
+            repo = Path(tmp)
+            git(repo, "init", "--quiet")
+            (repo / "a.ts").write_text("x\n")
+            git(repo, "add", ".")
+            git(repo, "commit", "--quiet", "-m", "base")
+            base = git(repo, "rev-parse", "HEAD")
+            (repo / "a.ts").write_text("x\ny\n")
+            out = self.run_cli("choose", "--mode", "change", "--target", ".", "--base", base, "--start-path", str(repo), cwd=repo)
+            self.assertEqual(out.returncode, 0, out.stderr)
+            self.assertIs(json.loads(out.stdout)["lightweight"], True)
+            path_mode = json.loads(self.run_cli("choose", "--mode", "path", "--target", ".", "--start-path", str(repo), cwd=repo).stdout)
+            self.assertIs(path_mode["lightweight"], False)
 
 
 if __name__ == "__main__":
